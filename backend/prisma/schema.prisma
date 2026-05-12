@@ -1,0 +1,909 @@
+// =========================================================
+// Tetri Copilot Prisma Schema
+// AI-First Lightweight SME Operating Assistant
+// Version: 2.0 MVP
+// Database: PostgreSQL on Ubuntu VPS
+// Backend: Express.js REST API on Ubuntu VPS
+// Frontend: React + Vite deployed to Cloudflare Pages
+// ORM: Prisma Client
+// =========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================================
+// ENUMS
+// =========================================================
+
+enum UserStatus {
+  active
+  inactive
+  invited
+  suspended
+}
+
+enum SystemRole {
+  admin
+  owner
+  user
+  viewer
+}
+
+enum SubscriptionPlanCode {
+  free
+  starter
+  professional
+  business
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  cancelled
+  expired
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  cancelled
+}
+
+enum ExpenseStatus {
+  draft
+  submitted
+  approved
+  rejected
+}
+
+enum ReminderType {
+  tax
+  invoice_due
+  payment
+  compliance
+  custom
+}
+
+enum ReminderStatus {
+  pending
+  sent
+  completed
+  cancelled
+  overdue
+}
+
+enum NotificationChannel {
+  dashboard
+  email
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+  read
+}
+
+enum DocumentType {
+  quotation
+  nda
+  freelance_agreement
+  offer_letter
+  operational_letter
+  other
+}
+
+enum DocumentStatus {
+  draft
+  generated
+  approved
+  archived
+}
+
+enum AiRequestType {
+  chat
+  document_generation
+  expense_categorization
+  compliance_guidance
+  invoice_guidance
+}
+
+enum AiRequestStatus {
+  success
+  failed
+  blocked_limit
+  blocked_permission
+}
+
+enum BillingEventType {
+  checkout_created
+  subscription_created
+  subscription_updated
+  subscription_cancelled
+  payment_succeeded
+  payment_failed
+}
+
+// =========================================================
+// LOCALIZATION
+// =========================================================
+
+model Language {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique @db.VarChar(10)
+  name       String   @db.VarChar(100)
+  nativeName String?  @map("native_name") @db.VarChar(100)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users                   User[]
+  defaultCountryProfiles  CountryProfile[]       @relation("DefaultCountryLanguage")
+  countryProfileLanguages CountryProfileLanguage[]
+  workspaces              Workspace[]
+  invoices                Invoice[]
+  aiConversations         AiConversation[]
+  documentTemplates       DocumentTemplate[]
+  generatedDocuments      GeneratedDocument[]
+
+  @@map("languages")
+}
+
+model Currency {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(3)
+  name      String   @db.VarChar(100)
+  symbol    String?  @db.VarChar(10)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  defaultCountryProfiles CountryProfile[] @relation("DefaultCountryCurrency")
+  workspaces             Workspace[]
+  invoices               Invoice[]
+  expenses               Expense[]
+
+  @@map("currencies")
+}
+
+model CountryProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  countryCode       String   @unique @map("country_code") @db.VarChar(5)
+  countryName       String   @map("country_name") @db.VarChar(150)
+  defaultCurrencyId String?  @map("default_currency_id") @db.Uuid
+  defaultLanguageId String?  @map("default_language_id") @db.Uuid
+  dateFormat        String?  @default("YYYY-MM-DD") @map("date_format") @db.VarChar(50)
+  timezone          String?  @db.VarChar(100)
+  taxLabel          String?  @map("tax_label") @db.VarChar(50)
+  taxNumberLabel    String?  @map("tax_number_label") @db.VarChar(100)
+  defaultTaxRate    Decimal? @default(0) @map("default_tax_rate") @db.Decimal(10, 4)
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  defaultCurrency Currency? @relation("DefaultCountryCurrency", fields: [defaultCurrencyId], references: [id])
+  defaultLanguage Language? @relation("DefaultCountryLanguage", fields: [defaultLanguageId], references: [id])
+
+  languages               CountryProfileLanguage[]
+  workspaces              Workspace[]
+  complianceCalendarItems ComplianceCalendarItem[]
+  reminders               Reminder[]
+  documentTemplates       DocumentTemplate[]
+
+  @@map("country_profiles")
+}
+
+model CountryProfileLanguage {
+  id               String  @id @default(uuid()) @db.Uuid
+  countryProfileId String  @map("country_profile_id") @db.Uuid
+  languageId       String  @map("language_id") @db.Uuid
+  isDefault        Boolean @default(false) @map("is_default")
+
+  countryProfile CountryProfile @relation(fields: [countryProfileId], references: [id], onDelete: Cascade)
+  language       Language       @relation(fields: [languageId], references: [id])
+
+  @@unique([countryProfileId, languageId])
+  @@map("country_profile_languages")
+}
+
+// =========================================================
+// USERS, WORKSPACES & MEMBERSHIP
+// =========================================================
+
+model User {
+  id                  String     @id @default(uuid()) @db.Uuid
+  clerkUserId         String?    @unique @map("clerk_user_id") @db.VarChar(255)
+  email               String     @unique @db.VarChar(255)
+  fullName            String?    @map("full_name") @db.VarChar(255)
+  phone               String?    @db.VarChar(50)
+  preferredLanguageId String?    @map("preferred_language_id") @db.Uuid
+  status              UserStatus @default(active)
+  isPlatformAdmin     Boolean    @default(false) @map("is_platform_admin")
+  lastLoginAt         DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  preferredLanguage Language? @relation(fields: [preferredLanguageId], references: [id])
+
+  ownedWorkspaces           Workspace[]        @relation("WorkspaceOwner")
+  workspaceMemberships      WorkspaceMember[]  @relation("WorkspaceMemberUser")
+  invitedWorkspaceMembers   WorkspaceMember[]  @relation("WorkspaceMemberInvitedBy")
+  sentInvitations           Invitation[]       @relation("InvitedBy")
+  uploadedFiles             File[]
+  createdCustomers          Customer[]
+  createdInvoices           Invoice[]
+  invoicePayments           InvoicePayment[]
+  recurringInvoices         RecurringInvoice[]
+  createdExpenses           Expense[]
+  createdReminders          Reminder[]         @relation("ReminderCreatedBy")
+  assignedReminders         Reminder[]         @relation("ReminderAssignedTo")
+  notifications             Notification[]
+  aiConversations           AiConversation[]
+  aiUsageLogs               AiUsageLog[]
+  generatedDocuments        GeneratedDocument[]
+  activityLogs              ActivityLog[]
+  adminAuditLogs            AuditLog[]
+
+  @@index([clerkUserId])
+  @@index([email])
+  @@map("users")
+}
+
+model Workspace {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String   @db.VarChar(255)
+  ownerUserId       String   @map("owner_user_id") @db.Uuid
+  countryProfileId  String?  @map("country_profile_id") @db.Uuid
+  defaultCurrencyId String?  @map("default_currency_id") @db.Uuid
+  defaultLanguageId String?  @map("default_language_id") @db.Uuid
+  status            String   @default("active") @db.VarChar(50)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner           User            @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
+  countryProfile  CountryProfile? @relation(fields: [countryProfileId], references: [id])
+  defaultCurrency Currency?       @relation(fields: [defaultCurrencyId], references: [id])
+  defaultLanguage Language?       @relation(fields: [defaultLanguageId], references: [id])
+
+  members           WorkspaceMember[]
+  invitations       Invitation[]
+  company           Company?
+  companySettings   CompanySettings?
+  subscription      Subscription?
+  billingEvents     BillingEvent[]
+  files             File[]
+  customers         Customer[]
+  invoices          Invoice[]
+  recurringInvoices RecurringInvoice[]
+  expenseCategories ExpenseCategory[]
+  expenses          Expense[]
+  reminders         Reminder[]
+  notifications     Notification[]
+  aiConversations   AiConversation[]
+  aiUsageLogs       AiUsageLog[]
+  documentTemplates DocumentTemplate[]
+  generatedDocuments GeneratedDocument[]
+  activityLogs      ActivityLog[]
+  auditLogs         AuditLog[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id              String     @id @default(uuid()) @db.Uuid
+  workspaceId     String     @map("workspace_id") @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  role            SystemRole @default(user)
+  status          UserStatus @default(active)
+  invitedByUserId String?    @map("invited_by_user_id") @db.Uuid
+  joinedAt        DateTime?  @map("joined_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user          User      @relation("WorkspaceMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  invitedByUser User?     @relation("WorkspaceMemberInvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([role])
+  @@map("workspace_members")
+}
+
+model Invitation {
+  id              String     @id @default(uuid()) @db.Uuid
+  workspaceId     String     @map("workspace_id") @db.Uuid
+  email           String     @db.VarChar(255)
+  role            SystemRole @default(user)
+  invitationToken String     @unique @map("invitation_token") @db.VarChar(255)
+  invitedByUserId String?    @map("invited_by_user_id") @db.Uuid
+  expiresAt       DateTime   @map("expires_at") @db.Timestamptz(6)
+  acceptedAt      DateTime?  @map("accepted_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedByUser User?     @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@map("invitations")
+}
+
+// =========================================================
+// COMPANY PROFILE & SETTINGS
+// =========================================================
+
+model Company {
+  id                 String   @id @default(uuid()) @db.Uuid
+  workspaceId        String   @unique @map("workspace_id") @db.Uuid
+  companyName        String   @map("company_name") @db.VarChar(255)
+  legalName          String?  @map("legal_name") @db.VarChar(255)
+  logoFileId         String?  @map("logo_file_id") @db.Uuid
+  email              String?  @db.VarChar(255)
+  phone              String?  @db.VarChar(50)
+  website            String?  @db.VarChar(255)
+  addressLine1       String?  @map("address_line1") @db.VarChar(255)
+  addressLine2       String?  @map("address_line2") @db.VarChar(255)
+  city               String?  @db.VarChar(150)
+  postalCode         String?  @map("postal_code") @db.VarChar(50)
+  taxNumber          String?  @map("tax_number") @db.VarChar(100)
+  registrationNumber String?  @map("registration_number") @db.VarChar(100)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  logoFile  File?     @relation("CompanyLogo", fields: [logoFileId], references: [id], onDelete: SetNull)
+
+  @@map("companies")
+}
+
+model CompanySettings {
+  id                            String   @id @default(uuid()) @db.Uuid
+  workspaceId                   String   @unique @map("workspace_id") @db.Uuid
+  invoicePrefix                 String   @default("INV") @map("invoice_prefix") @db.VarChar(20)
+  nextInvoiceNumber             Int      @default(1) @map("next_invoice_number")
+  defaultInvoiceDueDays         Int      @default(14) @map("default_invoice_due_days")
+  defaultTaxRate                Decimal? @default(0) @map("default_tax_rate") @db.Decimal(10, 4)
+  reminderLeadDays              Int      @default(3) @map("reminder_lead_days")
+  emailNotificationsEnabled     Boolean  @default(true) @map("email_notifications_enabled")
+  dashboardNotificationsEnabled Boolean  @default(true) @map("dashboard_notifications_enabled")
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("company_settings")
+}
+
+// =========================================================
+// SUBSCRIPTIONS, PLANS & BILLING
+// =========================================================
+
+model Plan {
+  id                   String               @id @default(uuid()) @db.Uuid
+  code                 SubscriptionPlanCode @unique
+  name                 String               @db.VarChar(100)
+  monthlyPriceUsd      Decimal              @default(0) @map("monthly_price_usd") @db.Decimal(10, 2)
+  includedUsers        Int                  @map("included_users")
+  maxUsers             Int?                 @map("max_users")
+  maxMonthlyInvoices   Int?                 @map("max_monthly_invoices")
+  maxMonthlyAiRequests Int?                 @map("max_monthly_ai_requests")
+  maxStorageMb         Int?                 @map("max_storage_mb")
+  hasExpenses          Boolean              @default(false) @map("has_expenses")
+  hasAiCategorization  Boolean              @default(false) @map("has_ai_categorization")
+  hasAdvancedCompliance Boolean             @default(false) @map("has_advanced_compliance")
+  isActive             Boolean              @default(true) @map("is_active")
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  workspaceId          String             @unique @map("workspace_id") @db.Uuid
+  planId               String             @map("plan_id") @db.Uuid
+  status               SubscriptionStatus @default(active)
+  stripeCustomerId     String?            @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?            @map("stripe_subscription_id") @db.VarChar(255)
+  currentPeriodStart   DateTime?          @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd     DateTime?          @map("current_period_end") @db.Timestamptz(6)
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan          Plan           @relation(fields: [planId], references: [id])
+  billingEvents BillingEvent[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+model BillingEvent {
+  id              String           @id @default(uuid()) @db.Uuid
+  workspaceId     String?          @map("workspace_id") @db.Uuid
+  subscriptionId  String?          @map("subscription_id") @db.Uuid
+  eventType       BillingEventType @map("event_type")
+  provider        String           @default("stripe") @db.VarChar(50)
+  providerEventId String?          @map("provider_event_id") @db.VarChar(255)
+  payload         Json?
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace    Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@map("billing_events")
+}
+
+// =========================================================
+// FILES
+// =========================================================
+
+model File {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  uploadedByUserId String?  @map("uploaded_by_user_id") @db.Uuid
+  storageProvider  String   @default("cloudflare_r2") @map("storage_provider") @db.VarChar(50)
+  bucketName       String?  @map("bucket_name") @db.VarChar(255)
+  objectKey        String   @map("object_key") @db.Text
+  originalFilename String?  @map("original_filename") @db.VarChar(255)
+  mimeType         String?  @map("mime_type") @db.VarChar(100)
+  fileSizeBytes    BigInt?  @map("file_size_bytes")
+  publicUrl        String?  @map("public_url") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedByUser User?     @relation(fields: [uploadedByUserId], references: [id])
+
+  companyLogoFor     Company[]          @relation("CompanyLogo")
+  expenseReceipts    Expense[]          @relation("ExpenseReceipt")
+  generatedDocuments GeneratedDocument[]
+
+  @@map("files")
+}
+
+// =========================================================
+// CUSTOMERS
+// =========================================================
+
+model Customer {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  addressLine1    String?  @map("address_line1") @db.VarChar(255)
+  addressLine2    String?  @map("address_line2") @db.VarChar(255)
+  city            String?  @db.VarChar(150)
+  country         String?  @db.VarChar(150)
+  taxNumber       String?  @map("tax_number") @db.VarChar(100)
+  notes           String?  @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUser User?     @relation(fields: [createdByUserId], references: [id])
+
+  invoices          Invoice[]
+  recurringInvoices RecurringInvoice[]
+
+  @@index([workspaceId])
+  @@map("customers")
+}
+
+// =========================================================
+// INVOICING
+// =========================================================
+
+model Invoice {
+  id              String        @id @default(uuid()) @db.Uuid
+  workspaceId     String        @map("workspace_id") @db.Uuid
+  customerId      String?       @map("customer_id") @db.Uuid
+  invoiceNumber   String        @map("invoice_number") @db.VarChar(100)
+  status          InvoiceStatus @default(draft)
+  issueDate       DateTime      @map("issue_date") @db.Date
+  dueDate         DateTime?     @map("due_date") @db.Date
+  currencyId      String?       @map("currency_id") @db.Uuid
+  subtotal        Decimal       @default(0) @db.Decimal(14, 2)
+  taxTotal        Decimal       @default(0) @map("tax_total") @db.Decimal(14, 2)
+  discountTotal   Decimal       @default(0) @map("discount_total") @db.Decimal(14, 2)
+  totalAmount     Decimal       @default(0) @map("total_amount") @db.Decimal(14, 2)
+  paidAmount      Decimal       @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  notes           String?       @db.Text
+  terms           String?       @db.Text
+  languageId      String?       @map("language_id") @db.Uuid
+  sentAt          DateTime?     @map("sent_at") @db.Timestamptz(6)
+  paidAt          DateTime?     @map("paid_at") @db.Timestamptz(6)
+  createdByUserId String?       @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  currency      Currency? @relation(fields: [currencyId], references: [id])
+  language      Language? @relation(fields: [languageId], references: [id])
+  createdByUser User?     @relation(fields: [createdByUserId], references: [id])
+
+  items     InvoiceItem[]
+  payments  InvoicePayment[]
+  reminders Reminder[]
+
+  @@unique([workspaceId, invoiceNumber])
+  @@index([workspaceId])
+  @@index([customerId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  itemOrder      Int      @default(1) @map("item_order")
+  description    String   @db.Text
+  quantity       Decimal  @default(1) @db.Decimal(14, 4)
+  unitPrice      Decimal  @default(0) @map("unit_price") @db.Decimal(14, 2)
+  taxRate        Decimal  @default(0) @map("tax_rate") @db.Decimal(10, 4)
+  discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  lineTotal      Decimal  @default(0) @map("line_total") @db.Decimal(14, 2)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model InvoicePayment {
+  id              String   @id @default(uuid()) @db.Uuid
+  invoiceId       String   @map("invoice_id") @db.Uuid
+  paidAmount      Decimal  @map("paid_amount") @db.Decimal(14, 2)
+  paymentDate     DateTime @map("payment_date") @db.Date
+  paymentMethod   String?  @map("payment_method") @db.VarChar(100)
+  notes           String?  @db.Text
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice       Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdByUser User?   @relation(fields: [createdByUserId], references: [id])
+
+  @@map("invoice_payments")
+}
+
+model RecurringInvoice {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  customerId      String?   @map("customer_id") @db.Uuid
+  frequency       String    @db.VarChar(50)
+  nextRunDate     DateTime  @map("next_run_date") @db.Date
+  lastRunDate     DateTime? @map("last_run_date") @db.Date
+  isActive        Boolean   @default(true) @map("is_active")
+  templateData    Json      @map("template_data")
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdByUser User?     @relation(fields: [createdByUserId], references: [id])
+
+  @@map("recurring_invoices")
+}
+
+// =========================================================
+// EXPENSE MANAGEMENT
+// =========================================================
+
+model ExpenseCategory {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String?  @map("workspace_id") @db.Uuid
+  name            String   @db.VarChar(150)
+  description     String?  @db.Text
+  isSystemDefault Boolean  @default(false) @map("is_system_default")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  expenses            Expense[] @relation("ExpenseCategory")
+  aiSuggestedExpenses Expense[] @relation("AiSuggestedExpenseCategory")
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id                   String        @id @default(uuid()) @db.Uuid
+  workspaceId          String        @map("workspace_id") @db.Uuid
+  categoryId           String?       @map("category_id") @db.Uuid
+  vendorName           String?       @map("vendor_name") @db.VarChar(255)
+  description          String?       @db.Text
+  expenseDate          DateTime      @map("expense_date") @db.Date
+  currencyId           String?       @map("currency_id") @db.Uuid
+  amount               Decimal       @db.Decimal(14, 2)
+  taxAmount            Decimal?      @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  status               ExpenseStatus @default(submitted)
+  receiptFileId        String?       @map("receipt_file_id") @db.Uuid
+  aiSuggestedCategoryId String?      @map("ai_suggested_category_id") @db.Uuid
+  aiConfidenceScore    Decimal?      @map("ai_confidence_score") @db.Decimal(5, 2)
+  createdByUserId      String?       @map("created_by_user_id") @db.Uuid
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace           Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category            ExpenseCategory? @relation("ExpenseCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  currency            Currency?        @relation(fields: [currencyId], references: [id])
+  receiptFile         File?            @relation("ExpenseReceipt", fields: [receiptFileId], references: [id], onDelete: SetNull)
+  aiSuggestedCategory ExpenseCategory? @relation("AiSuggestedExpenseCategory", fields: [aiSuggestedCategoryId], references: [id], onDelete: SetNull)
+  createdByUser       User?            @relation(fields: [createdByUserId], references: [id])
+
+  @@index([workspaceId])
+  @@index([categoryId])
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+// =========================================================
+// COMPLIANCE & REMINDERS
+// =========================================================
+
+model ComplianceCalendarItem {
+  id               String       @id @default(uuid()) @db.Uuid
+  countryProfileId String       @map("country_profile_id") @db.Uuid
+  title            String       @db.VarChar(255)
+  description      String?      @db.Text
+  reminderType     ReminderType @default(compliance) @map("reminder_type")
+  recurrenceRule   String?      @map("recurrence_rule") @db.Text
+  defaultDueMonth  Int?         @map("default_due_month")
+  defaultDueDay    Int?         @map("default_due_day")
+  leadDays         Int          @default(7) @map("lead_days")
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  countryProfile CountryProfile @relation(fields: [countryProfileId], references: [id], onDelete: Cascade)
+  reminders      Reminder[]
+
+  @@map("compliance_calendar_items")
+}
+
+model Reminder {
+  id                       String         @id @default(uuid()) @db.Uuid
+  workspaceId              String         @map("workspace_id") @db.Uuid
+  countryProfileId         String?        @map("country_profile_id") @db.Uuid
+  complianceCalendarItemId String?        @map("compliance_calendar_item_id") @db.Uuid
+  relatedInvoiceId         String?        @map("related_invoice_id") @db.Uuid
+  title                    String         @db.VarChar(255)
+  description              String?        @db.Text
+  reminderType             ReminderType   @default(custom) @map("reminder_type")
+  dueDate                  DateTime       @map("due_date") @db.Date
+  remindAt                 DateTime?      @map("remind_at") @db.Timestamptz(6)
+  status                   ReminderStatus @default(pending)
+  createdByUserId          String?        @map("created_by_user_id") @db.Uuid
+  assignedToUserId         String?        @map("assigned_to_user_id") @db.Uuid
+  createdAt                DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace              Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  countryProfile         CountryProfile?         @relation(fields: [countryProfileId], references: [id])
+  complianceCalendarItem ComplianceCalendarItem? @relation(fields: [complianceCalendarItemId], references: [id], onDelete: SetNull)
+  relatedInvoice         Invoice?                @relation(fields: [relatedInvoiceId], references: [id], onDelete: Cascade)
+  createdByUser          User?                   @relation("ReminderCreatedBy", fields: [createdByUserId], references: [id])
+  assignedToUser         User?                   @relation("ReminderAssignedTo", fields: [assignedToUserId], references: [id])
+
+  logs ReminderLog[]
+
+  @@index([workspaceId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([reminderType])
+  @@map("reminders")
+}
+
+model ReminderLog {
+  id                String              @id @default(uuid()) @db.Uuid
+  reminderId        String              @map("reminder_id") @db.Uuid
+  channel           NotificationChannel
+  status            NotificationStatus  @default(pending)
+  sentTo            String?             @map("sent_to") @db.VarChar(255)
+  providerMessageId String?             @map("provider_message_id") @db.VarChar(255)
+  errorMessage      String?             @map("error_message") @db.Text
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  reminder Reminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+
+  @@map("reminder_logs")
+}
+
+// =========================================================
+// NOTIFICATIONS
+// =========================================================
+
+model Notification {
+  id                String              @id @default(uuid()) @db.Uuid
+  workspaceId       String              @map("workspace_id") @db.Uuid
+  userId            String?             @map("user_id") @db.Uuid
+  title             String              @db.VarChar(255)
+  message           String?             @db.Text
+  channel           NotificationChannel @default(dashboard)
+  status            NotificationStatus  @default(pending)
+  relatedEntityType String?             @map("related_entity_type") @db.VarChar(100)
+  relatedEntityId   String?             @map("related_entity_id") @db.Uuid
+  readAt            DateTime?           @map("read_at") @db.Timestamptz(6)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+  @@map("notifications")
+}
+
+// =========================================================
+// AI ASSISTANT & AI USAGE
+// =========================================================
+
+model AiConversation {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String?  @db.VarChar(255)
+  languageId  String?  @map("language_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language  Language? @relation(fields: [languageId], references: [id])
+
+  messages AiMessage[]
+
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  role           String   @db.VarChar(50)
+  content        String   @db.Text
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("ai_messages")
+}
+
+model AiUsageLog {
+  id               String          @id @default(uuid()) @db.Uuid
+  workspaceId      String          @map("workspace_id") @db.Uuid
+  userId           String?         @map("user_id") @db.Uuid
+  requestType      AiRequestType   @map("request_type")
+  status           AiRequestStatus @default(success)
+  provider         String          @default("openai") @db.VarChar(50)
+  model            String?         @db.VarChar(100)
+  inputTokens      Int?            @default(0) @map("input_tokens")
+  outputTokens     Int?            @default(0) @map("output_tokens")
+  totalTokens      Int?            @default(0) @map("total_tokens")
+  estimatedCostUsd Decimal?        @default(0) @map("estimated_cost_usd") @db.Decimal(12, 6)
+  requestSummary   String?         @map("request_summary") @db.Text
+  errorMessage     String?         @map("error_message") @db.Text
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ai_usage_logs")
+}
+
+// =========================================================
+// AI DOCUMENT GENERATION
+// =========================================================
+
+model DocumentTemplate {
+  id              String       @id @default(uuid()) @db.Uuid
+  workspaceId     String?      @map("workspace_id") @db.Uuid
+  countryProfileId String?     @map("country_profile_id") @db.Uuid
+  documentType    DocumentType @map("document_type")
+  name            String       @db.VarChar(255)
+  description     String?      @db.Text
+  templateContent String?      @map("template_content") @db.Text
+  languageId      String?      @map("language_id") @db.Uuid
+  isSystemDefault Boolean      @default(false) @map("is_system_default")
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace      Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  countryProfile CountryProfile? @relation(fields: [countryProfileId], references: [id], onDelete: SetNull)
+  language       Language?       @relation(fields: [languageId], references: [id])
+
+  generatedDocuments GeneratedDocument[]
+
+  @@map("document_templates")
+}
+
+model GeneratedDocument {
+  id                String         @id @default(uuid()) @db.Uuid
+  workspaceId       String         @map("workspace_id") @db.Uuid
+  templateId        String?        @map("template_id") @db.Uuid
+  documentType      DocumentType   @map("document_type")
+  status            DocumentStatus @default(draft)
+  title             String         @db.VarChar(255)
+  content           String?        @db.Text
+  languageId        String?        @map("language_id") @db.Uuid
+  pdfFileId         String?        @map("pdf_file_id") @db.Uuid
+  generatedByUserId String?        @map("generated_by_user_id") @db.Uuid
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  template        DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  language        Language?         @relation(fields: [languageId], references: [id])
+  pdfFile         File?             @relation(fields: [pdfFileId], references: [id], onDelete: SetNull)
+  generatedByUser User?             @relation(fields: [generatedByUserId], references: [id])
+
+  @@map("generated_documents")
+}
+
+// =========================================================
+// ADMIN, ACTIVITY & AUDIT LOGS
+// =========================================================
+
+model ActivityLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  action      String   @db.VarChar(150)
+  entityType  String?  @map("entity_type") @db.VarChar(100)
+  entityId    String?  @map("entity_id") @db.Uuid
+  description String?  @db.Text
+  metadata    Json?
+  ipAddress   String?  @map("ip_address") @db.VarChar(100)
+  userAgent   String?  @map("user_agent") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  adminUserId String?  @map("admin_user_id") @db.Uuid
+  action      String   @db.VarChar(150)
+  entityType  String?  @map("entity_type") @db.VarChar(100)
+  entityId    String?  @map("entity_id") @db.Uuid
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  adminUser User?      @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
