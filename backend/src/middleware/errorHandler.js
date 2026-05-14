@@ -1,15 +1,24 @@
+const { ZodError } = require('zod');
 const { logger } = require('./requestLogger');
 
 const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  if (err instanceof ZodError) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details: err.issues.map((i) => ({ field: i.path.join('.'), message: i.message })),
+    });
+  }
+
   logger.error(err.message, {
     url: req.originalUrl,
     method: req.method,
     stack: err.stack,
   });
-
-  if (res.headersSent) {
-    return next(err);
-  }
 
   const statusCode = err.statusCode || err.status || 500;
   const message = statusCode === 500 ? 'Internal server error' : err.message;

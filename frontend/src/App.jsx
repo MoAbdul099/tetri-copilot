@@ -1,11 +1,36 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import StatusPage from './features/status/pages/StatusPage.jsx';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
+import { setClerkTokenGetter } from './lib/api.js';
+import ProtectedLayout from './components/layout/ProtectedLayout.jsx';
+import SignInPage from './features/auth/pages/SignInPage.jsx';
+import SignUpPage from './features/auth/pages/SignUpPage.jsx';
+import OnboardingPage from './features/onboarding/pages/OnboardingPage.jsx';
+import DashboardPage from './features/dashboard/pages/DashboardPage.jsx';
+
+function ClerkApiSync() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setClerkTokenGetter(getToken);
+  }, [getToken]);
+  return null;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ClerkApiSync />
       <Routes>
-        <Route path="/" element={<StatusPage />} />
+        {/* Public auth routes */}
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+
+        {/* Protected routes — require auth + workspace */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
