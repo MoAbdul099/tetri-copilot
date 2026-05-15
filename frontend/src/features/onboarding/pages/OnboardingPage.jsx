@@ -41,24 +41,30 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-tetri-bg flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 rounded-full mb-4">
-            <Building2 className="w-7 h-7 text-indigo-600" />
+          <img
+            src="/logo.svg"
+            alt="Tetri Copilot"
+            className="h-9 w-auto mx-auto mb-6"
+            draggable={false}
+          />
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#eff4ff] rounded-2xl mb-4">
+            <Building2 className="w-7 h-7 text-tetri-blue" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Set up your workspace</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-tetri-text">Set up your workspace</h1>
+          <p className="text-tetri-muted text-sm mt-1">
             Enter your business name to get started with Tetri Copilot
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-tetri-surface rounded-card border border-tetri-border p-6">
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
               <label
                 htmlFor="workspace-name"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-tetri-text mb-1.5"
               >
                 Workspace / Business Name
               </label>
@@ -73,17 +79,17 @@ export default function OnboardingPage() {
                 placeholder="e.g. Acme Consulting"
                 maxLength={255}
                 disabled={loading}
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed ${
-                  error ? 'border-red-400' : 'border-gray-300'
+                className={`w-full px-3 py-2.5 border rounded-xl text-sm text-tetri-text placeholder:text-tetri-neutral focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent disabled:bg-tetri-bg disabled:cursor-not-allowed transition-shadow ${
+                  error ? 'border-tetri-error' : 'border-tetri-border'
                 }`}
               />
-              {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+              {error && <p className="mt-1.5 text-xs text-tetri-error">{error}</p>}
             </div>
 
             <button
               type="submit"
               disabled={loading || !name.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <>
@@ -103,7 +109,7 @@ export default function OnboardingPage() {
         <div className="text-center mt-4">
           <button
             onClick={() => signOut({ redirectUrl: '/sign-in' })}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600"
+            className="inline-flex items-center gap-1.5 text-xs text-tetri-neutral hover:text-tetri-muted transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
             Sign out

@@ -44,13 +44,13 @@ export default function ProtectedLayout() {
 
   if (state.error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="bg-white border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
-          <p className="text-red-600 font-medium">Something went wrong</p>
-          <p className="text-gray-500 text-sm mt-1">{state.error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-tetri-bg px-4">
+        <div className="bg-tetri-surface border border-tetri-error/20 rounded-card p-6 max-w-md w-full text-center">
+          <p className="text-tetri-error font-semibold">Something went wrong</p>
+          <p className="text-tetri-muted text-sm mt-1">{state.error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
+            className="mt-4 px-4 py-2 bg-tetri-blue text-white text-sm font-medium rounded-btn hover:bg-tetri-blue-hover transition-colors"
           >
             Retry
           </button>
