@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import authService from '../../features/auth/services/authService.js';
+import { setClerkTokenGetter } from '../../lib/api.js';
 import LoadingSpinner from '../ui/LoadingSpinner.jsx';
 
 export default function ProtectedLayout() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const location = useLocation();
   const [state, setState] = useState({ loading: true, workspace: undefined, error: null });
 
@@ -17,6 +18,13 @@ export default function ProtectedLayout() {
       return;
     }
 
+    // Register the token getter before making any API call.
+    // ProtectedLayout's effect runs before ClerkApiSync's effect (child effects
+    // fire before parent effects in React), so clerkTokenGetter may still be null
+    // at this point. Setting it here guarantees the Authorization header is
+    // attached to the getMe() request below.
+    setClerkTokenGetter(getToken);
+
     authService
       .getMe()
       .then((data) => setState({ loading: false, workspace: data.workspace, error: null }))
@@ -24,7 +32,7 @@ export default function ProtectedLayout() {
         const msg = err?.response?.data?.error || err.message || 'Failed to load profile';
         setState({ loading: false, workspace: null, error: msg });
       });
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, getToken]);
 
   if (!isLoaded || state.loading) {
     return <LoadingSpinner message="Loading your workspace…" />;
