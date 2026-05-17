@@ -1,3 +1,5 @@
+import tailwindcssAnimate from 'tailwindcss-animate';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -111,5 +113,5 @@ export default {
     'data-[state=active]:border-tetri-border',
     'data-[placeholder]:text-tetri-neutral',
   ],
-  plugins: [require('tailwindcss-animate')],
+  plugins: [tailwindcssAnimate],
 };
