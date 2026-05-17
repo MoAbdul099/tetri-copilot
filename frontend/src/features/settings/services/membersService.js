@@ -15,4 +15,13 @@ const updateStatus = async (memberId, status) => {
   return data.data.member;
 };
 
-export default { getMembers, invite, updateStatus };
+const updateRole = async (memberId, role) => {
+  const { data } = await api.patch(`/api/v1/members/${memberId}/role`, { role });
+  return data.data.member;
+};
+
+const removeMember = async (memberId) => {
+  await api.delete(`/api/v1/members/${memberId}`);
+};
+
+export default { getMembers, invite, updateStatus, updateRole, removeMember };

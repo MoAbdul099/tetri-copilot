@@ -6,29 +6,13 @@ import {
   Users,
   Save,
   Loader2,
-  CheckCircle2,
-  XCircle,
-  Plus,
-  Shield,
-  Mail,
-  UserX,
-  UserCheck,
-  X,
-  Send,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Alert } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -39,52 +23,11 @@ import {
 import companyService from '../services/companyService.js';
 import settingsService from '../services/settingsService.js';
 import localizationService from '../services/localizationService.js';
-import membersService from '../services/membersService.js';
 import workspaceService from '../../workspace/services/workspaceService.js';
 import authService from '../../auth/services/authService.js';
-
-const ROLE_LABELS = { owner: 'Owner', user: 'User', viewer: 'Viewer', admin: 'Admin' };
-const ROLE_COLORS = {
-  owner: 'bg-[#eff4ff] text-tetri-blue',
-  user: 'bg-emerald-50 text-emerald-700',
-  viewer: 'bg-amber-50 text-amber-700',
-  admin: 'bg-purple-50 text-purple-700',
-};
-const STATUS_COLORS = {
-  active: 'bg-emerald-50 text-emerald-700',
-  inactive: 'bg-red-50 text-tetri-error',
-  invited: 'bg-amber-50 text-amber-700',
-};
-
-// Shared field wrapper
-const Field = ({ label, id, hint, error, children }) => (
-  <div className="space-y-1.5">
-    <Label htmlFor={id}>{label}</Label>
-    {children}
-    {hint && <p className="text-xs text-tetri-neutral">{hint}</p>}
-    {error && <p className="text-xs text-tetri-error">{error}</p>}
-  </div>
-);
-
-const Toast = ({ type, message, onClose }) => (
-  <div
-    className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
-      type === 'success'
-        ? 'bg-white border-emerald-200 text-emerald-700'
-        : 'bg-white border-red-200 text-tetri-error'
-    }`}
-  >
-    {type === 'success' ? (
-      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-    ) : (
-      <XCircle className="w-4 h-4 flex-shrink-0" />
-    )}
-    <span>{message}</span>
-    <button onClick={onClose} className="ml-1 opacity-60 hover:opacity-100">
-      <X className="w-3.5 h-3.5" />
-    </button>
-  </div>
-);
+import Field from '../../../components/shared/Field.jsx';
+import PageHeader from '../../../components/shared/PageHeader.jsx';
+import { useToast } from '../../../components/shared/Toast.jsx';
 
 // ─── Company Profile Tab ─────────────────────────────────────────────────────
 function CompanyTab({ isOwner, onToast }) {
@@ -443,248 +386,43 @@ function LocalizationTab({ isOwner, onToast }) {
 }
 
 // ─── Members Tab ─────────────────────────────────────────────────────────────
-function MembersTab({ isOwner, onToast }) {
-  const [data, setData] = useState({ members: [], invitations: [] });
-  const [loading, setLoading] = useState(true);
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('user');
-  const [inviting, setInviting] = useState(false);
-  const [updatingId, setUpdatingId] = useState(null);
-
-  const load = () => {
-    setLoading(true);
-    membersService
-      .getMembers()
-      .then(setData)
-      .catch(() => onToast('error', 'Failed to load members'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(load, []);
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    try {
-      await membersService.invite(inviteEmail.trim(), inviteRole);
-      onToast('success', `Invitation created for ${inviteEmail.trim()}`);
-      setInviteEmail('');
-      setInviteRole('user');
-      setShowInvite(false);
-      load();
-    } catch (err) {
-      onToast('error', err?.response?.data?.error || 'Failed to send invitation');
-    } finally {
-      setInviting(false);
-    }
-  };
-
-  const handleStatusToggle = async (member) => {
-    const newStatus = member.status === 'active' ? 'inactive' : 'active';
-    setUpdatingId(member.id);
-    try {
-      await membersService.updateStatus(member.id, newStatus);
-      onToast('success', `Member ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
-      load();
-    } catch (err) {
-      onToast('error', err?.response?.data?.error || 'Failed to update status');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="flex items-center gap-2 py-10 text-tetri-muted">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-sm">Loading…</span>
-      </div>
-    );
-
+function MembersTab() {
   return (
-    <div className="space-y-6">
-      {/* Members table */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-semibold text-tetri-text">
-            Workspace members ({data.members.length})
-          </p>
-          {isOwner && (
-            <Button size="sm" onClick={() => setShowInvite(true)}>
-              <Plus className="w-3.5 h-3.5" />
-              Invite
-            </Button>
-          )}
+    <div className="py-2">
+      <div className="flex items-start gap-4 p-4 bg-tetri-bg rounded-xl border border-tetri-border">
+        <div className="w-9 h-9 bg-[#eff4ff] rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Users className="w-4.5 h-4.5 text-tetri-blue" size={18} />
         </div>
-
-        <div className="border border-tetri-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-tetri-bg border-b border-tetri-border">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Member</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Status</th>
-                {isOwner && <th className="px-4 py-3" />}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-tetri-border bg-white">
-              {data.members.map((m) => (
-                <tr key={m.id} className="hover:bg-tetri-bg/50 transition-colors">
-                  <td className="px-4 py-3.5">
-                    <p className="font-medium text-tetri-text">{m.user.fullName || '—'}</p>
-                    <p className="text-xs text-tetri-muted">{m.user.email}</p>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[m.role] || 'bg-tetri-bg text-tetri-muted'}`}>
-                      <Shield className="w-3 h-3" />
-                      {ROLE_LABELS[m.role] || m.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[m.status] || 'bg-tetri-bg text-tetri-muted'}`}>
-                      {m.status}
-                    </span>
-                  </td>
-                  {isOwner && (
-                    <td className="px-4 py-3.5 text-right">
-                      {m.role !== 'owner' && (
-                        <button
-                          onClick={() => handleStatusToggle(m)}
-                          disabled={updatingId === m.id}
-                          className="flex items-center gap-1.5 ml-auto text-xs text-tetri-neutral hover:text-tetri-text transition-colors disabled:opacity-50"
-                        >
-                          {updatingId === m.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : m.status === 'active' ? (
-                            <UserX className="w-3.5 h-3.5" />
-                          ) : (
-                            <UserCheck className="w-3.5 h-3.5" />
-                          )}
-                          {m.status === 'active' ? 'Deactivate' : 'Activate'}
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div>
+          <p className="text-sm font-semibold text-tetri-text">Manage team members</p>
+          <p className="text-xs text-tetri-muted mt-0.5">
+            Invite members, assign roles, manage access, and handle invitations from the Members page.
+          </p>
+          <a
+            href="/members"
+            className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-tetri-blue hover:text-tetri-blue-hover transition-colors"
+          >
+            Go to Members
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
         </div>
       </div>
-
-      {/* Pending invitations */}
-      {data.invitations.length > 0 && (
-        <div>
-          <p className="text-sm font-semibold text-tetri-text mb-3">
-            Pending invitations ({data.invitations.length})
-          </p>
-          <div className="border border-tetri-border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-tetri-bg border-b border-tetri-border">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-tetri-neutral uppercase tracking-wide">Expires</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-tetri-border bg-white">
-                {data.invitations.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-tetri-bg/50">
-                    <td className="px-4 py-3.5 flex items-center gap-2 text-tetri-text">
-                      <Mail className="w-3.5 h-3.5 text-tetri-neutral flex-shrink-0" />
-                      {inv.email}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[inv.role] || 'bg-tetri-bg text-tetri-muted'}`}>
-                        {ROLE_LABELS[inv.role] || inv.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-tetri-muted text-xs">
-                      {new Date(inv.expiresAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Invite dialog */}
-      <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite a team member</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <Field label="Email address" id="invite-email">
-              <Input
-                id="invite-email"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="colleague@company.com"
-                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-              />
-            </Field>
-            <Field label="Role" id="invite-role">
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger id="invite-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User — operational access</SelectItem>
-                  <SelectItem value="viewer">Viewer — read-only access</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" className="flex-1" onClick={() => setShowInvite(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={handleInvite}
-              disabled={inviting || !inviteEmail.trim()}
-            >
-              {inviting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              Send invitation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
 
 // ─── Main Settings Page ──────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const [toast, setToast] = useState(null);
+  const { showToast, ToastContainer } = useToast();
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     authService.getMe().then((d) => setIsOwner(d?.workspace?.role === 'owner'));
   }, []);
 
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
-
   return (
     <div className="px-4 sm:px-8 py-8 max-w-3xl mx-auto">
-      <div className="mb-7">
-        <h1 className="text-xl font-bold text-tetri-text">Settings</h1>
-        <p className="text-sm text-tetri-muted mt-0.5">Manage your workspace, company, and team</p>
-      </div>
+      <PageHeader title="Settings" subtitle="Manage your workspace, company, and team" />
 
       <Tabs defaultValue="company">
         <TabsList className="w-full mb-7 overflow-x-auto">
@@ -724,12 +462,12 @@ export default function SettingsPage() {
             <LocalizationTab isOwner={isOwner} onToast={showToast} />
           </TabsContent>
           <TabsContent value="members">
-            <MembersTab isOwner={isOwner} onToast={showToast} />
+            <MembersTab />
           </TabsContent>
         </div>
       </Tabs>
 
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      {ToastContainer}
     </div>
   );
 }

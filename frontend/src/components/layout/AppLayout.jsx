@@ -4,6 +4,7 @@ import { useClerk } from '@clerk/clerk-react';
 import {
   LayoutDashboard,
   Settings,
+  Users,
   LogOut,
   Menu,
   X,
@@ -12,6 +13,7 @@ import {
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/members', label: 'Members', icon: Users },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

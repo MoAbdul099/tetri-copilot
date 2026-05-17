@@ -18,6 +18,15 @@ const findMemberById = (id, workspaceId) =>
 const updateMemberStatus = (id, status) =>
   prisma.workspaceMember.update({ where: { id }, data: { status } });
 
+const updateMemberRole = (id, role) =>
+  prisma.workspaceMember.update({ where: { id }, data: { role } });
+
+const countOwners = (workspaceId) =>
+  prisma.workspaceMember.count({ where: { workspaceId, role: 'owner', status: 'active' } });
+
+const deleteMember = (id) =>
+  prisma.workspaceMember.delete({ where: { id } });
+
 const findPendingInvitation = (workspaceId, email) =>
   prisma.invitation.findFirst({
     where: {
@@ -50,6 +59,9 @@ module.exports = {
   listMembers,
   findMemberById,
   updateMemberStatus,
+  updateMemberRole,
+  countOwners,
+  deleteMember,
   findPendingInvitation,
   createInvitation,
   listInvitations,

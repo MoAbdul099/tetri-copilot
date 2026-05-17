@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { User, Building2, ShieldCheck, ArrowRight, Settings } from 'lucide-react';
 import authService from '../../auth/services/authService.js';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner.jsx';
+import PageHeader from '../../../components/shared/PageHeader.jsx';
 
 const ROLE_LABELS = {
   owner: 'Owner',
@@ -31,14 +32,10 @@ export default function DashboardPage() {
 
   return (
     <div className="px-4 sm:px-8 py-8 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-tetri-text">
-          Welcome back{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}
-        </h1>
-        <p className="text-tetri-muted text-sm mt-0.5">
-          Your workspace is ready. Here&apos;s an overview.
-        </p>
-      </div>
+      <PageHeader
+        title={`Welcome back${user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}`}
+        subtitle="Your workspace is ready. Here's an overview."
+      />
 
       {/* Info cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

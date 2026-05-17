@@ -1,5 +1,5 @@
 const membersService = require('./members.service');
-const { inviteSchema, updateStatusSchema } = require('./members.validation');
+const { inviteSchema, updateStatusSchema, updateRoleSchema } = require('./members.validation');
 const { success } = require('../../utils/response');
 
 const getMembers = async (req, res, next) => {
@@ -44,4 +44,28 @@ const updateMemberStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { getMembers, inviteUser, updateMemberStatus };
+const updateMemberRole = async (req, res, next) => {
+  try {
+    const { role } = updateRoleSchema.parse(req.body);
+    const member = await membersService.updateMemberRole(
+      req.params.id,
+      req.workspaceId,
+      role,
+      req.user.id
+    );
+    return success(res, { member }, 'Member role updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const removeMember = async (req, res, next) => {
+  try {
+    await membersService.removeMember(req.params.id, req.workspaceId, req.user.id);
+    return success(res, {}, 'Member removed');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getMembers, inviteUser, updateMemberStatus, updateMemberRole, removeMember };

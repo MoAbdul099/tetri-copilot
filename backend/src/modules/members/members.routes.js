@@ -10,6 +10,8 @@ router.use(protect, requireWorkspace);
 
 router.get('/', membersController.getMembers);
 router.post('/invite', requireOwner, membersController.inviteUser);
+router.patch('/:id/role', requireOwner, membersController.updateMemberRole);
 router.patch('/:id/status', requireOwner, membersController.updateMemberStatus);
+router.delete('/:id', requireOwner, membersController.removeMember);
 
 module.exports = router;

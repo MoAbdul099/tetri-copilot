@@ -9,4 +9,8 @@ const updateStatusSchema = z.object({
   status: z.enum(['active', 'inactive']),
 });
 
-module.exports = { inviteSchema, updateStatusSchema };
+const updateRoleSchema = z.object({
+  role: z.enum(['owner', 'user', 'viewer']),
+});
+
+module.exports = { inviteSchema, updateStatusSchema, updateRoleSchema };

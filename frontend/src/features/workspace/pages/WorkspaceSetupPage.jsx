@@ -12,28 +12,19 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import companyService from '../../settings/services/companyService.js';
 import workspaceService from '../services/workspaceService.js';
 import settingsService from '../../settings/services/settingsService.js';
 import localizationService from '../../settings/services/localizationService.js';
+import Field from '../../../components/shared/Field.jsx';
 
 const STEPS = [
   { id: 1, label: 'Company Profile', icon: Building2 },
   { id: 2, label: 'Localization', icon: Globe },
   { id: 3, label: 'Preferences', icon: Settings },
 ];
-
-const Field = ({ label, id, error, hint, children }) => (
-  <div className="space-y-1.5">
-    <Label htmlFor={id}>{label}</Label>
-    {children}
-    {hint && <p className="text-xs text-tetri-neutral">{hint}</p>}
-    {error && <p className="text-xs text-tetri-error">{error}</p>}
-  </div>
-);
 
 export default function WorkspaceSetupPage() {
   const { signOut } = useClerk();
