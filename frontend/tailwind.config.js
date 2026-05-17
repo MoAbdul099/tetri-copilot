@@ -84,5 +84,32 @@ export default {
       },
     },
   },
+  safelist: [
+    // Force-include all tetri brand token utilities — guards against JIT scan misses
+    // in npm workspaces setups where UI component files may not be walked correctly.
+    { pattern: /^(bg|text|border|ring|divide)-tetri-.+/ },
+    {
+      pattern: /^(bg|text|border|ring)-tetri-.+/,
+      variants: ['hover', 'focus', 'focus-visible', 'disabled', 'placeholder', 'group-hover'],
+    },
+    // read-only and placeholder utilities used in Input / Select
+    'read-only:bg-tetri-bg',
+    'placeholder:text-tetri-neutral',
+    'focus:ring-tetri-blue',
+    'focus-visible:ring-tetri-blue',
+    'focus:bg-tetri-bg',
+    'focus:text-tetri-text',
+    // Opacity-modified border used in Alert
+    'border-tetri-blue/20',
+    // Radix UI data-state attribute classes (Switch, Tabs)
+    'data-[state=checked]:bg-tetri-blue',
+    'data-[state=unchecked]:bg-slate-300',
+    'data-[state=active]:bg-white',
+    'data-[state=active]:text-tetri-blue',
+    'data-[state=active]:shadow-sm',
+    'data-[state=active]:border',
+    'data-[state=active]:border-tetri-border',
+    'data-[placeholder]:text-tetri-neutral',
+  ],
   plugins: [require('tailwindcss-animate')],
 };

@@ -7,6 +7,7 @@ import {
   Save,
   Loader2,
   ArrowRight,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -414,7 +415,7 @@ function MembersTab() {
 // ─── Main Settings Page ──────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { showToast, ToastContainer } = useToast();
-  const [isOwner, setIsOwner] = useState(false);
+  const [isOwner, setIsOwner] = useState(null);
 
   useEffect(() => {
     authService.getMe().then((d) => setIsOwner(d?.workspace?.role === 'owner'));
@@ -445,7 +446,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <div className="bg-white rounded-card border border-tetri-border p-6">
-          {!isOwner && (
+          {isOwner === false && (
             <Alert variant="warning" className="mb-5">
               <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>You have read-only access. Only workspace owners can edit settings.</span>
