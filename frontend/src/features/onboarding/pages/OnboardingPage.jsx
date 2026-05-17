@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import { Building2, ArrowRight, LogOut } from 'lucide-react';
 import onboardingService from '../services/onboardingService.js';
 
 export default function OnboardingPage() {
-  const navigate = useNavigate();
   const { signOut } = useClerk();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -28,7 +26,8 @@ export default function OnboardingPage() {
 
     try {
       await onboardingService.bootstrapWorkspace(trimmed);
-      navigate('/dashboard', { replace: true });
+      // Full reload so ProtectedLayout re-fetches auth/me with fresh workspace state
+      window.location.replace('/dashboard');
     } catch (err) {
       const msg =
         err?.response?.data?.error ||

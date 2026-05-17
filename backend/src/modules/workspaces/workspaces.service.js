@@ -35,4 +35,9 @@ const bootstrap = async ({ clerkUserId, name }) => {
   return { workspace, membership, alreadyExisted: false };
 };
 
-module.exports = { bootstrap };
+const getCurrent = (workspaceId) => workspacesRepository.findWorkspaceById(workspaceId);
+
+const updateCurrent = (workspaceId, data) =>
+  workspacesRepository.updateWorkspace(workspaceId, data);
+
+module.exports = { bootstrap, getCurrent, updateCurrent };

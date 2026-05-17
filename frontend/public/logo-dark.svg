@@ -1,0 +1,39 @@
+<svg width="1200" height="360" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="360" fill="#020817"/>
+
+  <defs>
+    <linearGradient id="blueGradientDark" x1="80" y1="80" x2="320" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1447e6"/>
+      <stop offset="1" stop-color="#155dfc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon -->
+  <rect x="80" y="78" width="118" height="78" rx="16" fill="url(#blueGradientDark)"/>
+  <rect x="216" y="78" width="118" height="78" rx="16" fill="#155dfc"/>
+  <rect x="122" y="178" width="76" height="112" rx="16" fill="#1447e6"/>
+  <rect x="216" y="178" width="76" height="112" rx="16" fill="#155dfc"/>
+
+  <!-- Spark -->
+  <path d="M365 58C374.5 89.5 383.5 98.5 415 108C383.5 117.5 374.5 126.5 365 158C355.5 126.5 346.5 117.5 315 108C346.5 98.5 355.5 89.5 365 58Z" fill="#155dfc"/>
+
+  <!-- Wordmark -->
+  <text x="460" y="170"
+        font-family="Manrope, Inter, Arial, sans-serif"
+        font-size="86"
+        font-weight="800"
+        letter-spacing="-2">
+    <tspan fill="#FFFFFF">Tetri </tspan>
+    <tspan fill="#155dfc">Copilot</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="466" y="230"
+        font-family="Manrope, Inter, Arial, sans-serif"
+        font-size="32"
+        font-weight="500"
+        fill="#94A3B8">
+    AI-powered finance. Simplified.
+  </text>
+</svg>

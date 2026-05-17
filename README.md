@@ -296,6 +296,7 @@ Check after sign-up:
 | `npm run db:migrate:dev` | Run `prisma migrate dev` |
 | `npm run db:migrate:deploy` | Run `prisma migrate deploy` (production) |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm run db:seed` | Seed reference data (languages, currencies, country profiles) |
 
 ### Frontend (`cd frontend`)
 
@@ -469,7 +470,7 @@ Also in Clerk Dashboard → your app:
 |---|---|---|
 | Phase 0 | Foundation Setup | Done |
 | Slice 1 | Authentication & Workspace Bootstrap | Done |
-| Slice 2 | Company Setup & Localization | Pending |
+| Slice 2 | Workspace & Company Setup | Done |
 | Slice 3 | Workspace User Management & Roles | Pending |
 | Sprint 3 | Dashboards & Reporting | Pending |
 | Sprint 4 | Invoice Management | Pending |
@@ -477,6 +478,57 @@ Also in Clerk Dashboard → your app:
 | Sprint 6 | Compliance Reminder Engine | Pending |
 | Sprint 7 | AI Features | Pending |
 | Sprint 8 | Billing & Production Deployment | Pending |
+
+---
+
+## Slice 2 — Workspace & Company Setup
+
+### New endpoints
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | `/api/v1/workspaces/current` | any member | Get current workspace with localization |
+| PATCH | `/api/v1/workspaces/current` | owner | Update workspace name / localization defaults |
+| GET | `/api/v1/company` | any member | Get company profile |
+| PATCH | `/api/v1/company` | owner | Upsert company profile |
+| GET | `/api/v1/settings` | any member | Get workspace preferences |
+| PATCH | `/api/v1/settings` | owner | Upsert workspace preferences |
+| GET | `/api/v1/countries` | any member | List active country profiles |
+| GET | `/api/v1/languages` | any member | List languages |
+| GET | `/api/v1/currencies` | any member | List currencies |
+| GET | `/api/v1/members` | any member | List members and pending invitations |
+| POST | `/api/v1/members/invite` | owner | Invite user by email |
+| PATCH | `/api/v1/members/:id/status` | owner | Activate or deactivate a member |
+
+### Seed reference data
+
+```bash
+cd backend && npm run db:seed
+```
+
+Inserts: English / Arabic / Georgian languages; USD / AED / SAR / QAR / GEL currencies; country profiles for UAE, Saudi Arabia, Qatar, and Georgia.
+
+### Setup wizard flow
+
+1. New user completes onboarding → workspace created → redirected to `/setup`
+2. **Step 1 — Company Profile:** fill company name and optional fields → PATCH `/api/v1/company`
+3. **Step 2 — Localization:** select country (auto-fills currency + language) → PATCH `/api/v1/workspaces/current`
+4. **Step 3 — Preferences:** invoice prefix, due days, tax rate, notifications → PATCH `/api/v1/settings` → redirect to `/dashboard`
+
+### Slice 2 testing scenarios
+
+| # | Test | Expected |
+|---|------|----------|
+| 1 | Complete 3-step setup wizard | Redirect to `/dashboard`, setupComplete = true |
+| 2 | Navigate to `/setup` after completion | Redirect to `/dashboard` |
+| 3 | Edit company name in Settings → Company tab | Persists on reload |
+| 4 | Change country in Localization tab | Currency + language auto-fill |
+| 5 | Owner changes invoice prefix | Persists on reload |
+| 6 | Owner invites member via Members tab | Appears in Pending Invitations |
+| 7 | Owner deactivates a member | Status → Inactive |
+| 8 | Non-owner views Settings | Read-only banner shown, fields disabled |
+| 9 | PATCH `/api/v1/company` with non-owner token | 403 Forbidden |
+| 10 | GET `/api/v1/company` from different workspace session | Returns that workspace's data only |
 
 ---
 

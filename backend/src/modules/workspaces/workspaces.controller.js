@@ -1,6 +1,6 @@
 const { getAuth } = require('../../middleware/requireAuth');
 const workspacesService = require('./workspaces.service');
-const { bootstrapSchema } = require('./workspaces.validation');
+const { bootstrapSchema, patchWorkspaceSchema } = require('./workspaces.validation');
 const { success } = require('../../utils/response');
 
 const bootstrapWorkspace = async (req, res, next) => {
@@ -22,4 +22,23 @@ const bootstrapWorkspace = async (req, res, next) => {
   }
 };
 
-module.exports = { bootstrapWorkspace };
+const getCurrentWorkspace = async (req, res, next) => {
+  try {
+    const workspace = await workspacesService.getCurrent(req.workspaceId);
+    return success(res, { workspace }, 'Workspace retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateCurrentWorkspace = async (req, res, next) => {
+  try {
+    const data = patchWorkspaceSchema.parse(req.body);
+    const workspace = await workspacesService.updateCurrent(req.workspaceId, data);
+    return success(res, { workspace }, 'Workspace updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { bootstrapWorkspace, getCurrentWorkspace, updateCurrentWorkspace };

@@ -1,5 +1,6 @@
 const { clerkClient } = require('../../middleware/requireAuth');
 const authRepository = require('./auth.repository');
+const prisma = require('../../lib/prisma');
 
 const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
   const clerkUser = await clerkClient.users.getUser(clerkUserId);
@@ -26,6 +27,20 @@ const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
 
   const membership = await authRepository.getWorkspaceMembership(user.id);
 
+  let workspaceData = null;
+  if (membership) {
+    const company = await prisma.company.findUnique({
+      where: { workspaceId: membership.workspace.id },
+      select: { id: true },
+    });
+    workspaceData = {
+      id: membership.workspace.id,
+      name: membership.workspace.name,
+      role: membership.role,
+      setupComplete: !!company,
+    };
+  }
+
   return {
     user: {
       id: user.id,
@@ -34,13 +49,7 @@ const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
       status: user.status,
       isPlatformAdmin: user.isPlatformAdmin,
     },
-    workspace: membership
-      ? {
-          id: membership.workspace.id,
-          name: membership.workspace.name,
-          role: membership.role,
-        }
-      : null,
+    workspace: workspaceData,
   };
 };
 

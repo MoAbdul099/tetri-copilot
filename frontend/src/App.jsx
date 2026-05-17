@@ -6,7 +6,9 @@ import ProtectedLayout from './components/layout/ProtectedLayout.jsx';
 import SignInPage from './features/auth/pages/SignInPage.jsx';
 import SignUpPage from './features/auth/pages/SignUpPage.jsx';
 import OnboardingPage from './features/onboarding/pages/OnboardingPage.jsx';
+import WorkspaceSetupPage from './features/workspace/pages/WorkspaceSetupPage.jsx';
 import DashboardPage from './features/dashboard/pages/DashboardPage.jsx';
+import SettingsPage from './features/settings/pages/SettingsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -25,10 +27,12 @@ export default function App() {
         <Route path="/sign-in/*" element={<SignInPage />} />
         <Route path="/sign-up/*" element={<SignUpPage />} />
 
-        {/* Protected routes — require auth + workspace */}
+        {/* Protected routes */}
         <Route element={<ProtectedLayout />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/setup" element={<WorkspaceSetupPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

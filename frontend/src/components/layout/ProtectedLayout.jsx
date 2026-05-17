@@ -4,33 +4,31 @@ import { useAuth } from '@clerk/clerk-react';
 import authService from '../../features/auth/services/authService.js';
 import { setClerkTokenGetter } from '../../lib/api.js';
 import LoadingSpinner from '../ui/LoadingSpinner.jsx';
+import AppLayout from './AppLayout.jsx';
+
+const APP_LAYOUT_PATHS = ['/dashboard', '/settings'];
 
 export default function ProtectedLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const location = useLocation();
-  const [state, setState] = useState({ loading: true, workspace: undefined, error: null });
+  const [state, setState] = useState({ loading: true, profile: undefined, error: null });
 
   useEffect(() => {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      setState({ loading: false, workspace: null, error: null });
+      setState({ loading: false, profile: null, error: null });
       return;
     }
 
-    // Register the token getter before making any API call.
-    // ProtectedLayout's effect runs before ClerkApiSync's effect (child effects
-    // fire before parent effects in React), so clerkTokenGetter may still be null
-    // at this point. Setting it here guarantees the Authorization header is
-    // attached to the getMe() request below.
     setClerkTokenGetter(getToken);
 
     authService
       .getMe()
-      .then((data) => setState({ loading: false, workspace: data.workspace, error: null }))
+      .then((data) => setState({ loading: false, profile: data, error: null }))
       .catch((err) => {
         const msg = err?.response?.data?.error || err.message || 'Failed to load profile';
-        setState({ loading: false, workspace: null, error: msg });
+        setState({ loading: false, profile: null, error: msg });
       });
   }, [isLoaded, isSignedIn, getToken]);
 
@@ -59,14 +57,27 @@ export default function ProtectedLayout() {
     );
   }
 
+  const { user, workspace } = state.profile || {};
   const isOnboarding = location.pathname === '/onboarding';
+  const isSetup = location.pathname === '/setup';
 
-  if (!state.workspace && !isOnboarding) {
+  // No workspace → onboarding
+  if (!workspace && !isOnboarding) {
     return <Navigate to="/onboarding" replace />;
   }
+  if (workspace && isOnboarding) {
+    return <Navigate to={workspace.setupComplete ? '/dashboard' : '/setup'} replace />;
+  }
 
-  if (state.workspace && isOnboarding) {
-    return <Navigate to="/dashboard" replace />;
+  // Has workspace but setup not complete → setup wizard
+  if (workspace && !workspace.setupComplete && !isSetup) {
+    return <Navigate to="/setup" replace />;
+  }
+
+  // Use AppLayout for main app pages (dashboard, settings)
+  const useAppLayout = APP_LAYOUT_PATHS.some((p) => location.pathname.startsWith(p));
+  if (useAppLayout) {
+    return <AppLayout user={user} workspace={workspace} />;
   }
 
   return <Outlet />;

@@ -8,4 +8,11 @@ const bootstrapSchema = z.object({
     .max(255, 'Workspace name must be 255 characters or less'),
 });
 
-module.exports = { bootstrapSchema };
+const patchWorkspaceSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  countryProfileId: z.string().uuid().optional().nullable(),
+  defaultCurrencyId: z.string().uuid().optional().nullable(),
+  defaultLanguageId: z.string().uuid().optional().nullable(),
+});
+
+module.exports = { bootstrapSchema, patchWorkspaceSchema };
