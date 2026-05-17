@@ -46,7 +46,7 @@ export default function OnboardingPage() {
           <img
             src="/logo.svg"
             alt="Tetri Copilot"
-            className="h-9 w-auto mx-auto mb-6"
+            className="max-w-[180px] w-full h-auto mx-auto mb-6 object-contain"
             draggable={false}
           />
           <div className="inline-flex items-center justify-center w-14 h-14 bg-[#eff4ff] rounded-2xl mb-4">

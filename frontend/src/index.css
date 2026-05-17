@@ -3,11 +3,80 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* ── Tetri brand mapped to shadcn/ui CSS variables ─────────────────────── */
+    --background: 210 40% 98%;       /* #f8fafc  soft bg */
+    --foreground: 223 47% 11%;       /* #0f172b  primary text */
+
+    --card: 0 0% 100%;               /* #ffffff */
+    --card-foreground: 223 47% 11%;  /* #0f172b */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 223 47% 11%;
+
+    --primary: 225 83% 49%;          /* #1447e6  Tetri blue */
+    --primary-foreground: 0 0% 100%; /* #ffffff */
+
+    --secondary: 210 40% 96%;        /* light blue-gray */
+    --secondary-foreground: 223 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 216 15% 34%; /* #4a5565 */
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 223 47% 11%;
+
+    --destructive: 0 84% 60%;        /* #ef4444 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;           /* #e2e8f0 */
+    --input: 214 32% 91%;
+    --ring: 225 83% 49%;             /* #1447e6  focus ring = Tetri blue */
+
+    --radius: 12px;                  /* Tetri btn radius */
+  }
+
+  .dark {
+    --background: 222 47% 3%;        /* #020817 */
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 7%;              /* #0f172a */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 225 83% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 225 83% 55%;
+  }
+}
+
+@layer base {
   body {
     font-family: 'Manrope', Inter, Arial, Helvetica, sans-serif;
     color: #0f172b;
     background-color: #f8fafc;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    @apply border-border;
   }
 }

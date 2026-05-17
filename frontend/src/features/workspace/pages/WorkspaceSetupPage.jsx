@@ -10,6 +10,11 @@ import {
   LogOut,
   Loader2,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import companyService from '../../settings/services/companyService.js';
 import workspaceService from '../services/workspaceService.js';
 import settingsService from '../../settings/services/settingsService.js';
@@ -21,42 +26,12 @@ const STEPS = [
   { id: 3, label: 'Preferences', icon: Settings },
 ];
 
-const InputField = ({ label, id, error, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-tetri-text mb-1.5">
-      {label}
-    </label>
-    <input
-      id={id}
-      className={`w-full px-3 py-2.5 border rounded-xl text-sm text-tetri-text placeholder:text-tetri-neutral focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent transition-shadow bg-white ${
-        error ? 'border-tetri-error' : 'border-tetri-border'
-      }`}
-      {...props}
-    />
-    {error && <p className="mt-1 text-xs text-tetri-error">{error}</p>}
-  </div>
-);
-
-const SelectField = ({ label, id, options, placeholder, error, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-tetri-text mb-1.5">
-      {label}
-    </label>
-    <select
-      id={id}
-      className={`w-full px-3 py-2.5 border rounded-xl text-sm text-tetri-text focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent transition-shadow bg-white appearance-none ${
-        error ? 'border-tetri-error' : 'border-tetri-border'
-      }`}
-      {...props}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-    {error && <p className="mt-1 text-xs text-tetri-error">{error}</p>}
+const Field = ({ label, id, error, hint, children }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id}>{label}</Label>
+    {children}
+    {hint && <p className="text-xs text-tetri-neutral">{hint}</p>}
+    {error && <p className="text-xs text-tetri-error">{error}</p>}
   </div>
 );
 
@@ -122,8 +97,7 @@ export default function WorkspaceSetupPage() {
     }
   }, [step]);
 
-  const handleCountryChange = (e) => {
-    const countryId = e.target.value;
+  const handleCountryChange = (countryId) => {
     const selected = countries.find((c) => c.id === countryId);
     setLocalization({
       countryProfileId: countryId,
@@ -144,10 +118,8 @@ export default function WorkspaceSetupPage() {
 
     if (step === 1) {
       if (!validateStep1()) return;
-
       setSaving(true);
       try {
-        // Strip empty strings to null for optional fields
         const payload = Object.fromEntries(
           Object.entries(company).map(([k, v]) => [k, v.trim() === '' ? null : v.trim()])
         );
@@ -206,6 +178,8 @@ export default function WorkspaceSetupPage() {
     setStep((s) => s - 1);
   };
 
+  const setCompanyField = (k) => (e) => setCompany((p) => ({ ...p, [k]: e.target.value }));
+
   return (
     <div className="min-h-screen bg-tetri-bg flex flex-col items-center justify-start px-4 py-10">
       <div className="w-full max-w-xl">
@@ -214,7 +188,7 @@ export default function WorkspaceSetupPage() {
           <img
             src="/logo.svg"
             alt="Tetri Copilot"
-            className="h-8 w-auto mx-auto mb-6"
+            className="max-w-[200px] w-full h-auto mx-auto mb-6 object-contain"
             draggable={false}
           />
           <h1 className="text-xl font-bold text-tetri-text">Complete your workspace setup</h1>
@@ -224,7 +198,7 @@ export default function WorkspaceSetupPage() {
         </div>
 
         {/* Step indicator */}
-        <div className="flex items-center justify-center gap-0 mb-8">
+        <div className="flex items-center justify-center mb-8">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             const isActive = step === s.id;
@@ -242,7 +216,7 @@ export default function WorkspaceSetupPage() {
                     }`}
                   >
                     {isDone ? (
-                      <CheckCircle2 className="w-4.5 h-4.5" size={18} />
+                      <CheckCircle2 size={18} />
                     ) : (
                       <Icon size={16} />
                     )}
@@ -275,81 +249,45 @@ export default function WorkspaceSetupPage() {
               <h2 className="text-base font-semibold text-tetri-text mb-5">Company profile</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <InputField
-                    label="Company Name *"
-                    id="companyName"
-                    value={company.companyName}
-                    onChange={(e) => setCompany((p) => ({ ...p, companyName: e.target.value }))}
-                    placeholder="e.g. Acme Consulting LLC"
-                    error={companyErrors.companyName}
-                  />
+                  <Field label="Company Name *" id="companyName" error={companyErrors.companyName}>
+                    <Input
+                      id="companyName"
+                      value={company.companyName}
+                      onChange={setCompanyField('companyName')}
+                      placeholder="e.g. Acme Consulting LLC"
+                      className={companyErrors.companyName ? 'border-tetri-error' : ''}
+                    />
+                  </Field>
                 </div>
-                <InputField
-                  label="Legal Name"
-                  id="legalName"
-                  value={company.legalName}
-                  onChange={(e) => setCompany((p) => ({ ...p, legalName: e.target.value }))}
-                  placeholder="Legal entity name"
-                />
-                <InputField
-                  label="Business Email"
-                  id="email"
-                  type="email"
-                  value={company.email}
-                  onChange={(e) => setCompany((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="hello@company.com"
-                />
-                <InputField
-                  label="Phone"
-                  id="phone"
-                  value={company.phone}
-                  onChange={(e) => setCompany((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder="+1 000 000 0000"
-                />
-                <InputField
-                  label="Website"
-                  id="website"
-                  value={company.website}
-                  onChange={(e) => setCompany((p) => ({ ...p, website: e.target.value }))}
-                  placeholder="https://company.com"
-                />
+                <Field label="Legal Name" id="legalName">
+                  <Input id="legalName" value={company.legalName} onChange={setCompanyField('legalName')} placeholder="Legal entity name" />
+                </Field>
+                <Field label="Business Email" id="email">
+                  <Input id="email" type="email" value={company.email} onChange={setCompanyField('email')} placeholder="hello@company.com" />
+                </Field>
+                <Field label="Phone" id="phone">
+                  <Input id="phone" value={company.phone} onChange={setCompanyField('phone')} placeholder="+1 000 000 0000" />
+                </Field>
+                <Field label="Website" id="website">
+                  <Input id="website" value={company.website} onChange={setCompanyField('website')} placeholder="https://company.com" />
+                </Field>
                 <div className="sm:col-span-2">
-                  <InputField
-                    label="Address Line 1"
-                    id="addressLine1"
-                    value={company.addressLine1}
-                    onChange={(e) => setCompany((p) => ({ ...p, addressLine1: e.target.value }))}
-                    placeholder="Street address"
-                  />
+                  <Field label="Address Line 1" id="addressLine1">
+                    <Input id="addressLine1" value={company.addressLine1} onChange={setCompanyField('addressLine1')} placeholder="Street address" />
+                  </Field>
                 </div>
-                <InputField
-                  label="City"
-                  id="city"
-                  value={company.city}
-                  onChange={(e) => setCompany((p) => ({ ...p, city: e.target.value }))}
-                  placeholder="City"
-                />
-                <InputField
-                  label="Postal Code"
-                  id="postalCode"
-                  value={company.postalCode}
-                  onChange={(e) => setCompany((p) => ({ ...p, postalCode: e.target.value }))}
-                  placeholder="Postal code"
-                />
-                <InputField
-                  label="Tax Number"
-                  id="taxNumber"
-                  value={company.taxNumber}
-                  onChange={(e) => setCompany((p) => ({ ...p, taxNumber: e.target.value }))}
-                  placeholder="VAT / TRN / TIN"
-                />
-                <InputField
-                  label="Registration Number"
-                  id="registrationNumber"
-                  value={company.registrationNumber}
-                  onChange={(e) => setCompany((p) => ({ ...p, registrationNumber: e.target.value }))}
-                  placeholder="Company registration no."
-                />
+                <Field label="City" id="city">
+                  <Input id="city" value={company.city} onChange={setCompanyField('city')} placeholder="City" />
+                </Field>
+                <Field label="Postal Code" id="postalCode">
+                  <Input id="postalCode" value={company.postalCode} onChange={setCompanyField('postalCode')} placeholder="Postal code" />
+                </Field>
+                <Field label="Tax Number" id="taxNumber">
+                  <Input id="taxNumber" value={company.taxNumber} onChange={setCompanyField('taxNumber')} placeholder="VAT / TRN / TIN" />
+                </Field>
+                <Field label="Registration Number" id="registrationNumber">
+                  <Input id="registrationNumber" value={company.registrationNumber} onChange={setCompanyField('registrationNumber')} placeholder="Company registration no." />
+                </Field>
               </div>
             </div>
           )}
@@ -368,40 +306,50 @@ export default function WorkspaceSetupPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <SelectField
-                    label="Country"
-                    id="country"
-                    value={localization.countryProfileId}
-                    onChange={handleCountryChange}
-                    placeholder="Select a country"
-                    options={countries.map((c) => ({ value: c.id, label: c.countryName }))}
-                  />
-                  <SelectField
-                    label="Default Currency"
-                    id="currency"
-                    value={localization.defaultCurrencyId}
-                    onChange={(e) =>
-                      setLocalization((p) => ({ ...p, defaultCurrencyId: e.target.value }))
-                    }
-                    placeholder="Select currency"
-                    options={currencies.map((c) => ({
-                      value: c.id,
-                      label: `${c.code} — ${c.name}`,
-                    }))}
-                  />
-                  <SelectField
-                    label="Default Language"
-                    id="language"
-                    value={localization.defaultLanguageId}
-                    onChange={(e) =>
-                      setLocalization((p) => ({ ...p, defaultLanguageId: e.target.value }))
-                    }
-                    placeholder="Select language"
-                    options={languages.map((l) => ({
-                      value: l.id,
-                      label: l.nativeName ? `${l.name} (${l.nativeName})` : l.name,
-                    }))}
-                  />
+                  <Field label="Country" id="country">
+                    <Select value={localization.countryProfileId} onValueChange={handleCountryChange}>
+                      <SelectTrigger id="country">
+                        <SelectValue placeholder="Select a country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.countryName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Default Currency" id="currency">
+                    <Select
+                      value={localization.defaultCurrencyId}
+                      onValueChange={(v) => setLocalization((p) => ({ ...p, defaultCurrencyId: v }))}
+                    >
+                      <SelectTrigger id="currency">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Default Language" id="language">
+                    <Select
+                      value={localization.defaultLanguageId}
+                      onValueChange={(v) => setLocalization((p) => ({ ...p, defaultLanguageId: v }))}
+                    >
+                      <SelectTrigger id="language">
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.nativeName ? `${l.name} (${l.nativeName})` : l.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
               )}
             </div>
@@ -416,55 +364,59 @@ export default function WorkspaceSetupPage() {
               </p>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <InputField
-                    label="Invoice Prefix"
-                    id="invoicePrefix"
-                    value={settings.invoicePrefix}
-                    onChange={(e) =>
-                      setSettings((p) => ({ ...p, invoicePrefix: e.target.value.toUpperCase() }))
-                    }
-                    placeholder="INV"
-                    maxLength={20}
-                  />
-                  <InputField
-                    label="Invoice Due Days"
-                    id="dueDays"
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={settings.defaultInvoiceDueDays}
-                    onChange={(e) =>
-                      setSettings((p) => ({ ...p, defaultInvoiceDueDays: e.target.value }))
-                    }
-                  />
+                  <Field label="Invoice Prefix" id="invoicePrefix">
+                    <Input
+                      id="invoicePrefix"
+                      value={settings.invoicePrefix}
+                      onChange={(e) =>
+                        setSettings((p) => ({ ...p, invoicePrefix: e.target.value.toUpperCase() }))
+                      }
+                      placeholder="INV"
+                      maxLength={20}
+                    />
+                  </Field>
+                  <Field label="Invoice Due Days" id="dueDays">
+                    <Input
+                      id="dueDays"
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={settings.defaultInvoiceDueDays}
+                      onChange={(e) =>
+                        setSettings((p) => ({ ...p, defaultInvoiceDueDays: e.target.value }))
+                      }
+                    />
+                  </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <InputField
-                    label="Default Tax Rate (%)"
-                    id="taxRate"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    value={settings.defaultTaxRate}
-                    onChange={(e) =>
-                      setSettings((p) => ({ ...p, defaultTaxRate: e.target.value }))
-                    }
-                  />
-                  <InputField
-                    label="Reminder Lead Days"
-                    id="reminderLeadDays"
-                    type="number"
-                    min={0}
-                    max={30}
-                    value={settings.reminderLeadDays}
-                    onChange={(e) =>
-                      setSettings((p) => ({ ...p, reminderLeadDays: e.target.value }))
-                    }
-                  />
+                  <Field label="Default Tax Rate (%)" id="taxRate">
+                    <Input
+                      id="taxRate"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.01}
+                      value={settings.defaultTaxRate}
+                      onChange={(e) =>
+                        setSettings((p) => ({ ...p, defaultTaxRate: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Reminder Lead Days" id="reminderLeadDays">
+                    <Input
+                      id="reminderLeadDays"
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={settings.reminderLeadDays}
+                      onChange={(e) =>
+                        setSettings((p) => ({ ...p, reminderLeadDays: e.target.value }))
+                      }
+                    />
+                  </Field>
                 </div>
 
-                <div className="border border-tetri-border rounded-xl p-4 space-y-3">
+                <div className="border border-tetri-border rounded-xl p-4 space-y-4">
                   <p className="text-sm font-medium text-tetri-text">Notifications</p>
                   {[
                     {
@@ -478,24 +430,18 @@ export default function WorkspaceSetupPage() {
                       desc: 'Show alerts inside the app',
                     },
                   ].map(({ key, label, desc }) => (
-                    <label key={key} className="flex items-center gap-3 cursor-pointer">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={settings[key]}
-                          onChange={(e) =>
-                            setSettings((p) => ({ ...p, [key]: e.target.checked }))
-                          }
-                        />
-                        <div className="w-10 h-5.5 bg-tetri-border rounded-full peer-checked:bg-tetri-blue transition-colors" style={{height:'22px'}} />
-                        <div className="absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4.5" style={{width:'18px',height:'18px',transform: settings[key] ? 'translateX(18px)' : 'translateX(0)'}} />
-                      </div>
+                    <div key={key} className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-tetri-text">{label}</p>
                         <p className="text-xs text-tetri-muted">{desc}</p>
                       </div>
-                    </label>
+                      <Switch
+                        checked={settings[key]}
+                        onCheckedChange={(checked) =>
+                          setSettings((p) => ({ ...p, [key]: checked }))
+                        }
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -511,23 +457,22 @@ export default function WorkspaceSetupPage() {
 
           {/* Actions */}
           <div className="flex items-center justify-between mt-6 pt-5 border-t border-tetri-border">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={step === 1 ? undefined : handleBack}
               disabled={step === 1 || saving}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-xl border border-tetri-border text-tetri-muted hover:bg-tetri-bg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                step === 1 ? 'invisible' : ''
-              }`}
+              className={step === 1 ? 'invisible' : ''}
             >
               <ArrowLeft className="w-4 h-4" />
               Back
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={handleNext}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -542,7 +487,7 @@ export default function WorkspaceSetupPage() {
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
 

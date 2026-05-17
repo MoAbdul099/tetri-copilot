@@ -30,7 +30,7 @@ export default function AppLayout({ user, workspace }) {
         <img
           src="/logo.svg"
           alt="Tetri Copilot"
-          className="h-7 w-auto"
+          className="max-w-[160px] w-full h-auto object-contain"
           draggable={false}
         />
       </div>
@@ -138,7 +138,7 @@ export default function AppLayout({ user, workspace }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <img src="/logo.svg" alt="Tetri Copilot" className="h-6 w-auto" draggable={false} />
+          <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain" draggable={false} />
         </header>
 
         {/* Page content */}

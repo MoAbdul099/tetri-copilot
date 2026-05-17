@@ -16,19 +16,32 @@ import {
   X,
   Send,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Alert } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import companyService from '../services/companyService.js';
 import settingsService from '../services/settingsService.js';
 import localizationService from '../services/localizationService.js';
 import membersService from '../services/membersService.js';
 import workspaceService from '../../workspace/services/workspaceService.js';
 import authService from '../../auth/services/authService.js';
-
-const TABS = [
-  { id: 'company', label: 'Company Profile', icon: Building2 },
-  { id: 'workspace', label: 'Workspace Settings', icon: Settings },
-  { id: 'localization', label: 'Localization', icon: Globe },
-  { id: 'members', label: 'Members', icon: Users },
-];
 
 const ROLE_LABELS = { owner: 'Owner', user: 'User', viewer: 'Viewer', admin: 'Admin' };
 const ROLE_COLORS = {
@@ -43,44 +56,13 @@ const STATUS_COLORS = {
   invited: 'bg-amber-50 text-amber-700',
 };
 
-const InputField = ({ label, id, hint, error, readOnly, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-tetri-text mb-1.5">
-      {label}
-    </label>
-    <input
-      id={id}
-      readOnly={readOnly}
-      className={`w-full px-3 py-2.5 border rounded-xl text-sm text-tetri-text placeholder:text-tetri-neutral focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent transition-shadow ${
-        readOnly ? 'bg-tetri-bg cursor-default' : 'bg-white'
-      } ${error ? 'border-tetri-error' : 'border-tetri-border'}`}
-      {...props}
-    />
-    {hint && <p className="mt-1 text-xs text-tetri-neutral">{hint}</p>}
-    {error && <p className="mt-1 text-xs text-tetri-error">{error}</p>}
-  </div>
-);
-
-const SelectField = ({ label, id, options, placeholder, disabled, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-tetri-text mb-1.5">
-      {label}
-    </label>
-    <select
-      id={id}
-      disabled={disabled}
-      className={`w-full px-3 py-2.5 border border-tetri-border rounded-xl text-sm text-tetri-text focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent transition-shadow appearance-none ${
-        disabled ? 'bg-tetri-bg cursor-default' : 'bg-white'
-      }`}
-      {...props}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+// Shared field wrapper
+const Field = ({ label, id, hint, error, children }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id}>{label}</Label>
+    {children}
+    {hint && <p className="text-xs text-tetri-neutral">{hint}</p>}
+    {error && <p className="text-xs text-tetri-error">{error}</p>}
   </div>
 );
 
@@ -175,38 +157,47 @@ function CompanyTab({ isOwner, onToast }) {
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <InputField
-            label="Company Name *"
-            id="s-companyName"
-            value={form?.companyName || ''}
-            onChange={set('companyName')}
-            readOnly={!isOwner}
-            placeholder="Acme Consulting LLC"
-          />
+          <Field label="Company Name *" id="s-companyName">
+            <Input id="s-companyName" value={form?.companyName || ''} onChange={set('companyName')} readOnly={!isOwner} placeholder="Acme Consulting LLC" />
+          </Field>
         </div>
-        <InputField label="Legal Name" id="s-legalName" value={form?.legalName || ''} onChange={set('legalName')} readOnly={!isOwner} placeholder="Legal entity name" />
-        <InputField label="Business Email" id="s-email" type="email" value={form?.email || ''} onChange={set('email')} readOnly={!isOwner} placeholder="hello@company.com" />
-        <InputField label="Phone" id="s-phone" value={form?.phone || ''} onChange={set('phone')} readOnly={!isOwner} placeholder="+1 000 000 0000" />
-        <InputField label="Website" id="s-website" value={form?.website || ''} onChange={set('website')} readOnly={!isOwner} placeholder="https://company.com" />
+        <Field label="Legal Name" id="s-legalName">
+          <Input id="s-legalName" value={form?.legalName || ''} onChange={set('legalName')} readOnly={!isOwner} placeholder="Legal entity name" />
+        </Field>
+        <Field label="Business Email" id="s-email">
+          <Input id="s-email" type="email" value={form?.email || ''} onChange={set('email')} readOnly={!isOwner} placeholder="hello@company.com" />
+        </Field>
+        <Field label="Phone" id="s-phone">
+          <Input id="s-phone" value={form?.phone || ''} onChange={set('phone')} readOnly={!isOwner} placeholder="+1 000 000 0000" />
+        </Field>
+        <Field label="Website" id="s-website">
+          <Input id="s-website" value={form?.website || ''} onChange={set('website')} readOnly={!isOwner} placeholder="https://company.com" />
+        </Field>
         <div className="sm:col-span-2">
-          <InputField label="Address Line 1" id="s-addr1" value={form?.addressLine1 || ''} onChange={set('addressLine1')} readOnly={!isOwner} placeholder="Street address" />
+          <Field label="Address Line 1" id="s-addr1">
+            <Input id="s-addr1" value={form?.addressLine1 || ''} onChange={set('addressLine1')} readOnly={!isOwner} placeholder="Street address" />
+          </Field>
         </div>
-        <InputField label="City" id="s-city" value={form?.city || ''} onChange={set('city')} readOnly={!isOwner} placeholder="City" />
-        <InputField label="Postal Code" id="s-postal" value={form?.postalCode || ''} onChange={set('postalCode')} readOnly={!isOwner} placeholder="Postal code" />
-        <InputField label="Tax Number" id="s-tax" value={form?.taxNumber || ''} onChange={set('taxNumber')} readOnly={!isOwner} placeholder="VAT / TRN / TIN" />
-        <InputField label="Registration Number" id="s-reg" value={form?.registrationNumber || ''} onChange={set('registrationNumber')} readOnly={!isOwner} placeholder="Company reg. no." />
+        <Field label="City" id="s-city">
+          <Input id="s-city" value={form?.city || ''} onChange={set('city')} readOnly={!isOwner} placeholder="City" />
+        </Field>
+        <Field label="Postal Code" id="s-postal">
+          <Input id="s-postal" value={form?.postalCode || ''} onChange={set('postalCode')} readOnly={!isOwner} placeholder="Postal code" />
+        </Field>
+        <Field label="Tax Number" id="s-tax">
+          <Input id="s-tax" value={form?.taxNumber || ''} onChange={set('taxNumber')} readOnly={!isOwner} placeholder="VAT / TRN / TIN" />
+        </Field>
+        <Field label="Registration Number" id="s-reg">
+          <Input id="s-reg" value={form?.registrationNumber || ''} onChange={set('registrationNumber')} readOnly={!isOwner} placeholder="Company reg. no." />
+        </Field>
       </div>
 
       {isOwner && (
         <div className="flex justify-end mt-6 pt-5 border-t border-tetri-border">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 transition-colors"
-          >
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save changes
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -239,7 +230,6 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
   }, []);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const toggle = (k) => () => setForm((f) => ({ ...f, [k]: !f[k] }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -274,10 +264,18 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
       <div>
         <p className="text-sm font-semibold text-tetri-text mb-4">Invoicing</p>
         <div className="grid grid-cols-2 gap-4">
-          <InputField label="Invoice Prefix" id="s-prefix" value={form?.invoicePrefix || ''} onChange={set('invoicePrefix')} readOnly={!isOwner} hint="e.g. INV, BILL" maxLength={20} />
-          <InputField label="Default Due Days" id="s-due" type="number" min={1} max={365} value={form?.defaultInvoiceDueDays ?? ''} onChange={set('defaultInvoiceDueDays')} readOnly={!isOwner} />
-          <InputField label="Default Tax Rate (%)" id="s-taxrate" type="number" min={0} max={100} step={0.01} value={form?.defaultTaxRate ?? ''} onChange={set('defaultTaxRate')} readOnly={!isOwner} />
-          <InputField label="Reminder Lead Days" id="s-lead" type="number" min={0} max={30} value={form?.reminderLeadDays ?? ''} onChange={set('reminderLeadDays')} readOnly={!isOwner} />
+          <Field label="Invoice Prefix" id="s-prefix" hint="e.g. INV, BILL">
+            <Input id="s-prefix" value={form?.invoicePrefix || ''} onChange={set('invoicePrefix')} readOnly={!isOwner} maxLength={20} />
+          </Field>
+          <Field label="Default Due Days" id="s-due">
+            <Input id="s-due" type="number" min={1} max={365} value={form?.defaultInvoiceDueDays ?? ''} onChange={set('defaultInvoiceDueDays')} readOnly={!isOwner} />
+          </Field>
+          <Field label="Default Tax Rate (%)" id="s-taxrate">
+            <Input id="s-taxrate" type="number" min={0} max={100} step={0.01} value={form?.defaultTaxRate ?? ''} onChange={set('defaultTaxRate')} readOnly={!isOwner} />
+          </Field>
+          <Field label="Reminder Lead Days" id="s-lead">
+            <Input id="s-lead" type="number" min={0} max={30} value={form?.reminderLeadDays ?? ''} onChange={set('reminderLeadDays')} readOnly={!isOwner} />
+          </Field>
         </div>
       </div>
 
@@ -288,28 +286,18 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
             { key: 'emailNotificationsEnabled', label: 'Email notifications', desc: 'Reminders and alerts via email' },
             { key: 'dashboardNotificationsEnabled', label: 'Dashboard notifications', desc: 'In-app notification alerts' },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between px-4 py-3.5">
+            <div key={key} className="flex items-center justify-between px-4 py-3.5 gap-4">
               <div>
                 <p className="text-sm font-medium text-tetri-text">{label}</p>
                 <p className="text-xs text-tetri-muted">{desc}</p>
               </div>
-              <button
-                onClick={isOwner ? toggle(key) : undefined}
+              <Switch
+                checked={form?.[key] ?? false}
+                onCheckedChange={(checked) =>
+                  isOwner && setForm((f) => ({ ...f, [key]: checked }))
+                }
                 disabled={!isOwner}
-                className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 ${
-                  form?.[key] ? 'bg-tetri-blue' : 'bg-tetri-border'
-                } disabled:cursor-default`}
-                style={{ height: '22px' }}
-              >
-                <span
-                  className="absolute top-0.5 w-4.5 bg-white rounded-full shadow transition-transform"
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    left: form?.[key] ? '20px' : '2px',
-                  }}
-                />
-              </button>
+              />
             </div>
           ))}
         </div>
@@ -317,14 +305,10 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
 
       {isOwner && (
         <div className="flex justify-end pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 transition-colors"
-          >
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save changes
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -361,8 +345,7 @@ function LocalizationTab({ isOwner, onToast }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleCountryChange = (e) => {
-    const countryId = e.target.value;
+  const handleCountryChange = (countryId) => {
     const selected = countries.find((c) => c.id === countryId);
     setForm({
       countryProfileId: countryId,
@@ -397,43 +380,62 @@ function LocalizationTab({ isOwner, onToast }) {
 
   return (
     <div className="space-y-4">
-      <SelectField
-        label="Country"
-        id="l-country"
-        value={form.countryProfileId}
-        onChange={handleCountryChange}
-        disabled={!isOwner}
-        placeholder="Select country"
-        options={countries.map((c) => ({ value: c.id, label: c.countryName }))}
-      />
-      <SelectField
-        label="Default Currency"
-        id="l-currency"
-        value={form.defaultCurrencyId}
-        onChange={(e) => setForm((f) => ({ ...f, defaultCurrencyId: e.target.value }))}
-        disabled={!isOwner}
-        placeholder="Select currency"
-        options={currencies.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` }))}
-      />
-      <SelectField
-        label="Default Language"
-        id="l-language"
-        value={form.defaultLanguageId}
-        onChange={(e) => setForm((f) => ({ ...f, defaultLanguageId: e.target.value }))}
-        disabled={!isOwner}
-        placeholder="Select language"
-        options={languages.map((l) => ({ value: l.id, label: l.nativeName ? `${l.name} (${l.nativeName})` : l.name }))}
-      />
+      <Field label="Country" id="l-country">
+        <Select
+          value={form.countryProfileId}
+          onValueChange={isOwner ? handleCountryChange : undefined}
+          disabled={!isOwner}
+        >
+          <SelectTrigger id="l-country">
+            <SelectValue placeholder="Select country" />
+          </SelectTrigger>
+          <SelectContent>
+            {countries.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.countryName}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Default Currency" id="l-currency">
+        <Select
+          value={form.defaultCurrencyId}
+          onValueChange={isOwner ? (v) => setForm((f) => ({ ...f, defaultCurrencyId: v })) : undefined}
+          disabled={!isOwner}
+        >
+          <SelectTrigger id="l-currency">
+            <SelectValue placeholder="Select currency" />
+          </SelectTrigger>
+          <SelectContent>
+            {currencies.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Default Language" id="l-language">
+        <Select
+          value={form.defaultLanguageId}
+          onValueChange={isOwner ? (v) => setForm((f) => ({ ...f, defaultLanguageId: v })) : undefined}
+          disabled={!isOwner}
+        >
+          <SelectTrigger id="l-language">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            {languages.map((l) => (
+              <SelectItem key={l.id} value={l.id}>
+                {l.nativeName ? `${l.name} (${l.nativeName})` : l.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
       {isOwner && (
         <div className="flex justify-end pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 transition-colors"
-          >
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save changes
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -468,6 +470,7 @@ function MembersTab({ isOwner, onToast }) {
       await membersService.invite(inviteEmail.trim(), inviteRole);
       onToast('success', `Invitation created for ${inviteEmail.trim()}`);
       setInviteEmail('');
+      setInviteRole('user');
       setShowInvite(false);
       load();
     } catch (err) {
@@ -508,13 +511,10 @@ function MembersTab({ isOwner, onToast }) {
             Workspace members ({data.members.length})
           </p>
           {isOwner && (
-            <button
-              onClick={() => setShowInvite(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-tetri-blue text-white text-sm font-medium rounded-btn hover:bg-tetri-blue-hover transition-colors"
-            >
+            <Button size="sm" onClick={() => setShowInvite(true)}>
               <Plus className="w-3.5 h-3.5" />
               Invite
-            </button>
+            </Button>
           )}
         </div>
 
@@ -611,77 +611,62 @@ function MembersTab({ isOwner, onToast }) {
         </div>
       )}
 
-      {/* Invite modal */}
-      {showInvite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="bg-white rounded-card border border-tetri-border shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-tetri-text">Invite a team member</h3>
-              <button
-                onClick={() => setShowInvite(false)}
-                className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Invite dialog */}
+      <Dialog open={showInvite} onOpenChange={setShowInvite}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite a team member</DialogTitle>
+          </DialogHeader>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-tetri-text mb-1.5">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="colleague@company.com"
-                  className="w-full px-3 py-2.5 border border-tetri-border rounded-xl text-sm text-tetri-text placeholder:text-tetri-neutral focus:outline-none focus:ring-2 focus:ring-tetri-blue focus:border-transparent bg-white"
-                  onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-tetri-text mb-1.5">Role</label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-tetri-border rounded-xl text-sm text-tetri-text focus:outline-none focus:ring-2 focus:ring-tetri-blue bg-white appearance-none"
-                >
-                  <option value="user">User — operational access</option>
-                  <option value="viewer">Viewer — read-only access</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowInvite(false)}
-                className="flex-1 px-4 py-2.5 border border-tetri-border text-sm font-medium text-tetri-muted rounded-btn hover:bg-tetri-bg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleInvite}
-                disabled={inviting || !inviteEmail.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-tetri-blue text-white text-sm font-semibold rounded-btn hover:bg-tetri-blue-hover disabled:opacity-50 transition-colors"
-              >
-                {inviting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                Send invitation
-              </button>
-            </div>
+          <div className="space-y-4">
+            <Field label="Email address" id="invite-email">
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="colleague@company.com"
+                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+              />
+            </Field>
+            <Field label="Role" id="invite-role">
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger id="invite-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User — operational access</SelectItem>
+                  <SelectItem value="viewer">Viewer — read-only access</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button variant="outline" className="flex-1" onClick={() => setShowInvite(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleInvite}
+              disabled={inviting || !inviteEmail.trim()}
+            >
+              {inviting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Send invitation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // ─── Main Settings Page ──────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('company');
   const [toast, setToast] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
 
@@ -701,37 +686,48 @@ export default function SettingsPage() {
         <p className="text-sm text-tetri-muted mt-0.5">Manage your workspace, company, and team</p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-tetri-bg border border-tetri-border rounded-xl p-1 mb-7 overflow-x-auto">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
-              activeTab === id
-                ? 'bg-white text-tetri-text shadow-sm border border-tetri-border'
-                : 'text-tetri-muted hover:text-tetri-text'
-            }`}
-          >
-            <Icon size={15} />
-            {label}
-          </button>
-        ))}
-      </div>
+      <Tabs defaultValue="company">
+        <TabsList className="w-full mb-7 overflow-x-auto">
+          <TabsTrigger value="company" className="flex items-center gap-1.5">
+            <Building2 size={15} />
+            Company Profile
+          </TabsTrigger>
+          <TabsTrigger value="workspace" className="flex items-center gap-1.5">
+            <Settings size={15} />
+            Workspace Settings
+          </TabsTrigger>
+          <TabsTrigger value="localization" className="flex items-center gap-1.5">
+            <Globe size={15} />
+            Localization
+          </TabsTrigger>
+          <TabsTrigger value="members" className="flex items-center gap-1.5">
+            <Users size={15} />
+            Members
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tab content */}
-      <div className="bg-white rounded-card border border-tetri-border p-6">
-        {!isOwner && (
-          <div className="mb-5 flex items-center gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-            <Shield className="w-4 h-4 flex-shrink-0" />
-            You have read-only access. Only workspace owners can edit settings.
-          </div>
-        )}
-        {activeTab === 'company' && <CompanyTab isOwner={isOwner} onToast={showToast} />}
-        {activeTab === 'workspace' && <WorkspaceSettingsTab isOwner={isOwner} onToast={showToast} />}
-        {activeTab === 'localization' && <LocalizationTab isOwner={isOwner} onToast={showToast} />}
-        {activeTab === 'members' && <MembersTab isOwner={isOwner} onToast={showToast} />}
-      </div>
+        <div className="bg-white rounded-card border border-tetri-border p-6">
+          {!isOwner && (
+            <Alert variant="warning" className="mb-5">
+              <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>You have read-only access. Only workspace owners can edit settings.</span>
+            </Alert>
+          )}
+
+          <TabsContent value="company">
+            <CompanyTab isOwner={isOwner} onToast={showToast} />
+          </TabsContent>
+          <TabsContent value="workspace">
+            <WorkspaceSettingsTab isOwner={isOwner} onToast={showToast} />
+          </TabsContent>
+          <TabsContent value="localization">
+            <LocalizationTab isOwner={isOwner} onToast={showToast} />
+          </TabsContent>
+          <TabsContent value="members">
+            <MembersTab isOwner={isOwner} onToast={showToast} />
+          </TabsContent>
+        </div>
+      </Tabs>
 
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </div>
