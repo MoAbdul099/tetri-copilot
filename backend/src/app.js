@@ -14,6 +14,8 @@ const settingsRoutes = require('./modules/settings/settings.routes');
 const localizationRoutes = require('./modules/localization/localization.routes');
 const membersRoutes = require('./modules/members/members.routes');
 const invitationsRoutes = require('./modules/invitations/invitations.routes');
+const plansRoutes = require('./modules/plans/plans.routes');
+const subscriptionsRoutes = require('./modules/subscriptions/subscriptions.routes');
 
 const app = express();
 
@@ -45,6 +47,8 @@ app.use('/api/v1/languages', localizationRoutes.languages);
 app.use('/api/v1/currencies', localizationRoutes.currencies);
 app.use('/api/v1/members', membersRoutes);
 app.use('/api/v1/invitations', invitationsRoutes);
+app.use('/api/v1/plans', plansRoutes);
+app.use('/api/v1/subscription', subscriptionsRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);

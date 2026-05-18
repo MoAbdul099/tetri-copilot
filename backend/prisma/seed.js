@@ -124,6 +124,95 @@ async function main() {
   ]);
   console.log('Country profiles seeded: UAE, Saudi Arabia, Qatar, Georgia');
 
+  // Plans
+  const planData = [
+    {
+      code: 'free',
+      name: 'Free',
+      description: 'Get started with essential tools for solo operators and small teams.',
+      monthlyPriceUsd: 0,
+      yearlyPriceUsd: 0,
+      displayOrder: 0,
+      isRecommended: false,
+      isPublic: true,
+      includedUsers: 1,
+      maxUsers: 1,
+      maxMonthlyInvoices: 10,
+      maxMonthlyAiRequests: 5,
+      maxStorageMb: 100,
+      hasExpenses: false,
+      hasAiCategorization: false,
+      hasAdvancedCompliance: false,
+      isActive: true,
+    },
+    {
+      code: 'starter',
+      name: 'Starter',
+      description: 'Everything you need to run a growing small business efficiently.',
+      monthlyPriceUsd: 19,
+      yearlyPriceUsd: 190,
+      displayOrder: 1,
+      isRecommended: false,
+      isPublic: true,
+      includedUsers: 3,
+      maxUsers: 5,
+      maxMonthlyInvoices: 50,
+      maxMonthlyAiRequests: 50,
+      maxStorageMb: 1024,
+      hasExpenses: true,
+      hasAiCategorization: false,
+      hasAdvancedCompliance: false,
+      isActive: true,
+    },
+    {
+      code: 'professional',
+      name: 'Professional',
+      description: 'AI-powered operations for ambitious teams ready to scale.',
+      monthlyPriceUsd: 49,
+      yearlyPriceUsd: 490,
+      displayOrder: 2,
+      isRecommended: true,
+      isPublic: true,
+      includedUsers: 5,
+      maxUsers: 10,
+      maxMonthlyInvoices: 200,
+      maxMonthlyAiRequests: 200,
+      maxStorageMb: 5120,
+      hasExpenses: true,
+      hasAiCategorization: true,
+      hasAdvancedCompliance: false,
+      isActive: true,
+    },
+    {
+      code: 'business',
+      name: 'Business',
+      description: 'Full-scale platform for established businesses with advanced needs.',
+      monthlyPriceUsd: 99,
+      yearlyPriceUsd: 990,
+      displayOrder: 3,
+      isRecommended: false,
+      isPublic: true,
+      includedUsers: 10,
+      maxUsers: 25,
+      maxMonthlyInvoices: null,
+      maxMonthlyAiRequests: null,
+      maxStorageMb: 20480,
+      hasExpenses: true,
+      hasAiCategorization: true,
+      hasAdvancedCompliance: true,
+      isActive: true,
+    },
+  ];
+
+  for (const plan of planData) {
+    await prisma.plan.upsert({
+      where: { code: plan.code },
+      update: plan,
+      create: plan,
+    });
+  }
+  console.log('Plans seeded: Free, Starter, Professional, Business');
+
   console.log('Seed complete.');
 }
 
