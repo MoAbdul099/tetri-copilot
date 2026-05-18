@@ -26,6 +26,11 @@ const listPending = (workspaceId) =>
     orderBy: { createdAt: 'desc' },
   });
 
+const INVITATION_INCLUDE = {
+  workspace: { select: { name: true } },
+  invitedByUser: { select: { id: true, fullName: true, email: true } },
+};
+
 const create = (workspaceId, email, role, invitedByUserId) =>
   prisma.invitation.create({
     data: {
@@ -36,6 +41,7 @@ const create = (workspaceId, email, role, invitedByUserId) =>
       invitationToken: crypto.randomUUID(),
       expiresAt: new Date(Date.now() + EXPIRY_DAYS * 24 * 60 * 60 * 1000),
     },
+    include: INVITATION_INCLUDE,
   });
 
 const cancel = (id) =>
@@ -48,6 +54,7 @@ const resetExpiry = (id) =>
       invitationToken: crypto.randomUUID(),
       expiresAt: new Date(Date.now() + EXPIRY_DAYS * 24 * 60 * 60 * 1000),
     },
+    include: INVITATION_INCLUDE,
   });
 
 const accept = (id, acceptedAt) =>

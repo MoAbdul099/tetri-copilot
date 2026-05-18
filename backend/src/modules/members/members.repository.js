@@ -15,6 +15,12 @@ const listMembers = (workspaceId) =>
 const findMemberById = (id, workspaceId) =>
   prisma.workspaceMember.findFirst({ where: { id, workspaceId } });
 
+const findMemberByIdWithUser = (id, workspaceId) =>
+  prisma.workspaceMember.findFirst({
+    where: { id, workspaceId },
+    include: { user: { select: { id: true, email: true, fullName: true, status: true } } },
+  });
+
 const updateMemberStatus = (id, status) =>
   prisma.workspaceMember.update({ where: { id }, data: { status } });
 
@@ -47,6 +53,10 @@ const createInvitation = (workspaceId, email, role, invitedByUserId) =>
       invitationToken: crypto.randomUUID(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
+    include: {
+      workspace: { select: { name: true } },
+      invitedByUser: { select: { id: true, fullName: true, email: true } },
+    },
   });
 
 const listInvitations = (workspaceId) =>
@@ -58,6 +68,7 @@ const listInvitations = (workspaceId) =>
 module.exports = {
   listMembers,
   findMemberById,
+  findMemberByIdWithUser,
   updateMemberStatus,
   updateMemberRole,
   countOwners,

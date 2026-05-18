@@ -23,7 +23,7 @@ const create = async (req, res, next) => {
 
 const cancel = async (req, res, next) => {
   try {
-    await service.cancelInvitation(req.params.id, req.workspaceId);
+    await service.cancelInvitation(req.params.id, req.workspaceId, req.user.id);
     return success(res, {}, 'Invitation cancelled');
   } catch (err) {
     next(err);
@@ -32,7 +32,7 @@ const cancel = async (req, res, next) => {
 
 const resend = async (req, res, next) => {
   try {
-    const invitation = await service.resendInvitation(req.params.id, req.workspaceId);
+    const invitation = await service.resendInvitation(req.params.id, req.workspaceId, req.user.id);
     return success(res, { invitation }, 'Invitation resent');
   } catch (err) {
     next(err);

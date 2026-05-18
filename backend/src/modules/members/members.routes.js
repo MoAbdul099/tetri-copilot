@@ -9,6 +9,7 @@ const router = Router();
 router.use(protect, requireWorkspace);
 
 router.get('/', membersController.getMembers);
+router.get('/:id', membersController.getMember);
 router.post('/invite', requireOwner, membersController.inviteUser);
 router.patch('/:id/role', requireOwner, membersController.updateMemberRole);
 router.patch('/:id/status', requireOwner, membersController.updateMemberStatus);

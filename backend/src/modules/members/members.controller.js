@@ -14,6 +14,15 @@ const getMembers = async (req, res, next) => {
   }
 };
 
+const getMember = async (req, res, next) => {
+  try {
+    const member = await membersService.getMember(req.params.id, req.workspaceId);
+    return success(res, { member }, 'Member retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+
 const inviteUser = async (req, res, next) => {
   try {
     const { email, role } = inviteSchema.parse(req.body);
@@ -68,4 +77,4 @@ const removeMember = async (req, res, next) => {
   }
 };
 
-module.exports = { getMembers, inviteUser, updateMemberStatus, updateMemberRole, removeMember };
+module.exports = { getMembers, getMember, inviteUser, updateMemberStatus, updateMemberRole, removeMember };

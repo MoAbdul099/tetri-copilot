@@ -1,4 +1,6 @@
 const repo = require('./invitations.repository');
+const { logActivity } = require('../../lib/activityLogger');
+const { sendInvitationEmail } = require('../../lib/emailService');
 
 const listInvitations = (workspaceId) => repo.listPending(workspaceId);
 
@@ -9,20 +11,48 @@ const createInvitation = async (workspaceId, email, role, invitedByUserId) => {
     err.statusCode = 409;
     throw err;
   }
-  return repo.create(workspaceId, email, role, invitedByUserId);
+  const invitation = await repo.create(workspaceId, email, role, invitedByUserId);
+
+  sendInvitationEmail({
+    email,
+    inviterName: invitation.invitedByUser?.fullName,
+    workspaceName: invitation.workspace?.name,
+    role,
+    token: invitation.invitationToken,
+  }).catch(() => {});
+
+  logActivity({
+    workspaceId,
+    userId: invitedByUserId,
+    action: 'invitation.created',
+    entityType: 'invitation',
+    entityId: invitation.id,
+    description: `Invited ${email} as ${role}`,
+  });
+
+  return invitation;
 };
 
-const cancelInvitation = async (id, workspaceId) => {
+const cancelInvitation = async (id, workspaceId, requestingUserId) => {
   const inv = await repo.findById(id, workspaceId);
   if (!inv) {
     const err = new Error('Invitation not found');
     err.statusCode = 404;
     throw err;
   }
-  return repo.cancel(id);
+  await repo.cancel(id);
+
+  logActivity({
+    workspaceId,
+    userId: requestingUserId,
+    action: 'invitation.cancelled',
+    entityType: 'invitation',
+    entityId: id,
+    description: `Cancelled invitation for ${inv.email}`,
+  });
 };
 
-const resendInvitation = async (id, workspaceId) => {
+const resendInvitation = async (id, workspaceId, requestingUserId) => {
   const inv = await repo.findById(id, workspaceId);
   if (!inv) {
     const err = new Error('Invitation not found');
@@ -34,7 +64,26 @@ const resendInvitation = async (id, workspaceId) => {
     err.statusCode = 400;
     throw err;
   }
-  return repo.resetExpiry(id);
+  const updated = await repo.resetExpiry(id);
+
+  sendInvitationEmail({
+    email: inv.email,
+    inviterName: updated.invitedByUser?.fullName,
+    workspaceName: updated.workspace?.name,
+    role: inv.role,
+    token: updated.invitationToken,
+  }).catch(() => {});
+
+  logActivity({
+    workspaceId,
+    userId: requestingUserId,
+    action: 'invitation.resent',
+    entityType: 'invitation',
+    entityId: id,
+    description: `Resent invitation to ${inv.email}`,
+  });
+
+  return updated;
 };
 
 const acceptInvitation = async (token) => {
@@ -56,7 +105,7 @@ const acceptInvitation = async (token) => {
   }
 
   // Find user by email — they must sign up first, then accept
-  let user = await repo.findUserByEmail(inv.email);
+  const user = await repo.findUserByEmail(inv.email);
   if (!user) {
     const err = new Error('Please sign up first, then use this invitation link');
     err.statusCode = 400;
@@ -74,6 +123,15 @@ const acceptInvitation = async (token) => {
     repo.createMembership(inv.workspaceId, user.id, inv.role, inv.invitedByUserId),
     repo.accept(inv.id, new Date()),
   ]);
+
+  logActivity({
+    workspaceId: inv.workspaceId,
+    userId: user.id,
+    action: 'invitation.accepted',
+    entityType: 'invitation',
+    entityId: inv.id,
+    description: `${user.email} accepted invitation as ${inv.role}`,
+  });
 
   return { membership, workspaceId: inv.workspaceId };
 };
