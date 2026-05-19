@@ -4,6 +4,7 @@ import PricingCard from '../../../components/shared/PricingCard';
 import PlanChangeDialog from '../../../components/shared/PlanChangeDialog';
 import { getPlans } from '../services/plansService';
 import { getCurrentSubscription, upgradePlan, downgradePlan, cancelSubscription } from '../services/subscriptionService';
+import { createCheckoutSession } from '../services/billingService';
 
 export default function PlansPage() {
   const [plans, setPlans] = useState([]);
@@ -16,6 +17,10 @@ export default function PlansPage() {
   const [dialog, setDialog] = useState({ open: false, type: null, targetPlan: null });
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState(null);
+
+  // Checkout state
+  const [checkoutLoading, setCheckoutLoading] = useState(null); // planCode or null
+  const [checkoutError, setCheckoutError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -65,6 +70,21 @@ export default function PlansPage() {
     }
   };
 
+  const handleCheckout = async (plan) => {
+    setCheckoutLoading(plan.code);
+    setCheckoutError(null);
+    try {
+      const { checkoutUrl } = await createCheckoutSession({
+        planCode: plan.code,
+        billingInterval: billingCycle,
+      });
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setCheckoutError(err.response?.data?.error || 'Failed to start checkout. Please try again.');
+      setCheckoutLoading(null);
+    }
+  };
+
   const renderAction = (plan) => {
     const isCurrentPlan = subscription?.plan?.code === plan.code;
     const isCancelled = subscription?.status === 'cancelled';
@@ -96,13 +116,23 @@ export default function PlansPage() {
     }
 
     if (isUpgrade) {
+      const isCheckingOut = checkoutLoading === plan.code;
       return (
-        <button
-          onClick={() => openDialog('upgrade', plan)}
-          className="w-full py-2 rounded-btn bg-tetri-blue hover:bg-tetri-blue-hover text-white text-sm font-semibold transition-colors"
-        >
-          Upgrade
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={() => handleCheckout(plan)}
+            disabled={isCheckingOut}
+            className="w-full py-2 rounded-btn bg-tetri-blue hover:bg-tetri-blue-hover text-white text-sm font-semibold transition-colors disabled:opacity-60"
+          >
+            {isCheckingOut ? 'Redirecting…' : 'Subscribe'}
+          </button>
+          <button
+            onClick={() => openDialog('upgrade', plan)}
+            className="w-full py-1.5 rounded-btn text-xs font-medium text-tetri-muted hover:text-tetri-text transition-colors"
+          >
+            Switch plan manually
+          </button>
+        </div>
       );
     }
 
@@ -153,6 +183,13 @@ export default function PlansPage() {
           </button>
         </div>
       </div>
+
+      {/* Checkout error */}
+      {checkoutError && (
+        <div className="mb-4 rounded-card border border-tetri-error/20 bg-red-50 px-5 py-3">
+          <p className="text-sm text-tetri-error">{checkoutError}</p>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (

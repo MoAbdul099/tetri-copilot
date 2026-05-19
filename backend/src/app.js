@@ -17,6 +17,7 @@ const invitationsRoutes = require('./modules/invitations/invitations.routes');
 const plansRoutes = require('./modules/plans/plans.routes');
 const subscriptionsRoutes = require('./modules/subscriptions/subscriptions.routes');
 const usageRoutes = require('./modules/usage/usage.routes');
+const billingRoutes = require('./modules/billing/billing.routes');
 
 const app = express();
 
@@ -32,6 +33,9 @@ app.use(
     message: { success: false, error: 'Too many requests', details: [] },
   })
 );
+
+// Raw body for Stripe webhook signature verification — must come before express.json()
+app.use('/api/v1/billing/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -51,6 +55,7 @@ app.use('/api/v1/invitations', invitationsRoutes);
 app.use('/api/v1/plans', plansRoutes);
 app.use('/api/v1/subscription', subscriptionsRoutes);
 app.use('/api/v1/usage', usageRoutes);
+app.use('/api/v1/billing', billingRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);

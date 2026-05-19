@@ -10,12 +10,15 @@ import {
   Check,
   Minus,
   ArrowRight,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import PageHeader from '../../../components/shared/PageHeader';
 import UsageProgressCard from '../../../components/shared/UsageProgressCard';
-import { getCurrentSubscription } from '../services/subscriptionService';
+import BillingEventList from '../components/BillingEventList';
+import { getCurrentSubscription, getFeatureAccess } from '../services/subscriptionService';
 import { getUsageSummary } from '../services/usageService';
-import { getFeatureAccess } from '../services/subscriptionService';
+import { createPortalSession, getBillingEvents } from '../services/billingService';
 
 const SUBSCRIPTION_STATUS_STYLES = {
   active:    'bg-emerald-50 text-emerald-700',
@@ -33,36 +36,57 @@ const FEATURE_LABELS = {
 };
 
 const USAGE_CARDS = [
-  { key: 'users',               label: 'Team Members',          icon: Users,     unit: '' },
-  { key: 'monthly_invoices',    label: 'Invoices this month',   icon: FileText,  unit: '' },
-  { key: 'monthly_expenses',    label: 'Expenses this month',   icon: Receipt,   unit: '' },
-  { key: 'monthly_ai_requests', label: 'AI requests this month',icon: Sparkles,  unit: '' },
-  { key: 'storage_mb',          label: 'Storage used',          icon: HardDrive, unit: 'MB' },
+  { key: 'users',               label: 'Team Members',           icon: Users,     unit: '' },
+  { key: 'monthly_invoices',    label: 'Invoices this month',    icon: FileText,  unit: '' },
+  { key: 'monthly_expenses',    label: 'Expenses this month',    icon: Receipt,   unit: '' },
+  { key: 'monthly_ai_requests', label: 'AI requests this month', icon: Sparkles,  unit: '' },
+  { key: 'storage_mb',          label: 'Storage used',           icon: HardDrive, unit: 'MB' },
 ];
 
 export default function OverviewPage() {
   const [subscription, setSubscription] = useState(null);
   const [usage, setUsage] = useState(null);
   const [features, setFeatures] = useState(null);
+  const [billingEvents, setBillingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState(null);
 
   useEffect(() => {
     Promise.all([
       getCurrentSubscription(),
       getUsageSummary(),
       getFeatureAccess(),
+      getBillingEvents(),
     ])
-      .then(([sub, usageData, featureData]) => {
+      .then(([sub, usageData, featureData, events]) => {
         setSubscription(sub);
         setUsage(usageData);
         setFeatures(featureData);
+        setBillingEvents(events);
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load billing overview'))
       .finally(() => setLoading(false));
   }, []);
 
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const { portalUrl } = await createPortalSession();
+      window.location.href = portalUrl;
+    } catch (err) {
+      setPortalError(err.response?.data?.error || 'Failed to open billing portal. Please try again.');
+      setPortalLoading(false);
+    }
+  };
+
   const plan = subscription?.plan;
+  const isPastDue = subscription?.status === 'past_due';
+  const hasStripeCustomer = !!subscription?.stripeCustomerId;
+  const isFree = plan?.monthlyPriceUsd === 0;
+
   const statusLabel = subscription?.status
     ? subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1).replace('_', ' ')
     : null;
@@ -100,6 +124,28 @@ export default function OverviewPage() {
 
       {!loading && !error && (
         <div className="space-y-6">
+
+          {/* Past due warning */}
+          {isPastDue && (
+            <div className="flex gap-3 p-4 rounded-card border border-amber-200 bg-amber-50">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Payment past due</p>
+                <p className="text-sm text-amber-700 mt-0.5">
+                  Your last payment failed. Update your payment method to keep access to paid features.
+                </p>
+                {hasStripeCustomer && (
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={portalLoading}
+                    className="mt-2 text-sm font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-900 disabled:opacity-60"
+                  >
+                    {portalLoading ? 'Opening portal…' : 'Update payment method'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Current plan card */}
           <div className="rounded-card border border-tetri-border bg-tetri-surface p-6">
@@ -147,15 +193,46 @@ export default function OverviewPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Portal error */}
+                {portalError && (
+                  <p className="mt-2 text-xs text-tetri-error">{portalError}</p>
+                )}
               </div>
 
-              <Link
-                to="/billing/plans"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn bg-tetri-blue hover:bg-tetri-blue-hover text-white text-sm font-semibold transition-colors flex-shrink-0"
-              >
-                Upgrade
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {/* Billing action buttons */}
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                {hasStripeCustomer ? (
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={portalLoading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn border border-tetri-border text-sm font-medium text-tetri-text hover:bg-tetri-bg transition-colors disabled:opacity-60"
+                  >
+                    {portalLoading ? 'Opening…' : (
+                      <>
+                        Manage Billing
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                ) : isFree ? (
+                  <Link
+                    to="/billing/plans"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn bg-tetri-blue hover:bg-tetri-blue-hover text-white text-sm font-semibold transition-colors"
+                  >
+                    Upgrade Plan
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/billing/plans"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn border border-tetri-border text-sm font-medium text-tetri-text hover:bg-tetri-bg transition-colors"
+                  >
+                    View Plans
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
@@ -209,6 +286,12 @@ export default function OverviewPage() {
               </div>
             </div>
           )}
+
+          {/* Billing events section */}
+          <div>
+            <h3 className="text-sm font-semibold text-tetri-text mb-3">Billing events</h3>
+            <BillingEventList events={billingEvents} />
+          </div>
 
         </div>
       )}
