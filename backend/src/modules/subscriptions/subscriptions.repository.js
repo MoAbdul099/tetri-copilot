@@ -24,4 +24,32 @@ const createFreeSubscription = (workspaceId, planId) =>
     include: SUBSCRIPTION_INCLUDE,
   });
 
-module.exports = { findByWorkspace, findFreePlan, createFreeSubscription };
+const findPlanByCode = (code) =>
+  prisma.plan.findFirst({ where: { code, isActive: true } });
+
+const updateSubscriptionPlan = (workspaceId, planId) =>
+  prisma.subscription.update({
+    where: { workspaceId },
+    data: { planId, status: 'active' },
+    include: SUBSCRIPTION_INCLUDE,
+  });
+
+const updateSubscriptionStatus = (workspaceId, status) =>
+  prisma.subscription.update({
+    where: { workspaceId },
+    data: { status },
+    include: SUBSCRIPTION_INCLUDE,
+  });
+
+const countActiveMembers = (workspaceId) =>
+  prisma.workspaceMember.count({ where: { workspaceId, status: 'active' } });
+
+module.exports = {
+  findByWorkspace,
+  findFreePlan,
+  createFreeSubscription,
+  findPlanByCode,
+  updateSubscriptionPlan,
+  updateSubscriptionStatus,
+  countActiveMembers,
+};

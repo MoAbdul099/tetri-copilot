@@ -11,7 +11,7 @@ const formatStorage = (mb) => {
   return `${mb} MB`;
 };
 
-export default function PricingCard({ plan, isCurrentPlan = false, billingCycle = 'monthly' }) {
+export default function PricingCard({ plan, isCurrentPlan = false, billingCycle = 'monthly', action = null }) {
   const price = billingCycle === 'yearly' && plan.yearlyPriceUsd !== null
     ? plan.yearlyPriceUsd / 12
     : plan.monthlyPriceUsd;
@@ -109,6 +109,13 @@ export default function PricingCard({ plan, isCurrentPlan = false, billingCycle 
             </div>
           ))}
         </div>
+
+        {/* Action button */}
+        {action && (
+          <div className="pt-1">
+            {action}
+          </div>
+        )}
       </div>
     </div>
   );

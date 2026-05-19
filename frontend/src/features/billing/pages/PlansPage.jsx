@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PageHeader from '../../../components/shared/PageHeader';
 import PricingCard from '../../../components/shared/PricingCard';
+import PlanChangeDialog from '../../../components/shared/PlanChangeDialog';
 import { getPlans } from '../services/plansService';
-import { getCurrentSubscription } from '../services/subscriptionService';
+import { getCurrentSubscription, upgradePlan, downgradePlan, cancelSubscription } from '../services/subscriptionService';
 
 export default function PlansPage() {
   const [plans, setPlans] = useState([]);
@@ -11,23 +12,113 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [plansData, subData] = await Promise.all([
-          getPlans(),
-          getCurrentSubscription(),
-        ]);
-        setPlans(plansData);
-        setSubscription(subData);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to load plans');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  // Dialog state
+  const [dialog, setDialog] = useState({ open: false, type: null, targetPlan: null });
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [plansData, subData] = await Promise.all([getPlans(), getCurrentSubscription()]);
+      setPlans(plansData);
+      setSubscription(subData);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load plans');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const currentPlanOrder = subscription?.plan?.displayOrder ?? -1;
+
+  const openDialog = (type, targetPlan = null) => {
+    setActionError(null);
+    setDialog({ open: true, type, targetPlan });
+  };
+
+  const closeDialog = () => {
+    if (actionLoading) return;
+    setDialog({ open: false, type: null, targetPlan: null });
+    setActionError(null);
+  };
+
+  const handleConfirm = async () => {
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      let updated;
+      if (dialog.type === 'upgrade') {
+        updated = await upgradePlan(dialog.targetPlan.code);
+      } else if (dialog.type === 'downgrade') {
+        updated = await downgradePlan(dialog.targetPlan.code);
+      } else if (dialog.type === 'cancel') {
+        updated = await cancelSubscription();
+      }
+      setSubscription(updated);
+      closeDialog();
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const renderAction = (plan) => {
+    const isCurrentPlan = subscription?.plan?.code === plan.code;
+    const isCancelled = subscription?.status === 'cancelled';
+    const isUpgrade = plan.displayOrder > currentPlanOrder;
+    const isDowngrade = plan.displayOrder < currentPlanOrder;
+
+    if (isCurrentPlan) {
+      return (
+        <div className="space-y-2">
+          <button
+            disabled
+            className="w-full py-2 rounded-btn border border-tetri-border text-sm font-medium text-tetri-muted bg-tetri-bg cursor-not-allowed"
+          >
+            Current Plan
+          </button>
+          {!isCancelled && (
+            <button
+              onClick={() => openDialog('cancel')}
+              className="w-full py-2 rounded-btn border border-tetri-error/30 text-sm font-medium text-tetri-error hover:bg-red-50 transition-colors"
+            >
+              Cancel Plan
+            </button>
+          )}
+          {isCancelled && (
+            <p className="text-center text-xs text-tetri-error font-medium">Subscription cancelled</p>
+          )}
+        </div>
+      );
+    }
+
+    if (isUpgrade) {
+      return (
+        <button
+          onClick={() => openDialog('upgrade', plan)}
+          className="w-full py-2 rounded-btn bg-tetri-blue hover:bg-tetri-blue-hover text-white text-sm font-semibold transition-colors"
+        >
+          Upgrade
+        </button>
+      );
+    }
+
+    if (isDowngrade) {
+      return (
+        <button
+          onClick={() => openDialog('downgrade', plan)}
+          className="w-full py-2 rounded-btn border border-tetri-border text-sm font-medium text-tetri-text hover:bg-tetri-bg transition-colors"
+        >
+          Downgrade
+        </button>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto">
@@ -67,7 +158,7 @@ export default function PlansPage() {
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-card border border-tetri-border bg-tetri-surface h-[480px] animate-pulse" />
+            <div key={i} className="rounded-card border border-tetri-border bg-tetri-surface h-[520px] animate-pulse" />
           ))}
         </div>
       )}
@@ -88,12 +179,13 @@ export default function PlansPage() {
               plan={plan}
               isCurrentPlan={subscription?.plan?.code === plan.code}
               billingCycle={billingCycle}
+              action={subscription ? renderAction(plan) : null}
             />
           ))}
         </div>
       )}
 
-      {/* Current plan info */}
+      {/* Current plan footer */}
       {!loading && !error && subscription && (
         <div className="mt-8 rounded-card border border-tetri-border bg-tetri-surface p-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -122,8 +214,20 @@ export default function PlansPage() {
       )}
 
       <p className="mt-6 text-xs text-tetri-neutral text-center">
-        Upgrade and billing flows coming soon. Prices shown in USD.
+        Prices shown in USD. Payment billing coming soon.
       </p>
+
+      {/* Plan change dialog */}
+      <PlanChangeDialog
+        open={dialog.open}
+        type={dialog.type}
+        targetPlan={dialog.targetPlan}
+        currentPlan={subscription?.plan}
+        loading={actionLoading}
+        error={actionError}
+        onConfirm={handleConfirm}
+        onClose={closeDialog}
+      />
     </div>
   );
 }
