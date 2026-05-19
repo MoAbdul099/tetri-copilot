@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Settings,
   Users,
+  Users2,
   CreditCard,
   LogOut,
   Menu,
@@ -14,6 +15,7 @@ import {
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/customers', label: 'Customers', icon: Users2 },
   { to: '/members', label: 'Members', icon: Users },
   { to: '/billing', label: 'Billing', icon: CreditCard },
   { to: '/settings', label: 'Settings', icon: Settings },

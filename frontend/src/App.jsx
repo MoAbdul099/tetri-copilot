@@ -13,6 +13,10 @@ import SettingsPage from './features/settings/pages/SettingsPage.jsx';
 import MembersPage from './features/members/pages/MembersPage.jsx';
 import PlansPage from './features/billing/pages/PlansPage.jsx';
 import OverviewPage from './features/billing/pages/OverviewPage.jsx';
+import CustomersPage from './features/customers/pages/CustomersPage.jsx';
+import CreateCustomerPage from './features/customers/pages/CreateCustomerPage.jsx';
+import EditCustomerPage from './features/customers/pages/EditCustomerPage.jsx';
+import CustomerDetailPage from './features/customers/pages/CustomerDetailPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -41,6 +45,10 @@ export default function App() {
           <Route path="/members" element={<MembersPage />} />
           <Route path="/billing" element={<OverviewPage />} />
           <Route path="/billing/plans" element={<PlansPage />} />
+          <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/customers/new" element={<CreateCustomerPage />} />
+          <Route path="/customers/:id" element={<CustomerDetailPage />} />
+          <Route path="/customers/:id/edit" element={<EditCustomerPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
