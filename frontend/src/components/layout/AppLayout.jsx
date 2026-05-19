@@ -15,7 +15,7 @@ import {
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/members', label: 'Members', icon: Users },
-  { to: '/billing/plans', label: 'Billing', icon: CreditCard },
+  { to: '/billing', label: 'Billing', icon: CreditCard },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

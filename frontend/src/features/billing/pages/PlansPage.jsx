@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { CreditCard } from 'lucide-react';
 import PageHeader from '../../../components/shared/PageHeader';
 import PricingCard from '../../../components/shared/PricingCard';
 import { getPlans } from '../services/plansService';
@@ -33,9 +32,8 @@ export default function PlansPage() {
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto">
       <PageHeader
-        icon={CreditCard}
         title="Plans"
-        description="Choose the plan that best fits your team's needs."
+        subtitle="Choose the plan that best fits your team's needs."
       />
 
       {/* Billing cycle toggle */}

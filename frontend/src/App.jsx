@@ -12,6 +12,7 @@ import DashboardPage from './features/dashboard/pages/DashboardPage.jsx';
 import SettingsPage from './features/settings/pages/SettingsPage.jsx';
 import MembersPage from './features/members/pages/MembersPage.jsx';
 import PlansPage from './features/billing/pages/PlansPage.jsx';
+import OverviewPage from './features/billing/pages/OverviewPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/members" element={<MembersPage />} />
+          <Route path="/billing" element={<OverviewPage />} />
           <Route path="/billing/plans" element={<PlansPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>

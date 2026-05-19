@@ -16,6 +16,7 @@ const membersRoutes = require('./modules/members/members.routes');
 const invitationsRoutes = require('./modules/invitations/invitations.routes');
 const plansRoutes = require('./modules/plans/plans.routes');
 const subscriptionsRoutes = require('./modules/subscriptions/subscriptions.routes');
+const usageRoutes = require('./modules/usage/usage.routes');
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/v1/members', membersRoutes);
 app.use('/api/v1/invitations', invitationsRoutes);
 app.use('/api/v1/plans', plansRoutes);
 app.use('/api/v1/subscription', subscriptionsRoutes);
+app.use('/api/v1/usage', usageRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);
