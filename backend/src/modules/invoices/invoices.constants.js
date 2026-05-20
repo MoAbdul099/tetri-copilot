@@ -1,14 +1,15 @@
-const INVOICE_STATUSES = ['draft', 'issued', 'sent', 'paid', 'overdue', 'cancelled', 'void'];
+const INVOICE_STATUSES = ['draft', 'issued', 'sent', 'partially_paid', 'paid', 'overdue', 'cancelled', 'void'];
 
 // Which transitions are allowed from each status
 const VALID_TRANSITIONS = {
-  draft:     ['issued', 'cancelled'],
-  issued:    ['sent', 'cancelled', 'void'],
-  sent:      ['paid', 'cancelled', 'void'],
-  paid:      [],
-  overdue:   ['paid', 'void'],
-  cancelled: [],
-  void:      [],
+  draft:          ['issued', 'cancelled'],
+  issued:         ['sent', 'partially_paid', 'paid', 'cancelled', 'void'],
+  sent:           ['partially_paid', 'paid', 'cancelled', 'void'],
+  partially_paid: ['paid', 'cancelled', 'void'],
+  paid:           [],
+  overdue:        ['partially_paid', 'paid', 'void'],
+  cancelled:      [],
+  void:           [],
 };
 
 const EDITABLE_STATUSES = ['draft'];

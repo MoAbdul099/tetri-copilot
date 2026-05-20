@@ -21,6 +21,10 @@ import InvoicesPage from './features/invoices/pages/InvoicesPage.jsx';
 import CreateInvoicePage from './features/invoices/pages/CreateInvoicePage.jsx';
 import EditInvoicePage from './features/invoices/pages/EditInvoicePage.jsx';
 import InvoiceDetailPage from './features/invoices/pages/InvoiceDetailPage.jsx';
+import PaymentsPage from './features/payments/pages/PaymentsPage.jsx';
+import CreatePaymentPage from './features/payments/pages/CreatePaymentPage.jsx';
+import PaymentDetailPage from './features/payments/pages/PaymentDetailPage.jsx';
+import EditPaymentPage from './features/payments/pages/EditPaymentPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -57,6 +61,10 @@ export default function App() {
           <Route path="/invoices/new" element={<CreateInvoicePage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/invoices/:id/edit" element={<EditInvoicePage />} />
+          <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/payments/new" element={<CreatePaymentPage />} />
+          <Route path="/payments/:id" element={<PaymentDetailPage />} />
+          <Route path="/payments/:id/edit" element={<EditPaymentPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

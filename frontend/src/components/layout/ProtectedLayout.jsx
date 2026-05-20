@@ -6,7 +6,7 @@ import { setClerkTokenGetter } from '../../lib/api.js';
 import LoadingSpinner from '../ui/LoadingSpinner.jsx';
 import AppLayout from './AppLayout.jsx';
 
-const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices'];
+const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments'];
 
 export default function ProtectedLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();

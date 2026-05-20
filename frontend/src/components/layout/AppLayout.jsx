@@ -17,10 +17,11 @@ import {
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/customers', label: 'Customers', icon: Users2 },
-  { to: '/invoices', label: 'Invoices', icon: FileText },
-  { to: '/members', label: 'Members', icon: Users },
-  { to: '/billing', label: 'Billing', icon: CreditCard },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/invoices',  label: 'Invoices',  icon: FileText },
+  { to: '/payments',  label: 'Payments',  icon: CreditCard },
+  { to: '/members',   label: 'Members',   icon: Users },
+  { to: '/billing',   label: 'Billing',   icon: CreditCard },
+  { to: '/settings',  label: 'Settings',  icon: Settings },
 ];
 
 export default function AppLayout({ user, workspace }) {

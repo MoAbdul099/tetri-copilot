@@ -54,10 +54,33 @@ enum InvoiceStatus {
   draft
   issued
   sent
+  partially_paid
   paid
   overdue
   cancelled
   void
+}
+
+enum PaymentStatus {
+  draft
+  posted
+  allocated
+  partially_allocated
+  unallocated
+  reversed
+  voided
+}
+
+enum PaymentMethod {
+  cash
+  bank_transfer
+  credit_card
+  debit_card
+  cheque
+  mobile_wallet
+  pos
+  online_transfer
+  other
 }
 
 enum ExpenseStatus {
@@ -257,6 +280,8 @@ model User {
   createdCustomers          Customer[]
   createdInvoices           Invoice[]
   invoicePayments           InvoicePayment[]
+  createdPayments           Payment[]        @relation("PaymentCreatedBy")
+  reversedPayments          Payment[]        @relation("PaymentReversedBy")
   recurringInvoices         RecurringInvoice[]
   createdExpenses           Expense[]
   createdReminders          Reminder[]         @relation("ReminderCreatedBy")
@@ -304,6 +329,8 @@ model Workspace {
   customerTagAssignments CustomerTagAssignment[]
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
+  payments          Payment[]
+  customerCredits   CustomerCredit[]
   expenseCategories ExpenseCategory[]
   expenses          Expense[]
   reminders         Reminder[]
@@ -396,6 +423,8 @@ model CompanySettings {
   emailNotificationsEnabled     Boolean  @default(true) @map("email_notifications_enabled")
   dashboardNotificationsEnabled Boolean  @default(true) @map("dashboard_notifications_enabled")
   brandColor                    String?  @default("#2563eb") @map("brand_color") @db.VarChar(7)
+  nextPaymentNumber             Int      @default(1) @map("next_payment_number")
+  paymentPrefix                 String   @default("PAY") @map("payment_prefix") @db.VarChar(20)
   createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -546,6 +575,8 @@ model Customer {
   tagAssignments    CustomerTagAssignment[]
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
+  payments          Payment[]
+  credits           CustomerCredit[]
 
   @@unique([workspaceId, customerCode])
   @@index([workspaceId])
@@ -703,12 +734,13 @@ model Invoice {
   language      Language? @relation(fields: [languageId], references: [id])
   createdByUser User?     @relation(fields: [createdByUserId], references: [id])
 
-  items         InvoiceItem[]
-  payments      InvoicePayment[]
-  reminders     Reminder[]
-  statusHistory InvoiceStatusHistory[]
-  deliveryLogs  InvoiceDeliveryLog[]
-  attachments   InvoiceAttachment[]
+  items              InvoiceItem[]
+  payments           InvoicePayment[]
+  reminders          Reminder[]
+  statusHistory      InvoiceStatusHistory[]
+  deliveryLogs       InvoiceDeliveryLog[]
+  attachments        InvoiceAttachment[]
+  paymentAllocations PaymentAllocation[]
 
   @@unique([workspaceId, invoiceNumber])
   @@index([workspaceId])
@@ -1135,4 +1167,152 @@ model AuditLog {
   adminUser User?      @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
+}
+
+// =========================================================
+// PAYMENTS & ALLOCATIONS
+// =========================================================
+
+model Payment {
+  id                String        @id @default(uuid()) @db.Uuid
+  workspaceId       String        @map("workspace_id") @db.Uuid
+  customerId        String        @map("customer_id") @db.Uuid
+  paymentNumber     String        @map("payment_number") @db.VarChar(100)
+  status            PaymentStatus @default(draft)
+  paymentDate       DateTime      @map("payment_date") @db.Date
+  amount            Decimal       @db.Decimal(14, 2)
+  currencyCode      String        @default("USD") @map("currency_code") @db.VarChar(10)
+  paymentMethod     PaymentMethod @default(bank_transfer) @map("payment_method")
+  referenceNumber   String?       @map("reference_number") @db.VarChar(100)
+  bankReference     String?       @map("bank_reference") @db.VarChar(100)
+  chequeNumber      String?       @map("cheque_number") @db.VarChar(100)
+  depositDate       DateTime?     @map("deposit_date") @db.Date
+  valueDate         DateTime?     @map("value_date") @db.Date
+  allocatedAmount   Decimal       @default(0) @map("allocated_amount") @db.Decimal(14, 2)
+  unallocatedAmount Decimal       @default(0) @map("unallocated_amount") @db.Decimal(14, 2)
+  isAdvance         Boolean       @default(false) @map("is_advance")
+  notes             String?       @db.Text
+  reversalReason    String?       @map("reversal_reason") @db.Text
+  reversedAt        DateTime?     @map("reversed_at") @db.Timestamptz(6)
+  reversedById      String?       @map("reversed_by_id") @db.Uuid
+  voidedAt          DateTime?     @map("voided_at") @db.Timestamptz(6)
+  postedAt          DateTime?     @map("posted_at") @db.Timestamptz(6)
+  createdByUserId   String?       @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  createdByUser User?     @relation("PaymentCreatedBy", fields: [createdByUserId], references: [id])
+  reversedByUser User?    @relation("PaymentReversedBy", fields: [reversedById], references: [id])
+
+  allocations   PaymentAllocation[]
+  statusHistory PaymentStatusHistory[]
+  attachments   PaymentAttachment[]
+  credits       CustomerCredit[]
+
+  @@unique([workspaceId, paymentNumber])
+  @@index([workspaceId])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  paymentId       String   @map("payment_id") @db.Uuid
+  invoiceId       String   @map("invoice_id") @db.Uuid
+  allocatedAmount Decimal  @map("allocated_amount") @db.Decimal(14, 2)
+  notes           String?  @db.Text
+  allocatedById   String?  @map("allocated_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@map("payment_allocations")
+}
+
+model PaymentStatusHistory {
+  id          String         @id @default(uuid()) @db.Uuid
+  paymentId   String         @map("payment_id") @db.Uuid
+  workspaceId String         @map("workspace_id") @db.Uuid
+  fromStatus  PaymentStatus? @map("from_status")
+  toStatus    PaymentStatus  @map("to_status")
+  changedById String?        @map("changed_by_id") @db.Uuid
+  reason      String?        @db.Text
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_status_history")
+}
+
+model PaymentAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  paymentId      String   @map("payment_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  fileName       String   @map("file_name") @db.VarChar(255)
+  storedFileName String   @map("stored_file_name") @db.VarChar(255)
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  fileSize       BigInt   @map("file_size")
+  storagePath    String   @map("storage_path") @db.Text
+  description    String?  @db.Text
+  uploadedById   String?  @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([workspaceId])
+  @@map("payment_attachments")
+}
+
+model CustomerCredit {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  customerId      String   @map("customer_id") @db.Uuid
+  paymentId       String?  @map("payment_id") @db.Uuid
+  currencyCode    String   @default("USD") @map("currency_code") @db.VarChar(10)
+  originalAmount  Decimal  @map("original_amount") @db.Decimal(14, 2)
+  usedAmount      Decimal  @default(0) @map("used_amount") @db.Decimal(14, 2)
+  remainingAmount Decimal  @map("remaining_amount") @db.Decimal(14, 2)
+  notes           String?  @db.Text
+  createdById     String?  @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  sourcePayment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  transactions CustomerCreditTransaction[]
+
+  @@index([workspaceId])
+  @@index([customerId])
+  @@map("customer_credits")
+}
+
+model CustomerCreditTransaction {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  creditId     String   @map("credit_id") @db.Uuid
+  invoiceId    String?  @map("invoice_id") @db.Uuid
+  amount       Decimal  @db.Decimal(14, 2)
+  type         String   @db.VarChar(50)
+  notes        String?  @db.Text
+  createdById  String?  @map("created_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  credit CustomerCredit @relation(fields: [creditId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([creditId])
+  @@map("customer_credit_transactions")
 }
