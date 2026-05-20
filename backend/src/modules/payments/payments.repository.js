@@ -13,7 +13,9 @@ const PAYMENT_INCLUDE = {
   attachments:   { orderBy: { createdAt: 'desc' } },
 };
 
-const listPayments = async (workspaceId, { search, status, customerId, method, dateFrom, dateTo, page = 1, limit = 20, sort = 'paymentDate', order = 'desc' }) => {
+const listPayments = async (workspaceId, { search, status, customerId, method, dateFrom, dateTo, page = 1, limit = 20, sort = 'paymentDate', order = 'desc' } = {}) => {
+  page  = Math.max(1, parseInt(page,  10) || 1);
+  limit = Math.min(200, parseInt(limit, 10) || 20);
   const where = { workspaceId };
   if (status)     where.status = status;
   if (customerId) where.customerId = customerId;

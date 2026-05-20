@@ -46,7 +46,7 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <ToastContainer />
+      {ToastContainer}
       <PageHeader title="Payments">
         <Button onClick={() => navigate('/payments/new')}>
           <Plus className="h-4 w-4 mr-2" /> Record Payment

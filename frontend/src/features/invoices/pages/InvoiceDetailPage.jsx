@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Edit, Download, Send, CheckCircle, XCircle, Ban,
-  Copy, Loader2, Paperclip, Upload, Trash2, FileText,
+  Copy, Loader2, Paperclip, Upload, Trash2, FileText, CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '../../../components/shared/Toast.jsx';
@@ -222,6 +222,10 @@ export default function InvoiceDetailPage() {
   const canVoid      = ['issued', 'sent', 'overdue'].includes(invoice.status);
   const isTerminal   = ['paid', 'cancelled', 'void'].includes(invoice.status);
 
+  const outstandingBalance = Math.max(0, Number(invoice.totalAmount || 0) - Number(invoice.paidAmount || 0));
+  const canRecordPayment = outstandingBalance > 0 && ['issued', 'sent', 'partially_paid', 'overdue'].includes(invoice.status);
+  const recordPaymentUrl = `/payments/new?customerId=${invoice.customer?.id}&invoiceId=${invoice.id}&amount=${outstandingBalance.toFixed(2)}&currencyCode=${invoice.currencyCode || 'USD'}`;
+
   return (
     <div className="space-y-6">
       {ToastContainer}
@@ -259,6 +263,12 @@ export default function InvoiceDetailPage() {
             <Button size="sm" variant="outline" onClick={() => navigate(`/invoices/${id}/edit`)} className="gap-1.5">
               <Edit className="w-3.5 h-3.5" />
               Edit
+            </Button>
+          )}
+          {canRecordPayment && (
+            <Button size="sm" variant="outline" onClick={() => navigate(recordPaymentUrl)} disabled={!!actionLoading} className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
+              <CreditCard className="w-3.5 h-3.5" />
+              Record Payment
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={handleDownload} disabled={!!actionLoading} className="gap-1.5">

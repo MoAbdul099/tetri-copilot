@@ -22,7 +22,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'CAD', 'AUD'];
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function PaymentForm({ initial = {}, onSubmit, loading, submitLabel = 'Save' }) {
+export default function PaymentForm({ initial = {}, onSubmit, loading, submitLabel = 'Save', onCustomerChange }) {
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState({
     customerId:      initial.customerId     || '',
@@ -44,9 +44,13 @@ export default function PaymentForm({ initial = {}, onSubmit, loading, submitLab
     listCustomers({ status: 'active', limit: 200 })
       .then((r) => setCustomers(r.items || r))
       .catch(() => {});
+    if (initial.customerId && onCustomerChange) onCustomerChange(initial.customerId);
   }, []);
 
-  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+  const set = (field, value) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (field === 'customerId' && onCustomerChange) onCustomerChange(value);
+  };
 
   const validate = () => {
     const e = {};

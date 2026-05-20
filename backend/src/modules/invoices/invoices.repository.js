@@ -43,9 +43,14 @@ const listInvoices = async (workspaceId, {
   page = 1, limit = 20, search, status, customerId,
   dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc',
 } = {}) => {
+  page  = Math.max(1, parseInt(page,  10) || 1);
+  limit = Math.min(200, parseInt(limit, 10) || 20);
   const where = { workspaceId };
 
-  if (status) where.status = status;
+  if (status) {
+    const statuses = String(status).split(',').map((s) => s.trim()).filter(Boolean);
+    where.status = statuses.length === 1 ? statuses[0] : { in: statuses };
+  }
   if (customerId) where.customerId = customerId;
   if (dateFrom || dateTo) {
     where.issueDate = {};

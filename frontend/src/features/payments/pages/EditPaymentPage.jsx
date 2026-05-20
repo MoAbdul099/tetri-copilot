@@ -33,7 +33,7 @@ export default function EditPaymentPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <ToastContainer />
+      {ToastContainer}
       <PageHeader title={`Edit ${payment.paymentNumber}`} />
       <div className="rounded-lg border bg-card p-6">
         <PaymentForm initial={payment} onSubmit={handleSubmit} loading={loading} submitLabel="Save Changes" />

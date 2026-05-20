@@ -52,7 +52,7 @@ export default function PaymentDetailPage() {
 
   return (
     <div className="space-y-6">
-      <ToastContainer />
+      {ToastContainer}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">

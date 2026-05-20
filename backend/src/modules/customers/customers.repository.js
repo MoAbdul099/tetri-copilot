@@ -39,6 +39,8 @@ const generateCustomerCode = async (workspaceId) => {
 };
 
 const listCustomers = async (workspaceId, { page = 1, limit = 20, search, status, customerType, country, tagIds, sortBy = 'name', sortOrder = 'asc' } = {}) => {
+  page  = Math.max(1, parseInt(page,  10) || 1);
+  limit = Math.min(200, parseInt(limit, 10) || 20);
   const where = { workspaceId };
 
   if (status) where.status = status;
