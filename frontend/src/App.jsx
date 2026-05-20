@@ -25,6 +25,12 @@ import PaymentsPage from './features/payments/pages/PaymentsPage.jsx';
 import CreatePaymentPage from './features/payments/pages/CreatePaymentPage.jsx';
 import PaymentDetailPage from './features/payments/pages/PaymentDetailPage.jsx';
 import EditPaymentPage from './features/payments/pages/EditPaymentPage.jsx';
+import ReceivablesPage from './features/receivables/pages/ReceivablesPage.jsx';
+import AgingPage from './features/receivables/pages/AgingPage.jsx';
+import CustomerReceivablePage from './features/receivables/pages/CustomerReceivablePage.jsx';
+import CustomerReceivablesListPage from './features/receivables/pages/CustomerReceivablesListPage.jsx';
+import CollectionsPage from './features/receivables/pages/CollectionsPage.jsx';
+import StatementsPage from './features/receivables/pages/StatementsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -65,6 +71,12 @@ export default function App() {
           <Route path="/payments/new" element={<CreatePaymentPage />} />
           <Route path="/payments/:id" element={<PaymentDetailPage />} />
           <Route path="/payments/:id/edit" element={<EditPaymentPage />} />
+          <Route path="/receivables" element={<ReceivablesPage />} />
+          <Route path="/receivables/aging" element={<AgingPage />} />
+          <Route path="/receivables/customers" element={<CustomerReceivablesListPage />} />
+          <Route path="/receivables/customers/:id" element={<CustomerReceivablePage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
+          <Route path="/statements" element={<StatementsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

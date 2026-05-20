@@ -12,16 +12,22 @@ import {
   Menu,
   X,
   ChevronDown,
+  TrendingUp,
+  Activity,
+  Receipt,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/customers', label: 'Customers', icon: Users2 },
-  { to: '/invoices',  label: 'Invoices',  icon: FileText },
-  { to: '/payments',  label: 'Payments',  icon: CreditCard },
-  { to: '/members',   label: 'Members',   icon: Users },
-  { to: '/billing',   label: 'Billing',   icon: CreditCard },
-  { to: '/settings',  label: 'Settings',  icon: Settings },
+  { to: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { to: '/customers',    label: 'Customers',    icon: Users2 },
+  { to: '/invoices',     label: 'Invoices',     icon: FileText },
+  { to: '/payments',     label: 'Payments',     icon: CreditCard },
+  { to: '/receivables',  label: 'Receivables',  icon: TrendingUp },
+  { to: '/collections',  label: 'Collections',  icon: Activity },
+  { to: '/statements',   label: 'Statements',   icon: Receipt },
+  { to: '/members',      label: 'Members',      icon: Users },
+  { to: '/billing',      label: 'Billing',      icon: CreditCard },
+  { to: '/settings',     label: 'Settings',     icon: Settings },
 ];
 
 export default function AppLayout({ user, workspace }) {

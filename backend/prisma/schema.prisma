@@ -173,6 +173,33 @@ enum CustomerStatus {
   archived
 }
 
+enum CollectionActivityType {
+  phone_call
+  email
+  meeting
+  reminder
+  escalation
+  site_visit
+  other
+}
+
+enum CollectionStatus {
+  pending
+  contacted
+  awaiting_response
+  promise_to_pay
+  partially_settled
+  escalated
+  closed
+}
+
+enum PromiseStatus {
+  pending
+  fulfilled
+  broken
+  cancelled
+}
+
 // =========================================================
 // LOCALIZATION
 // =========================================================
@@ -292,6 +319,8 @@ model User {
   generatedDocuments        GeneratedDocument[]
   activityLogs              ActivityLog[]
   adminAuditLogs            AuditLog[]
+  assignedCollections       CollectionActivity[] @relation("CollectionAssigned")
+  createdCollections        CollectionActivity[] @relation("CollectionCreated")
 
   @@index([clerkUserId])
   @@index([email])
@@ -339,8 +368,11 @@ model Workspace {
   aiUsageLogs       AiUsageLog[]
   documentTemplates DocumentTemplate[]
   generatedDocuments GeneratedDocument[]
-  activityLogs      ActivityLog[]
-  auditLogs         AuditLog[]
+  activityLogs        ActivityLog[]
+  auditLogs           AuditLog[]
+  collectionActivities CollectionActivity[]
+  paymentPromises     PaymentPromise[]
+  statementRuns       StatementRun[]
 
   @@map("workspaces")
 }
@@ -575,8 +607,11 @@ model Customer {
   tagAssignments    CustomerTagAssignment[]
   invoices          Invoice[]
   recurringInvoices RecurringInvoice[]
-  payments          Payment[]
-  credits           CustomerCredit[]
+  payments             Payment[]
+  credits              CustomerCredit[]
+  collectionActivities CollectionActivity[]
+  paymentPromises      PaymentPromise[]
+  statementRuns        StatementRun[]
 
   @@unique([workspaceId, customerCode])
   @@index([workspaceId])
@@ -1315,4 +1350,74 @@ model CustomerCreditTransaction {
   @@index([workspaceId])
   @@index([creditId])
   @@map("customer_credit_transactions")
+}
+
+// =========================================================
+// RECEIVABLES — COLLECTIONS & STATEMENTS
+// =========================================================
+
+model CollectionActivity {
+  id               String                 @id @default(uuid()) @db.Uuid
+  workspaceId      String                 @map("workspace_id") @db.Uuid
+  customerId       String                 @map("customer_id") @db.Uuid
+  invoiceId        String?                @map("invoice_id") @db.Uuid
+  activityType     CollectionActivityType @default(phone_call) @map("activity_type")
+  status           CollectionStatus       @default(pending)
+  activityDate     DateTime               @map("activity_date") @db.Date
+  notes            String?                @db.Text
+  outcome          String?                @db.Text
+  nextFollowUpDate DateTime?              @map("next_follow_up_date") @db.Date
+  assignedToUserId String?                @map("assigned_to_user_id") @db.Uuid
+  createdByUserId  String?                @map("created_by_user_id") @db.Uuid
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  assignedUser  User?     @relation("CollectionAssigned", fields: [assignedToUserId], references: [id])
+  createdByUser User?     @relation("CollectionCreated", fields: [createdByUserId], references: [id])
+
+  @@index([workspaceId])
+  @@index([customerId])
+  @@index([status])
+  @@map("collection_activities")
+}
+
+model PaymentPromise {
+  id              String        @id @default(uuid()) @db.Uuid
+  workspaceId     String        @map("workspace_id") @db.Uuid
+  customerId      String        @map("customer_id") @db.Uuid
+  invoiceId       String?       @map("invoice_id") @db.Uuid
+  promisedAmount  Decimal       @map("promised_amount") @db.Decimal(14, 2)
+  promisedDate    DateTime      @map("promised_date") @db.Date
+  status          PromiseStatus @default(pending)
+  notes           String?       @db.Text
+  createdByUserId String?       @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer      Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([workspaceId])
+  @@index([customerId])
+  @@map("payment_promises")
+}
+
+model StatementRun {
+  id                String   @id @default(uuid()) @db.Uuid
+  workspaceId       String   @map("workspace_id") @db.Uuid
+  customerId        String   @map("customer_id") @db.Uuid
+  statementType     String   @default("full") @map("statement_type") @db.VarChar(50)
+  periodStart       DateTime @map("period_start") @db.Date
+  periodEnd         DateTime @map("period_end") @db.Date
+  generatedByUserId String?  @map("generated_by_user_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer  Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([workspaceId])
+  @@index([customerId])
+  @@map("statement_runs")
 }

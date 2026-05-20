@@ -21,6 +21,9 @@ const billingRoutes = require('./modules/billing/billing.routes');
 const customersRoutes = require('./modules/customers/customers.routes');
 const invoicesRoutes = require('./modules/invoices/invoices.routes');
 const paymentsRoutes = require('./modules/payments/payments.routes');
+const receivablesRoutes = require('./modules/receivables/receivables.routes');
+const collectionsRoutes = require('./modules/collections/collections.routes');
+const statementsRoutes = require('./modules/statements/statements.routes');
 
 const app = express();
 
@@ -62,6 +65,9 @@ app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/customers', customersRoutes);
 app.use('/api/v1/invoices', invoicesRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
+app.use('/api/v1/receivables', receivablesRoutes);
+app.use('/api/v1/collections', collectionsRoutes);
+app.use('/api/v1/statements', statementsRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);
