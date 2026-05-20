@@ -311,8 +311,8 @@ const sendInvoice = async (id, workspaceId, userId, role, rawPayload) => {
     deliveryMethod: 'email',
   });
 
-  // Transition to sent if currently issued
-  if (existing.status === 'issued' && result.success) {
+  // Transition to sent if currently issued (success OR skipped — user intent is clear)
+  if (existing.status === 'issued' && (result.success || result.skipped)) {
     await transitionStatus(id, workspaceId, userId, role, 'sent');
   }
 
