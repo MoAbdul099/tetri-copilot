@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { sendInvoice } from '../services/invoicesService.js';
 
-export default function SendInvoiceDialog({ invoice, onClose, onSent, toast }) {
+export default function SendInvoiceDialog({ invoice, onClose, onSent, onToast }) {
   const [form, setForm] = useState({
     to: invoice.customer?.email || '',
     cc: '',
@@ -28,14 +28,14 @@ export default function SendInvoiceDialog({ invoice, onClose, onSent, toast }) {
         message: form.message.trim() || null,
       });
       if (result.skipped) {
-        toast?.('Email delivery skipped — SMTP not configured', 'warning');
+        onToast?.('warning', 'Email delivery skipped — SMTP not configured');
       } else {
-        toast?.(`Invoice sent to ${result.to}`, 'success');
+        onToast?.('success', `Invoice sent to ${result.to}`);
       }
       onSent?.(result);
       onClose();
     } catch (err) {
-      toast?.(err.response?.data?.message || 'Failed to send invoice', 'error');
+      onToast?.('error', err.response?.data?.message || 'Failed to send invoice');
     } finally {
       setLoading(false);
     }

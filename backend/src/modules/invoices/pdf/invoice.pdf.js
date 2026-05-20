@@ -15,6 +15,35 @@ const fmt = (val, currency = '') => {
   return `${currency} ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
 };
 
+// Amount in words
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+  'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const CURRENCY_NAMES = {
+  USD: 'US Dollars', EUR: 'Euros', GBP: 'Pounds Sterling', AED: 'UAE Dirhams',
+  SAR: 'Saudi Riyals', CAD: 'Canadian Dollars', AUD: 'Australian Dollars',
+  CHF: 'Swiss Francs', JPY: 'Japanese Yen', SGD: 'Singapore Dollars',
+};
+const _nw = (n) => {
+  if (n === 0) return '';
+  if (n < 20) return ONES[n];
+  if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+  if (n < 1000) return ONES[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + _nw(n % 100) : '');
+  if (n < 1e6) return _nw(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + _nw(n % 1000) : '');
+  if (n < 1e9) return _nw(Math.floor(n / 1e6)) + ' Million' + (n % 1e6 ? ' ' + _nw(n % 1e6) : '');
+  return _nw(Math.floor(n / 1e9)) + ' Billion' + (n % 1e9 ? ' ' + _nw(n % 1e9) : '');
+};
+const amountInWords = (amount, currency = '') => {
+  const n = Math.abs(Number(amount) || 0);
+  const whole = Math.floor(n);
+  const cents = Math.round((n - whole) * 100);
+  const name = CURRENCY_NAMES[currency] || currency;
+  const words = whole === 0 ? 'Zero' : _nw(whole);
+  return cents > 0
+    ? `${words} ${name} and ${String(cents).padStart(2, '0')}/100`
+    : `${words} ${name} Only`;
+};
+
 const fmtDate = (d) => {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -174,6 +203,13 @@ const generateInvoicePdf = (invoice, company) =>
     doc.text(`${currency} ${Number(invoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
       490, y + 6, { width: W - 440, align: 'right' });
     y += 36;
+
+    // ── Amount in words ────────────────────────────────────
+    const wordsText = amountInWords(invoice.totalAmount, currency);
+    doc.font('Helvetica-Bold').fontSize(7.5).fillColor(COLORS.muted).text('AMOUNT IN WORDS', 50, y);
+    y += 12;
+    doc.font('Helvetica').fontSize(9).fillColor(COLORS.text).text(wordsText, 50, y, { width: W });
+    y += 20;
 
     // ── Notes / Terms ──────────────────────────────────────
     if (invoice.notes || invoice.terms) {

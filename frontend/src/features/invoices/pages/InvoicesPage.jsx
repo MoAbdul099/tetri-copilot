@@ -66,7 +66,7 @@ function MenuItem({ icon, label, onClick, danger }) {
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
-  const toast = useToast();
+  const { showToast, ToastContainer } = useToast();
 
   const [invoices, setInvoices] = useState([]);
   const [total, setTotal] = useState(0);
@@ -86,7 +86,7 @@ export default function InvoicesPage() {
       setTotal(result.total || 0);
       setPages(result.pages || 1);
     } catch {
-      toast('Failed to load invoices', 'error');
+      showToast('error', 'Failed to load invoices');
     } finally {
       setLoading(false);
     }
@@ -101,11 +101,11 @@ export default function InvoicesPage() {
     setDeleting(true);
     try {
       await deleteInvoice(deleteTarget.id);
-      toast('Invoice deleted', 'success');
+      showToast('success', 'Invoice deleted');
       setDeleteTarget(null);
       load();
     } catch (err) {
-      toast(err.response?.data?.message || 'Failed to delete', 'error');
+      showToast('error', err.response?.data?.message || 'Failed to delete');
     } finally {
       setDeleting(false);
     }
@@ -114,10 +114,10 @@ export default function InvoicesPage() {
   const handleDuplicate = async (inv) => {
     try {
       const newInv = await duplicateInvoice(inv.id);
-      toast('Invoice duplicated', 'success');
+      showToast('success', 'Invoice duplicated');
       navigate(`/invoices/${newInv.id}`);
     } catch {
-      toast('Failed to duplicate invoice', 'error');
+      showToast('error', 'Failed to duplicate invoice');
     }
   };
 
@@ -125,12 +125,13 @@ export default function InvoicesPage() {
     try {
       await downloadInvoicePdf(inv.id, inv.invoiceNumber);
     } catch {
-      toast('Failed to download PDF', 'error');
+      showToast('error', 'Failed to download PDF');
     }
   };
 
   return (
     <div className="space-y-6">
+      {ToastContainer}
       <PageHeader title="Invoices" subtitle={`${total} invoice${total !== 1 ? 's' : ''}`}>
         <Button onClick={() => navigate('/invoices/new')} className="gap-2">
           <Plus className="w-4 h-4" />

@@ -150,7 +150,7 @@ export default function AppLayout({ user, workspace }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto py-6 px-6 md:px-8">
           <Outlet />
         </main>
       </div>

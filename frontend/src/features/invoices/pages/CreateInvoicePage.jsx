@@ -8,17 +8,17 @@ import { createInvoice } from '../services/invoicesService.js';
 
 export default function CreateInvoicePage() {
   const navigate = useNavigate();
-  const toast = useToast();
+  const { showToast, ToastContainer } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (payload) => {
     setLoading(true);
     try {
       const inv = await createInvoice(payload);
-      toast('Invoice created', 'success');
+      showToast('success', 'Invoice created');
       navigate(`/invoices/${inv.id}`);
     } catch (err) {
-      toast(err.response?.data?.message || 'Failed to create invoice', 'error');
+      showToast('error', err.response?.data?.message || 'Failed to create invoice');
     } finally {
       setLoading(false);
     }
@@ -26,6 +26,7 @@ export default function CreateInvoicePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {ToastContainer}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/invoices')}>
           <ArrowLeft className="w-4 h-4" />

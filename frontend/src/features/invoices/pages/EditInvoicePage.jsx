@@ -9,7 +9,7 @@ import { getInvoice, updateInvoice } from '../services/invoicesService.js';
 export default function EditInvoicePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const toast = useToast();
+  const { showToast, ToastContainer } = useToast();
 
   const [invoice, setInvoice] = useState(null);
   const [loadingInv, setLoadingInv] = useState(true);
@@ -18,7 +18,7 @@ export default function EditInvoicePage() {
   useEffect(() => {
     getInvoice(id)
       .then(setInvoice)
-      .catch(() => { toast('Invoice not found', 'error'); navigate('/invoices'); })
+      .catch(() => { showToast('error', 'Invoice not found'); navigate('/invoices'); })
       .finally(() => setLoadingInv(false));
   }, [id]);
 
@@ -26,10 +26,10 @@ export default function EditInvoicePage() {
     setSaving(true);
     try {
       await updateInvoice(id, payload);
-      toast('Invoice updated', 'success');
+      showToast('success', 'Invoice updated');
       navigate(`/invoices/${id}`);
     } catch (err) {
-      toast(err.response?.data?.message || 'Failed to update invoice', 'error');
+      showToast('error', err.response?.data?.message || 'Failed to update invoice');
     } finally {
       setSaving(false);
     }
@@ -68,6 +68,7 @@ export default function EditInvoicePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {ToastContainer}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/invoices/${id}`)}>
           <ArrowLeft className="w-4 h-4" />

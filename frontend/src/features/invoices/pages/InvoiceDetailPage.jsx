@@ -15,6 +15,37 @@ import {
   deleteInvoiceAttachment, getAttachmentDownloadUrl,
 } from '../services/invoicesService.js';
 
+// ── Amount in words ────────────────────────────────────────
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+  'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const CURRENCY_NAMES = {
+  USD: 'US Dollars', EUR: 'Euros', GBP: 'Pounds Sterling', AED: 'UAE Dirhams',
+  SAR: 'Saudi Riyals', CAD: 'Canadian Dollars', AUD: 'Australian Dollars',
+  CHF: 'Swiss Francs', JPY: 'Japanese Yen', SGD: 'Singapore Dollars',
+};
+
+const _numWords = (n) => {
+  if (n === 0) return '';
+  if (n < 20) return ONES[n];
+  if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+  if (n < 1000) return ONES[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + _numWords(n % 100) : '');
+  if (n < 1e6) return _numWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + _numWords(n % 1000) : '');
+  if (n < 1e9) return _numWords(Math.floor(n / 1e6)) + ' Million' + (n % 1e6 ? ' ' + _numWords(n % 1e6) : '');
+  return _numWords(Math.floor(n / 1e9)) + ' Billion' + (n % 1e9 ? ' ' + _numWords(n % 1e9) : '');
+};
+
+const amountInWords = (amount, currency = '') => {
+  const n = Math.abs(Number(amount) || 0);
+  const whole = Math.floor(n);
+  const cents = Math.round((n - whole) * 100);
+  const currencyName = CURRENCY_NAMES[currency] || currency;
+  const words = whole === 0 ? 'Zero' : _numWords(whole);
+  return cents > 0
+    ? `${words} ${currencyName} and ${String(cents).padStart(2, '0')}/100`
+    : `${words} ${currencyName} Only`;
+};
+
 const fmt = (n, currency = '') =>
   `${currency} ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
 
@@ -53,7 +84,7 @@ const TABS = ['Overview', 'Line Items', 'Delivery History', 'Attachments'];
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const toast = useToast();
+  const { showToast, ToastContainer } = useToast();
 
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +106,7 @@ export default function InvoiceDetailPage() {
       const inv = await getInvoice(id);
       setInvoice(inv);
     } catch {
-      toast('Invoice not found', 'error');
+      showToast('error', 'Invoice not found');
       navigate('/invoices');
     } finally {
       setLoading(false);
@@ -90,7 +121,7 @@ export default function InvoiceDetailPage() {
       const atts = await listInvoiceAttachments(id);
       setAttachments(atts || []);
     } catch {
-      toast('Failed to load attachments', 'error');
+      showToast('error', 'Failed to load attachments');
     }
   }, [id, activeTab]);
 
@@ -101,9 +132,9 @@ export default function InvoiceDetailPage() {
     try {
       const updated = await fn();
       setInvoice(updated);
-      toast(`Invoice ${label}`, 'success');
+      showToast('success', `Invoice ${label}`);
     } catch (err) {
-      toast(err.response?.data?.message || `Failed to ${label} invoice`, 'error');
+      showToast('error', err.response?.data?.message || `Failed to ${label} invoice`);
     } finally {
       setActionLoading('');
     }
@@ -122,10 +153,10 @@ export default function InvoiceDetailPage() {
     setActionLoading('duplicate');
     try {
       const newInv = await duplicateInvoice(id);
-      toast('Invoice duplicated', 'success');
+      showToast('success', 'Invoice duplicated');
       navigate(`/invoices/${newInv.id}`);
     } catch {
-      toast('Failed to duplicate', 'error');
+      showToast('error', 'Failed to duplicate');
     } finally {
       setActionLoading('');
     }
@@ -135,7 +166,7 @@ export default function InvoiceDetailPage() {
     try {
       await downloadInvoicePdf(id, invoice.invoiceNumber);
     } catch {
-      toast('Failed to download PDF', 'error');
+      showToast('error', 'Failed to download PDF');
     } finally {
       setActionLoading('');
     }
@@ -149,10 +180,10 @@ export default function InvoiceDetailPage() {
       const fd = new FormData();
       fd.append('file', file);
       await uploadInvoiceAttachment(id, fd);
-      toast('File uploaded', 'success');
+      showToast('success', 'File uploaded');
       loadAttachments();
     } catch (err) {
-      toast(err.response?.data?.message || 'Upload failed', 'error');
+      showToast('error', err.response?.data?.message || 'Upload failed');
     } finally {
       setAttLoading(false);
       e.target.value = '';
@@ -164,11 +195,11 @@ export default function InvoiceDetailPage() {
     setDeletingAtt(true);
     try {
       await deleteInvoiceAttachment(id, deleteAtt.id);
-      toast('Attachment deleted', 'success');
+      showToast('success', 'Attachment deleted');
       setDeleteAtt(null);
       loadAttachments();
     } catch {
-      toast('Failed to delete attachment', 'error');
+      showToast('error', 'Failed to delete attachment');
     } finally {
       setDeletingAtt(false);
     }
@@ -193,6 +224,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-6">
+      {ToastContainer}
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
@@ -289,7 +321,7 @@ export default function InvoiceDetailPage() {
           invoice={invoice}
           onClose={() => setShowSend(false)}
           onSent={() => load()}
-          toast={(msg, type) => toast(msg, type)}
+          onToast={(type, msg) => showToast(type, msg)}
         />
       )}
 
@@ -382,6 +414,10 @@ function OverviewTab({ invoice }) {
           <InfoRow label="Tax" value={fmt(invoice.taxTotal, invoice.currencyCode)} />
         )}
         <InfoRow label="Total Due" value={<span className="font-bold text-tetri-primary">{fmt(invoice.totalAmount, invoice.currencyCode)}</span>} />
+        <div className="pt-3 border-t border-tetri-border/60 mt-1">
+          <p className="text-xs text-tetri-neutral mb-0.5">Amount in Words</p>
+          <p className="text-sm font-medium text-tetri-text italic">{amountInWords(invoice.totalAmount, invoice.currencyCode)}</p>
+        </div>
       </SectionCard>
 
       {(invoice.notes || invoice.terms) && (
