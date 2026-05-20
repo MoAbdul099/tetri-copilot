@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Zap, Plus, Trash2 } from 'lucide-react';
-import axios from 'axios';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+import api from '../../../lib/api';
 
 const fmtCcy = (v, ccy = '') => `${ccy} ${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
 
@@ -21,19 +19,11 @@ export default function AllocationEditor({ payment, onAllocate, onAutoAllocate, 
     if (!customerId) return;
     setLoadingInvoices(true);
 
-    const wid = localStorage.getItem('activeWorkspaceId') || '';
-    const getToken = async () => {
-      try { return await window.Clerk?.session?.getToken(); } catch { return null; }
-    };
-
-    getToken().then((token) => {
-      axios.get(`${API}/invoices`, {
-        params: { workspaceId: wid, customerId, status: 'issued,sent,partially_paid,overdue', limit: 100 },
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }).then((r) => {
-        setInvoices(r.data?.data?.items || []);
-      }).catch(() => {}).finally(() => setLoadingInvoices(false));
-    });
+    api.get('/api/v1/invoices', {
+      params: { customerId, status: 'issued,sent,partially_paid,overdue', limit: 100 },
+    }).then((r) => {
+      setInvoices(r.data?.data?.items || []);
+    }).catch(() => {}).finally(() => setLoadingInvoices(false));
   }, [customerId]);
 
   const outstanding = (inv) => Number(inv.totalAmount) - Number(inv.paidAmount);

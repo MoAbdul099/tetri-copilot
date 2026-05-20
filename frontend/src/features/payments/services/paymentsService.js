@@ -1,57 +1,27 @@
-import axios from 'axios';
+import api from '../../../lib/api';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
-const authHeader = async () => {
-  const { getToken } = await import('@clerk/clerk-react').then((m) => m.useAuth?.() ?? {});
-  return {};
-};
-
-const client = axios.create({ baseURL: API, withCredentials: true });
-
-client.interceptors.request.use(async (config) => {
-  try {
-    const { Clerk } = window;
-    if (Clerk?.session) {
-      const token = await Clerk.session.getToken();
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (_) {}
-  return config;
-});
-
-const workspaceParam = () => {
-  const match = window.location.pathname.match(/\/workspaces\/([^/]+)/);
-  return match ? match[1] : null;
-};
-
-const wid = () => {
-  const id = localStorage.getItem('activeWorkspaceId');
-  return id || '';
-};
-
-const withWid = (params = {}) => ({ ...params, workspaceId: wid() });
-
-export const listPayments   = (params = {}) => client.get('/payments',        { params: withWid(params) }).then((r) => r.data.data);
-export const getPayment     = (id)          => client.get(`/payments/${id}`,  { params: withWid() }).then((r) => r.data.data);
-export const recordPayment  = (data)        => client.post('/payments',        { ...data, ...withWid() }).then((r) => r.data.data);
-export const updatePayment  = (id, data)    => client.patch(`/payments/${id}`, { ...data, ...withWid() }).then((r) => r.data.data);
-export const postPayment    = (id)          => client.post(`/payments/${id}/post`,    withWid()).then((r) => r.data.data);
-export const reversePayment = (id, data)    => client.post(`/payments/${id}/reverse`, { ...data, ...withWid() }).then((r) => r.data.data);
-export const voidPayment    = (id)          => client.post(`/payments/${id}/void`,    withWid()).then((r) => r.data.data);
-export const allocatePayment = (id, data)   => client.post(`/payments/${id}/allocate`, { ...data, ...withWid() }).then((r) => r.data.data);
-export const autoAllocate   = (id)          => client.post(`/payments/${id}/auto-allocate`, withWid()).then((r) => r.data.data);
-export const removeAllocation = (id, allocationId) => client.delete(`/payments/${id}/allocations/${allocationId}`, { params: withWid() }).then((r) => r.data.data);
-export const createCredit   = (id, amount)  => client.post(`/payments/${id}/credits`, { amount, ...withWid() }).then((r) => r.data.data);
-export const listCredits    = (params = {}) => client.get('/payments/credits',  { params: withWid(params) }).then((r) => r.data.data);
-export const applyCredit    = (id, data)    => client.post(`/payments/credits/${id}/apply`, { ...data, ...withWid() }).then((r) => r.data.data);
-export const getStats       = ()            => client.get('/payments/stats',    { params: withWid() }).then((r) => r.data.data);
+export const listPayments    = (params = {})    => api.get('/api/v1/payments',              { params }).then((r) => r.data.data);
+export const getPayment      = (id)             => api.get(`/api/v1/payments/${id}`).then((r) => r.data.data);
+export const recordPayment   = (data)           => api.post('/api/v1/payments', data).then((r) => r.data.data);
+export const updatePayment   = (id, data)       => api.patch(`/api/v1/payments/${id}`, data).then((r) => r.data.data);
+export const postPayment     = (id)             => api.post(`/api/v1/payments/${id}/post`).then((r) => r.data.data);
+export const reversePayment  = (id, data)       => api.post(`/api/v1/payments/${id}/reverse`, data).then((r) => r.data.data);
+export const voidPayment     = (id)             => api.post(`/api/v1/payments/${id}/void`).then((r) => r.data.data);
+export const allocatePayment = (id, data)       => api.post(`/api/v1/payments/${id}/allocate`, data).then((r) => r.data.data);
+export const autoAllocate    = (id)             => api.post(`/api/v1/payments/${id}/auto-allocate`).then((r) => r.data.data);
+export const removeAllocation = (id, allocId)  => api.delete(`/api/v1/payments/${id}/allocations/${allocId}`).then((r) => r.data.data);
+export const createCredit    = (id, amount)     => api.post(`/api/v1/payments/${id}/credits`, { amount }).then((r) => r.data.data);
+export const listCredits     = (params = {})    => api.get('/api/v1/payments/credits', { params }).then((r) => r.data.data);
+export const applyCredit     = (id, data)       => api.post(`/api/v1/payments/credits/${id}/apply`, data).then((r) => r.data.data);
+export const getStats        = ()               => api.get('/api/v1/payments/stats').then((r) => r.data.data);
 
 export const uploadAttachment = (id, file) => {
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('workspaceId', wid());
-  return client.post(`/payments/${id}/attachments`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data);
+  return api.post(`/api/v1/payments/${id}/attachments`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then((r) => r.data.data);
 };
+
 export const deleteAttachment = (id, attachmentId) =>
-  client.delete(`/payments/${id}/attachments/${attachmentId}`, { params: withWid() });
+  api.delete(`/api/v1/payments/${id}/attachments/${attachmentId}`);
