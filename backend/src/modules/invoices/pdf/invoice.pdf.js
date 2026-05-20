@@ -246,7 +246,8 @@ const generateInvoicePdf = (invoice, company) =>
     // Grand total band
     y += 4;
     const GT_H = 28;
-    doc.rect(TLABEL_X - 10, y, TVAL_X - TLABEL_X + TVAL_W + 10, GT_H).fill(C.primary);
+    const GT_X = TLABEL_X - 10;
+    doc.rect(GT_X, y, MARGIN + W - GT_X, GT_H).fill(C.primary);
     doc.font('Helvetica-Bold').fontSize(10).fillColor(C.white)
       .text('TOTAL DUE', TLABEL_X, y + 9, { width: TLABEL_W, align: 'right', lineBreak: false });
     doc.font('Helvetica-Bold').fontSize(11).fillColor(C.white)
