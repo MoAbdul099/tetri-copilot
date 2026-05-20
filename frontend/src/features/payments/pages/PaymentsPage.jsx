@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PageHeader from '@/components/shared/PageHeader';
 import PaymentStatusBadge from '../components/PaymentStatusBadge';
 import { listPayments } from '../services/paymentsService';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '../../../components/shared/Toast.jsx';
 
 const fmtDate  = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 const fmtMoney = (v, ccy = '') => `${ccy} ${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`.trim();

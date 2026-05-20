@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '@/components/shared/PageHeader';
 import PaymentForm from '../components/PaymentForm';
 import { getPayment, updatePayment } from '../services/paymentsService';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '../../../components/shared/Toast.jsx';
 
 export default function EditPaymentPage() {
   const { id } = useParams();

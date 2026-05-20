@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/shared/PageHeader';
 import PaymentForm from '../components/PaymentForm';
 import { recordPayment } from '../services/paymentsService';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '../../../components/shared/Toast.jsx';
 
 export default function CreatePaymentPage() {
   const navigate = useNavigate();
