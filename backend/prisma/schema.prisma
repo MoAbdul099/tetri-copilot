@@ -52,10 +52,12 @@ enum SubscriptionStatus {
 
 enum InvoiceStatus {
   draft
+  issued
   sent
   paid
   overdue
   cancelled
+  void
 }
 
 enum ExpenseStatus {
@@ -661,27 +663,38 @@ model CustomerTagAssignment {
 // =========================================================
 
 model Invoice {
-  id              String        @id @default(uuid()) @db.Uuid
-  workspaceId     String        @map("workspace_id") @db.Uuid
-  customerId      String?       @map("customer_id") @db.Uuid
-  invoiceNumber   String        @map("invoice_number") @db.VarChar(100)
-  status          InvoiceStatus @default(draft)
-  issueDate       DateTime      @map("issue_date") @db.Date
-  dueDate         DateTime?     @map("due_date") @db.Date
-  currencyId      String?       @map("currency_id") @db.Uuid
-  subtotal        Decimal       @default(0) @db.Decimal(14, 2)
-  taxTotal        Decimal       @default(0) @map("tax_total") @db.Decimal(14, 2)
-  discountTotal   Decimal       @default(0) @map("discount_total") @db.Decimal(14, 2)
-  totalAmount     Decimal       @default(0) @map("total_amount") @db.Decimal(14, 2)
-  paidAmount      Decimal       @default(0) @map("paid_amount") @db.Decimal(14, 2)
-  notes           String?       @db.Text
-  terms           String?       @db.Text
-  languageId      String?       @map("language_id") @db.Uuid
-  sentAt          DateTime?     @map("sent_at") @db.Timestamptz(6)
-  paidAt          DateTime?     @map("paid_at") @db.Timestamptz(6)
-  createdByUserId String?       @map("created_by_user_id") @db.Uuid
-  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String        @id @default(uuid()) @db.Uuid
+  workspaceId       String        @map("workspace_id") @db.Uuid
+  customerId        String?       @map("customer_id") @db.Uuid
+  customerContactId String?       @map("customer_contact_id") @db.Uuid
+  invoiceNumber     String        @map("invoice_number") @db.VarChar(100)
+  status            InvoiceStatus @default(draft)
+  issueDate         DateTime      @map("issue_date") @db.Date
+  dueDate           DateTime?     @map("due_date") @db.Date
+  currencyCode      String        @default("USD") @map("currency_code") @db.VarChar(10)
+  currencyId        String?       @map("currency_id") @db.Uuid
+  referenceNumber   String?       @map("reference_number") @db.VarChar(100)
+  poNumber          String?       @map("po_number") @db.VarChar(100)
+  customerReference String?       @map("customer_reference") @db.VarChar(100)
+  billingAddress    Json?         @map("billing_address")
+  subtotal          Decimal       @default(0) @db.Decimal(14, 2)
+  taxTotal          Decimal       @default(0) @map("tax_total") @db.Decimal(14, 2)
+  discountTotal     Decimal       @default(0) @map("discount_total") @db.Decimal(14, 2)
+  totalAmount       Decimal       @default(0) @map("total_amount") @db.Decimal(14, 2)
+  paidAmount        Decimal       @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  notes             String?       @db.Text
+  terms             String?       @db.Text
+  internalComments  String?       @map("internal_comments") @db.Text
+  languageId        String?       @map("language_id") @db.Uuid
+  issuedAt          DateTime?     @map("issued_at") @db.Timestamptz(6)
+  sentAt            DateTime?     @map("sent_at") @db.Timestamptz(6)
+  cancelledAt       DateTime?     @map("cancelled_at") @db.Timestamptz(6)
+  voidedAt          DateTime?     @map("voided_at") @db.Timestamptz(6)
+  voidReason        String?       @map("void_reason") @db.Text
+  paidAt            DateTime?     @map("paid_at") @db.Timestamptz(6)
+  createdByUserId   String?       @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -689,9 +702,12 @@ model Invoice {
   language      Language? @relation(fields: [languageId], references: [id])
   createdByUser User?     @relation(fields: [createdByUserId], references: [id])
 
-  items     InvoiceItem[]
-  payments  InvoicePayment[]
-  reminders Reminder[]
+  items         InvoiceItem[]
+  payments      InvoicePayment[]
+  reminders     Reminder[]
+  statusHistory InvoiceStatusHistory[]
+  deliveryLogs  InvoiceDeliveryLog[]
+  attachments   InvoiceAttachment[]
 
   @@unique([workspaceId, invoiceNumber])
   @@index([workspaceId])
@@ -708,14 +724,74 @@ model InvoiceItem {
   description    String   @db.Text
   quantity       Decimal  @default(1) @db.Decimal(14, 4)
   unitPrice      Decimal  @default(0) @map("unit_price") @db.Decimal(14, 2)
-  taxRate        Decimal  @default(0) @map("tax_rate") @db.Decimal(10, 4)
+  discountRate   Decimal  @default(0) @map("discount_rate") @db.Decimal(10, 4)
   discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  taxRate        Decimal  @default(0) @map("tax_rate") @db.Decimal(10, 4)
+  taxAmount      Decimal  @default(0) @map("tax_amount") @db.Decimal(14, 2)
   lineTotal      Decimal  @default(0) @map("line_total") @db.Decimal(14, 2)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("invoice_items")
+}
+
+model InvoiceStatusHistory {
+  id          String        @id @default(uuid()) @db.Uuid
+  invoiceId   String        @map("invoice_id") @db.Uuid
+  workspaceId String        @map("workspace_id") @db.Uuid
+  fromStatus  InvoiceStatus? @map("from_status")
+  toStatus    InvoiceStatus @map("to_status")
+  changedById String?       @map("changed_by_id") @db.Uuid
+  reason      String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([workspaceId])
+  @@map("invoice_status_history")
+}
+
+model InvoiceDeliveryLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  sentById       String?  @map("sent_by_id") @db.Uuid
+  recipientEmail String   @map("recipient_email") @db.VarChar(255)
+  ccEmails       String?  @map("cc_emails") @db.Text
+  bccEmails      String?  @map("bcc_emails") @db.Text
+  subject        String?  @db.VarChar(500)
+  status         String   @default("sent") @db.VarChar(50)
+  errorMessage   String?  @map("error_message") @db.Text
+  deliveryMethod String   @default("email") @map("delivery_method") @db.VarChar(50)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([workspaceId])
+  @@map("invoice_delivery_logs")
+}
+
+model InvoiceAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  fileName       String   @map("file_name") @db.VarChar(255)
+  storedFileName String   @map("stored_file_name") @db.VarChar(255)
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  fileSize       BigInt   @map("file_size")
+  storagePath    String   @map("storage_path") @db.Text
+  description    String?  @db.Text
+  uploadedById   String?  @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([workspaceId])
+  @@map("invoice_attachments")
 }
 
 model InvoicePayment {
