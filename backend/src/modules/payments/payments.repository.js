@@ -1,7 +1,7 @@
 const prisma = require('../../lib/prisma');
 
 const PAYMENT_INCLUDE = {
-  customer: { select: { id: true, name: true, email: true, currencyCode: true } },
+  customer: { select: { id: true, name: true, email: true, defaultCurrency: true } },
   allocations: {
     include: {
       invoice: { select: { id: true, invoiceNumber: true, totalAmount: true, paidAmount: true, status: true, dueDate: true } },
