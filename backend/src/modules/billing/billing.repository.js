@@ -34,7 +34,7 @@ const findWorkspaceById = (id) =>
 const findWorkspaceOwner = (workspaceId) =>
   prisma.workspaceMember.findFirst({
     where: { workspaceId, role: 'owner', status: 'active' },
-    include: { user: { select: { email: true, firstName: true, lastName: true } } },
+    include: { user: { select: { email: true, fullName: true } } },
   });
 
 module.exports = {
