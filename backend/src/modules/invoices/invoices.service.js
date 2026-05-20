@@ -84,8 +84,13 @@ const formatInvoice = (inv) => ({
   })),
 });
 
-const getCompany = (workspaceId) =>
-  prisma.company.findUnique({ where: { workspaceId } });
+const getCompany = async (workspaceId) => {
+  const [company, settings] = await Promise.all([
+    prisma.company.findUnique({ where: { workspaceId } }),
+    prisma.companySettings.findUnique({ where: { workspaceId } }),
+  ]);
+  return company ? { ...company, brandColor: settings?.brandColor || null } : null;
+};
 
 // ── CRUD ──────────────────────────────────────────────────
 
@@ -311,8 +316,8 @@ const sendInvoice = async (id, workspaceId, userId, role, rawPayload) => {
     deliveryMethod: 'email',
   });
 
-  // Transition to sent if currently issued (success OR skipped — user intent is clear)
-  if (existing.status === 'issued' && (result.success || result.skipped)) {
+  // Always transition issued → sent when user explicitly sends (email outcome tracked in delivery log)
+  if (existing.status === 'issued') {
     await transitionStatus(id, workspaceId, userId, role, 'sent');
   }
 
