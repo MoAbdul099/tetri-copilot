@@ -1,14 +1,14 @@
 const PDFDocument = require('pdfkit');
 
-const COLORS = {
-  primary:    '#2563eb',
+const buildColors = (brandColor) => ({
+  primary:    brandColor || '#2563eb',
   text:       '#0f172a',
   muted:      '#64748b',
   border:     '#e2e8f0',
   bg:         '#f8fafc',
   white:      '#ffffff',
   error:      '#ef4444',
-};
+});
 
 const fmt = (val, currency = '') => {
   const n = Number(val ?? 0);
@@ -73,6 +73,7 @@ const generateInvoicePdf = (invoice, company) =>
     doc.on('end', () => resolve(Buffer.concat(buffers)));
     doc.on('error', reject);
 
+    const COLORS = buildColors(company?.brandColor);
     const W = doc.page.width - 100; // usable width
     const currency = invoice.currencyCode || '';
 

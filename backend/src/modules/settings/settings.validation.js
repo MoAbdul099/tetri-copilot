@@ -7,6 +7,7 @@ const patchSettingsSchema = z.object({
   reminderLeadDays: z.number().int().min(0, 'Cannot be negative').max(30).optional(),
   emailNotificationsEnabled: z.boolean().optional(),
   dashboardNotificationsEnabled: z.boolean().optional(),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color').optional(),
 });
 
 module.exports = { patchSettingsSchema };

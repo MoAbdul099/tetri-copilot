@@ -166,6 +166,7 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
             reminderLeadDays: 3,
             emailNotificationsEnabled: true,
             dashboardNotificationsEnabled: true,
+            brandColor: '#2563eb',
           }
         )
       )
@@ -185,6 +186,7 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
         reminderLeadDays: Number(form.reminderLeadDays),
         emailNotificationsEnabled: form.emailNotificationsEnabled,
         dashboardNotificationsEnabled: form.dashboardNotificationsEnabled,
+        brandColor: form.brandColor,
       });
       setForm(updated);
       onToast('success', 'Settings saved');
@@ -219,6 +221,35 @@ function WorkspaceSettingsTab({ isOwner, onToast }) {
           </Field>
           <Field label="Reminder Lead Days" id="s-lead">
             <Input id="s-lead" type="number" min={0} max={30} value={form?.reminderLeadDays ?? ''} onChange={set('reminderLeadDays')} readOnly={!isOwner} />
+          </Field>
+          <Field label="Invoice Brand Color" id="s-color" hint="Used in PDF invoice header and totals">
+            <div className="flex items-center gap-3">
+              <input
+                id="s-color"
+                type="color"
+                value={form?.brandColor || '#2563eb'}
+                onChange={(e) => isOwner && setForm((f) => ({ ...f, brandColor: e.target.value }))}
+                disabled={!isOwner}
+                className="h-10 w-14 rounded-lg border border-tetri-border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed p-0.5 bg-white"
+              />
+              <Input
+                value={form?.brandColor || '#2563eb'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                    isOwner && setForm((f) => ({ ...f, brandColor: val }));
+                  }
+                }}
+                readOnly={!isOwner}
+                maxLength={7}
+                className="font-mono w-28"
+                placeholder="#2563eb"
+              />
+              <div
+                className="h-10 w-10 rounded-lg border border-tetri-border flex-shrink-0"
+                style={{ backgroundColor: form?.brandColor || '#2563eb' }}
+              />
+            </div>
           </Field>
         </div>
       </div>

@@ -395,6 +395,7 @@ model CompanySettings {
   reminderLeadDays              Int      @default(3) @map("reminder_lead_days")
   emailNotificationsEnabled     Boolean  @default(true) @map("email_notifications_enabled")
   dashboardNotificationsEnabled Boolean  @default(true) @map("dashboard_notifications_enabled")
+  brandColor                    String?  @default("#2563eb") @map("brand_color") @db.VarChar(7)
   createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
