@@ -131,16 +131,12 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Invoices"
-        description={`${total} invoice${total !== 1 ? 's' : ''}`}
-        actions={
-          <Button onClick={() => navigate('/invoices/new')} className="gap-2">
-            <Plus className="w-4 h-4" />
-            New Invoice
-          </Button>
-        }
-      />
+      <PageHeader title="Invoices" subtitle={`${total} invoice${total !== 1 ? 's' : ''}`}>
+        <Button onClick={() => navigate('/invoices/new')} className="gap-2">
+          <Plus className="w-4 h-4" />
+          New Invoice
+        </Button>
+      </PageHeader>
 
       {/* Status tabs */}
       <div className="flex gap-1 border-b border-tetri-border">
