@@ -81,7 +81,7 @@ const generateInvoicePdf = (invoice, company) =>
     doc.rect(50, 40, W, 90).fill(COLORS.bg);
 
     // Company name
-    doc.font('Helvetica-Bold').fontSize(18).fillColor(COLORS.primary)
+    doc.font('Helvetica-Bold').fontSize(18).fillColor(COLORS.text)
       .text(company?.companyName || 'Your Company', 65, 55, { width: W / 2 });
 
     // Company details
@@ -187,9 +187,10 @@ const generateInvoicePdf = (invoice, company) =>
 
     // ── Totals ─────────────────────────────────────────────
     const totRow = (label, value, bold = false) => {
+      const display = typeof value === 'string' ? value : fmt(value, currency);
       doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(9).fillColor(bold ? COLORS.text : COLORS.muted);
       doc.text(label, 350, y, { width: 130, align: 'right' });
-      doc.text(fmt(value, currency), 490, y, { width: W - 440, align: 'right' });
+      doc.text(display, 490, y, { width: W - 440, align: 'right' });
       y += 16;
     };
 
