@@ -119,7 +119,12 @@ const createInvoice = async (workspaceId, userId, rawPayload) => {
 
   const items   = calcItems(rawItems);
   const totals  = calcTotals(items);
-  const data    = { ...rest, ...totals };
+  const data    = {
+    ...rest,
+    issueDate: new Date(rest.issueDate),
+    dueDate:   rest.dueDate ? new Date(rest.dueDate) : null,
+    ...totals,
+  };
 
   const inv = await repo.create(workspaceId, userId, data, items);
 
@@ -141,7 +146,12 @@ const updateInvoice = async (id, workspaceId, userId, role, rawPayload) => {
 
   const items  = rawItems ? calcItems(rawItems) : undefined;
   const totals = items ? calcTotals(items) : {};
-  const data   = { ...rest, ...totals };
+  const data   = {
+    ...rest,
+    ...(rest.issueDate ? { issueDate: new Date(rest.issueDate) } : {}),
+    ...(rest.dueDate !== undefined ? { dueDate: rest.dueDate ? new Date(rest.dueDate) : null } : {}),
+    ...totals,
+  };
 
   const inv = await repo.update(id, data, items);
 
