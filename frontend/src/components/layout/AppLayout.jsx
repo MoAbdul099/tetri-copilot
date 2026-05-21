@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Activity,
   Receipt,
+  ShoppingCart,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { to: '/receivables',  label: 'Receivables',  icon: TrendingUp },
   { to: '/collections',  label: 'Collections',  icon: Activity },
   { to: '/statements',   label: 'Statements',   icon: Receipt },
+  { to: '/expenses',     label: 'Expenses',     icon: ShoppingCart },
   { to: '/members',      label: 'Members',      icon: Users },
   { to: '/billing',      label: 'Billing',      icon: CreditCard },
   { to: '/settings',     label: 'Settings',     icon: Settings },

@@ -88,6 +88,13 @@ enum ExpenseStatus {
   submitted
   approved
   rejected
+  cancelled
+}
+
+enum ExpenseType {
+  company
+  employee
+  petty_cash
 }
 
 enum ReminderType {
@@ -321,6 +328,7 @@ model User {
   adminAuditLogs            AuditLog[]
   assignedCollections       CollectionActivity[] @relation("CollectionAssigned")
   createdCollections        CollectionActivity[] @relation("CollectionCreated")
+  createdSuppliers          Supplier[]           @relation("SupplierCreatedBy")
 
   @@index([clerkUserId])
   @@index([email])
@@ -371,8 +379,9 @@ model Workspace {
   activityLogs        ActivityLog[]
   auditLogs           AuditLog[]
   collectionActivities CollectionActivity[]
-  paymentPromises     PaymentPromise[]
-  statementRuns       StatementRun[]
+  paymentPromises      PaymentPromise[]
+  statementRuns        StatementRun[]
+  suppliers            Supplier[]
 
   @@map("workspaces")
 }
@@ -457,6 +466,8 @@ model CompanySettings {
   brandColor                    String?  @default("#2563eb") @map("brand_color") @db.VarChar(7)
   nextPaymentNumber             Int      @default(1) @map("next_payment_number")
   paymentPrefix                 String   @default("PAY") @map("payment_prefix") @db.VarChar(20)
+  nextExpenseNumber             Int      @default(1) @map("next_expense_number")
+  expensePrefix                 String   @default("EXP") @map("expense_prefix") @db.VarChar(20)
   createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -903,15 +914,20 @@ model RecurringInvoice {
 // =========================================================
 
 model ExpenseCategory {
-  id              String   @id @default(uuid()) @db.Uuid
-  workspaceId     String?  @map("workspace_id") @db.Uuid
-  name            String   @db.VarChar(150)
-  description     String?  @db.Text
-  isSystemDefault Boolean  @default(false) @map("is_system_default")
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String?  @map("workspace_id") @db.Uuid
+  name             String   @db.VarChar(150)
+  categoryCode     String?  @map("category_code") @db.VarChar(50)
+  description      String?  @db.Text
+  parentCategoryId String?  @map("parent_category_id") @db.Uuid
+  isSystemDefault  Boolean  @default(false) @map("is_system_default")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace       Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentCategory  ExpenseCategory?  @relation("CategoryParent", fields: [parentCategoryId], references: [id])
+  childCategories ExpenseCategory[] @relation("CategoryParent")
 
   expenses            Expense[] @relation("ExpenseCategory")
   aiSuggestedExpenses Expense[] @relation("AiSuggestedExpenseCategory")
@@ -921,35 +937,104 @@ model ExpenseCategory {
   @@map("expense_categories")
 }
 
+model Supplier {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  contactPerson   String?  @map("contact_person") @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  taxNumber       String?  @map("tax_number") @db.VarChar(100)
+  addressLine1    String?  @map("address_line1") @db.VarChar(255)
+  city            String?  @db.VarChar(150)
+  country         String?  @db.VarChar(150)
+  website         String?  @db.VarChar(255)
+  notes           String?  @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUser User?     @relation("SupplierCreatedBy", fields: [createdByUserId], references: [id])
+  expenses      Expense[]
+
+  @@index([workspaceId])
+  @@map("suppliers")
+}
+
 model Expense {
-  id                   String        @id @default(uuid()) @db.Uuid
-  workspaceId          String        @map("workspace_id") @db.Uuid
-  categoryId           String?       @map("category_id") @db.Uuid
-  vendorName           String?       @map("vendor_name") @db.VarChar(255)
-  description          String?       @db.Text
-  expenseDate          DateTime      @map("expense_date") @db.Date
-  currencyId           String?       @map("currency_id") @db.Uuid
-  amount               Decimal       @db.Decimal(14, 2)
-  taxAmount            Decimal?      @default(0) @map("tax_amount") @db.Decimal(14, 2)
-  status               ExpenseStatus @default(submitted)
-  receiptFileId        String?       @map("receipt_file_id") @db.Uuid
-  aiSuggestedCategoryId String?      @map("ai_suggested_category_id") @db.Uuid
-  aiConfidenceScore    Decimal?      @map("ai_confidence_score") @db.Decimal(5, 2)
-  createdByUserId      String?       @map("created_by_user_id") @db.Uuid
-  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                    String        @id @default(uuid()) @db.Uuid
+  workspaceId           String        @map("workspace_id") @db.Uuid
+  expenseNumber         String?       @map("expense_number") @db.VarChar(100)
+  expenseType           ExpenseType   @default(company) @map("expense_type")
+  categoryId            String?       @map("category_id") @db.Uuid
+  supplierId            String?       @map("supplier_id") @db.Uuid
+  vendorName            String?       @map("vendor_name") @db.VarChar(255)
+  description           String        @db.Text
+  expenseDate           DateTime      @map("expense_date") @db.Date
+  postingDate           DateTime?     @map("posting_date") @db.Date
+  currencyId            String?       @map("currency_id") @db.Uuid
+  currencyCode          String        @default("USD") @map("currency_code") @db.VarChar(10)
+  amount                Decimal       @db.Decimal(14, 2)
+  taxRate               Decimal?      @default(0) @map("tax_rate") @db.Decimal(10, 4)
+  taxAmount             Decimal?      @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  taxIncluded           Boolean       @default(false) @map("tax_included")
+  baseAmount            Decimal?      @map("base_amount") @db.Decimal(14, 2)
+  exchangeRate          Decimal?      @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  department            String?       @db.VarChar(150)
+  costCenter            String?       @map("cost_center") @db.VarChar(150)
+  project               String?       @db.VarChar(150)
+  referenceNumber       String?       @map("reference_number") @db.VarChar(100)
+  notes                 String?       @db.Text
+  status                ExpenseStatus @default(draft)
+  receiptFileId         String?       @map("receipt_file_id") @db.Uuid
+  aiSuggestedCategoryId String?       @map("ai_suggested_category_id") @db.Uuid
+  aiConfidenceScore     Decimal?      @map("ai_confidence_score") @db.Decimal(5, 2)
+  isDeleted             Boolean       @default(false) @map("is_deleted")
+  deletedAt             DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  deletedByUserId       String?       @map("deleted_by_user_id") @db.Uuid
+  createdByUserId       String?       @map("created_by_user_id") @db.Uuid
+  updatedByUserId       String?       @map("updated_by_user_id") @db.Uuid
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   workspace           Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   category            ExpenseCategory? @relation("ExpenseCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier            Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   currency            Currency?        @relation(fields: [currencyId], references: [id])
   receiptFile         File?            @relation("ExpenseReceipt", fields: [receiptFileId], references: [id], onDelete: SetNull)
   aiSuggestedCategory ExpenseCategory? @relation("AiSuggestedExpenseCategory", fields: [aiSuggestedCategoryId], references: [id], onDelete: SetNull)
   createdByUser       User?            @relation(fields: [createdByUserId], references: [id])
 
+  expenseAttachments ExpenseAttachment[]
+
+  @@unique([workspaceId, expenseNumber])
   @@index([workspaceId])
   @@index([categoryId])
+  @@index([supplierId])
   @@index([expenseDate])
+  @@index([status])
   @@map("expenses")
+}
+
+model ExpenseAttachment {
+  id               String   @id @default(uuid()) @db.Uuid
+  expenseId        String   @map("expense_id") @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  fileName         String   @map("file_name") @db.VarChar(255)
+  storedFileName   String   @map("stored_file_name") @db.VarChar(255)
+  mimeType         String   @map("mime_type") @db.VarChar(100)
+  fileSize         BigInt   @map("file_size")
+  storagePath      String   @map("storage_path") @db.Text
+  uploadedByUserId String?  @map("uploaded_by_user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+  @@index([workspaceId])
+  @@map("expense_attachments")
 }
 
 // =========================================================

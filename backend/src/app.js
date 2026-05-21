@@ -24,6 +24,9 @@ const paymentsRoutes = require('./modules/payments/payments.routes');
 const receivablesRoutes = require('./modules/receivables/receivables.routes');
 const collectionsRoutes = require('./modules/collections/collections.routes');
 const statementsRoutes = require('./modules/statements/statements.routes');
+const expenseCategoriesRoutes = require('./modules/expense-categories/expense-categories.routes');
+const suppliersRoutes = require('./modules/suppliers/suppliers.routes');
+const expensesRoutes = require('./modules/expenses/expenses.routes');
 
 const app = express();
 
@@ -68,6 +71,9 @@ app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/receivables', receivablesRoutes);
 app.use('/api/v1/collections', collectionsRoutes);
 app.use('/api/v1/statements', statementsRoutes);
+app.use('/api/v1/expense-categories', expenseCategoriesRoutes);
+app.use('/api/v1/suppliers', suppliersRoutes);
+app.use('/api/v1/expenses', expensesRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);
