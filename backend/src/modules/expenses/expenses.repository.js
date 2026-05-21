@@ -94,12 +94,21 @@ const list = async (workspaceId, {
 const findById = (id, workspaceId) =>
   prisma.expense.findFirst({ where: { id, workspaceId, isDeleted: false }, include: EXPENSE_INCLUDE });
 
+// ── Date coercion ──────────────────────────────────────────
+
+const parseDates = (data) => {
+  const out = { ...data };
+  if (out.expenseDate)  out.expenseDate  = new Date(out.expenseDate);
+  if (out.postingDate)  out.postingDate  = new Date(out.postingDate);
+  return out;
+};
+
 // ── Create ─────────────────────────────────────────────────
 
 const create = async (workspaceId, userId, data) => {
   const expenseNumber = await generateExpenseNumber(workspaceId);
   return prisma.expense.create({
-    data: { ...data, workspaceId, expenseNumber, createdByUserId: userId },
+    data: { ...parseDates(data), workspaceId, expenseNumber, createdByUserId: userId },
     include: EXPENSE_INCLUDE,
   });
 };
@@ -109,7 +118,7 @@ const create = async (workspaceId, userId, data) => {
 const update = (id, userId, data) =>
   prisma.expense.update({
     where: { id },
-    data:  { ...data, updatedByUserId: userId },
+    data:  { ...parseDates(data), updatedByUserId: userId },
     include: EXPENSE_INCLUDE,
   });
 
@@ -127,7 +136,11 @@ const duplicate = async (id, workspaceId, userId) => {
   const source = await findById(id, workspaceId);
   if (!source) throw Object.assign(new Error('Expense not found'), { statusCode: 404 });
 
-  const { id: _, expenseNumber: __, createdAt, updatedAt, deletedAt, expenseAttachments, ...fields } = source;
+  const {
+    id: _, expenseNumber: __, createdAt, updatedAt, deletedAt,
+    expenseAttachments, category, supplier, createdByUser,
+    ...fields
+  } = source;
   const newNumber = await generateExpenseNumber(workspaceId);
 
   return prisma.expense.create({
