@@ -43,6 +43,7 @@ export default function ExpenseDetailPage() {
   const fileRef = useRef(null);
 
   const [expense, setExpense] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -50,11 +51,17 @@ export default function ExpenseDetailPage() {
   const [deleteAttTarget, setDeleteAttTarget] = useState(null);
   const [deletingAtt, setDeletingAtt] = useState(false);
 
-  const load = () =>
-    getExpense(id)
-      .then(setExpense)
-      .catch(() => showToast('error', 'Failed to load expense'))
+  const load = () => {
+    setLoading(true);
+    setLoadError(null);
+    return getExpense(id)
+      .then((data) => { setExpense(data); })
+      .catch((err) => {
+        const msg = err?.response?.data?.error || err?.message || 'Failed to load expense';
+        setLoadError(msg);
+      })
       .finally(() => setLoading(false));
+  };
 
   useEffect(() => { load(); }, [id]);
 
@@ -125,8 +132,15 @@ export default function ExpenseDetailPage() {
   if (!expense) {
     return (
       <div className="py-16 text-center space-y-3">
-        <p className="text-tetri-neutral">Expense not found</p>
-        <Button variant="outline" onClick={() => navigate('/expenses')}>Back to Expenses</Button>
+        <p className="text-sm font-medium text-tetri-neutral">Expense not found</p>
+        {loadError && (
+          <p className="text-xs text-tetri-error bg-red-50 border border-red-200 rounded-lg px-4 py-2 inline-block max-w-md">
+            {loadError}
+          </p>
+        )}
+        <div>
+          <Button variant="outline" onClick={() => navigate('/expenses')}>Back to Expenses</Button>
+        </div>
       </div>
     );
   }

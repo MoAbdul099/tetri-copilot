@@ -1,3 +1,7 @@
+// BigInt can't be serialized by JSON.stringify by default; convert to Number.
+// File sizes are well within Number's safe integer range.
+BigInt.prototype.toJSON = function () { return Number(this); };
+
 const app = require('./app');
 const env = require('./config/env');
 const { logger } = require('./middleware/requestLogger');
