@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 const svc = require('./expenses.service');
 const { success } = require('../../utils/response');
 
-const UPLOAD_DIR = path.join(__dirname, '../../../../uploads/expenses');
+const UPLOAD_DIR = path.join(__dirname, '../../../uploads/expenses');
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),

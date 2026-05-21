@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Receipt, Download, Copy, Trash2, MoreHorizontal, ChevronDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,22 +36,38 @@ function StatusBadge({ status }) {
 
 function ActionsMenu({ expense, onDelete, onDuplicate }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <div className="relative">
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        ref={btnRef}
+        onClick={handleToggle}
         className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
-          <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-tetri-border rounded-xl shadow-lg py-1 z-20">
-            <button onClick={() => { setOpen(false); onDuplicate(expense); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-tetri-text hover:bg-tetri-bg">
+          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
+          <div
+            className="fixed w-44 bg-white border border-tetri-border rounded-xl shadow-lg py-1 z-50"
+            style={{ top: pos.top, right: pos.right }}
+          >
+            <button onClick={(e) => { e.stopPropagation(); setOpen(false); onDuplicate(expense); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-tetri-text hover:bg-tetri-bg">
               <Copy className="w-4 h-4 text-tetri-neutral" /> Duplicate
             </button>
-            <button onClick={() => { setOpen(false); onDelete(expense); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-tetri-error hover:bg-red-50">
+            <button onClick={(e) => { e.stopPropagation(); setOpen(false); onDelete(expense); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-tetri-error hover:bg-red-50">
               <Trash2 className="w-4 h-4" /> Delete
             </button>
           </div>
