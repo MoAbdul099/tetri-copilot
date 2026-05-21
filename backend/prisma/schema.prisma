@@ -86,9 +86,12 @@ enum PaymentMethod {
 enum ExpenseStatus {
   draft
   submitted
+  pending_approval
   approved
   rejected
+  returned
   cancelled
+  closed
 }
 
 enum ExpenseType {
@@ -326,9 +329,22 @@ model User {
   generatedDocuments        GeneratedDocument[]
   activityLogs              ActivityLog[]
   adminAuditLogs            AuditLog[]
-  assignedCollections       CollectionActivity[] @relation("CollectionAssigned")
-  createdCollections        CollectionActivity[] @relation("CollectionCreated")
-  createdSuppliers          Supplier[]           @relation("SupplierCreatedBy")
+  assignedCollections           CollectionActivity[]   @relation("CollectionAssigned")
+  createdCollections            CollectionActivity[]   @relation("CollectionCreated")
+  createdSuppliers              Supplier[]             @relation("SupplierCreatedBy")
+  approvalRulesAsApprover       ApprovalRule[]         @relation("ApprovalRuleApprover")
+  approvalRulesCreated          ApprovalRule[]         @relation("ApprovalRuleCreatedBy")
+  submittedApprovalWorkflows    ApprovalWorkflow[]     @relation("WorkflowSubmittedBy")
+  approvalAssignments           ApprovalAssignment[]   @relation("AssignmentAssignedTo")
+  approvalDecisions             ApprovalAssignment[]   @relation("AssignmentDecidedBy")
+  approvalComments              ApprovalComment[]      @relation("ApprovalCommentUser")
+  delegationsGiven              ApprovalDelegation[]   @relation("DelegationDelegator")
+  delegationsReceived           ApprovalDelegation[]   @relation("DelegationDelegate")
+  reimbursementRequestsMade     ReimbursementRequest[] @relation("ReimbursementRequestedBy")
+  reimbursementsApproved        ReimbursementRequest[] @relation("ReimbursementApprovedBy")
+  reimbursementsRejected        ReimbursementRequest[] @relation("ReimbursementRejectedBy")
+  reimbursementPaymentsRecorded ReimbursementPayment[] @relation("ReimbursementPaymentRecordedBy")
+  approvalAuditLogs             ApprovalAuditLog[]     @relation("ApprovalAuditLogUser")
 
   @@index([clerkUserId])
   @@index([email])
@@ -382,6 +398,12 @@ model Workspace {
   paymentPromises      PaymentPromise[]
   statementRuns        StatementRun[]
   suppliers            Supplier[]
+  approvalRules        ApprovalRule[]
+  approvalWorkflows    ApprovalWorkflow[]
+  approvalDelegations  ApprovalDelegation[]
+  reimbursementRequests ReimbursementRequest[]
+  reimbursementPayments ReimbursementPayment[]
+  approvalAuditLogs    ApprovalAuditLog[]
 
   @@map("workspaces")
 }
@@ -929,8 +951,9 @@ model ExpenseCategory {
   parentCategory  ExpenseCategory?  @relation("CategoryParent", fields: [parentCategoryId], references: [id])
   childCategories ExpenseCategory[] @relation("CategoryParent")
 
-  expenses            Expense[] @relation("ExpenseCategory")
-  aiSuggestedExpenses Expense[] @relation("AiSuggestedExpenseCategory")
+  expenses            Expense[]     @relation("ExpenseCategory")
+  aiSuggestedExpenses Expense[]     @relation("AiSuggestedExpenseCategory")
+  approvalRules       ApprovalRule[] @relation("ApprovalRuleCategory")
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
@@ -994,6 +1017,8 @@ model Expense {
   isDeleted             Boolean       @default(false) @map("is_deleted")
   deletedAt             DateTime?     @map("deleted_at") @db.Timestamptz(6)
   deletedByUserId       String?       @map("deleted_by_user_id") @db.Uuid
+  submittedAt           DateTime?     @map("submitted_at") @db.Timestamptz(6)
+  submittedByUserId     String?       @map("submitted_by_user_id") @db.Uuid
   createdByUserId       String?       @map("created_by_user_id") @db.Uuid
   updatedByUserId       String?       @map("updated_by_user_id") @db.Uuid
   createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1007,7 +1032,9 @@ model Expense {
   aiSuggestedCategory ExpenseCategory? @relation("AiSuggestedExpenseCategory", fields: [aiSuggestedCategoryId], references: [id], onDelete: SetNull)
   createdByUser       User?            @relation(fields: [createdByUserId], references: [id])
 
-  expenseAttachments ExpenseAttachment[]
+  expenseAttachments    ExpenseAttachment[]
+  approvalWorkflow      ApprovalWorkflow?
+  reimbursementRequests ReimbursementRequest[]
 
   @@unique([workspaceId, expenseNumber])
   @@index([workspaceId])
@@ -1505,4 +1532,197 @@ model StatementRun {
   @@index([workspaceId])
   @@index([customerId])
   @@map("statement_runs")
+}
+
+// =========================================================
+// EXPENSE APPROVALS & REIMBURSEMENTS
+// =========================================================
+
+model ApprovalRule {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  ruleType        String   @default("default") @map("rule_type") @db.VarChar(50)
+  priority        Int      @default(0)
+  isActive        Boolean  @default(true) @map("is_active")
+  amountMin       Decimal? @map("amount_min") @db.Decimal(14, 2)
+  amountMax       Decimal? @map("amount_max") @db.Decimal(14, 2)
+  categoryId      String?  @map("category_id") @db.Uuid
+  department      String?  @db.VarChar(150)
+  approverUserId  String?  @map("approver_user_id") @db.Uuid
+  approverRole    String?  @map("approver_role") @db.VarChar(50)
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category      ExpenseCategory? @relation("ApprovalRuleCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  approverUser  User?            @relation("ApprovalRuleApprover", fields: [approverUserId], references: [id], onDelete: SetNull)
+  createdByUser User?            @relation("ApprovalRuleCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@map("approval_rules")
+}
+
+model ApprovalWorkflow {
+  id                String    @id @default(uuid()) @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  expenseId         String    @unique @map("expense_id") @db.Uuid
+  status            String    @default("pending") @db.VarChar(50)
+  submittedByUserId String?   @map("submitted_by_user_id") @db.Uuid
+  submittedAt       DateTime? @map("submitted_at") @db.Timestamptz(6)
+  decidedAt         DateTime? @map("decided_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  expense     Expense   @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  submittedBy User?     @relation("WorkflowSubmittedBy", fields: [submittedByUserId], references: [id])
+
+  assignments ApprovalAssignment[]
+  comments    ApprovalComment[]
+  auditLogs   ApprovalAuditLog[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("approval_workflows")
+}
+
+model ApprovalAssignment {
+  id               String    @id @default(uuid()) @db.Uuid
+  workflowId       String    @map("workflow_id") @db.Uuid
+  workspaceId      String    @map("workspace_id") @db.Uuid
+  assignedToUserId String    @map("assigned_to_user_id") @db.Uuid
+  status           String    @default("pending") @db.VarChar(50)
+  decidedAt        DateTime? @map("decided_at") @db.Timestamptz(6)
+  decidedByUserId  String?   @map("decided_by_user_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflow   ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  assignedTo User             @relation("AssignmentAssignedTo", fields: [assignedToUserId], references: [id])
+  decidedBy  User?            @relation("AssignmentDecidedBy", fields: [decidedByUserId], references: [id])
+
+  @@index([workflowId])
+  @@index([assignedToUserId])
+  @@index([workspaceId])
+  @@map("approval_assignments")
+}
+
+model ApprovalComment {
+  id          String   @id @default(uuid()) @db.Uuid
+  workflowId  String   @map("workflow_id") @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  action      String   @db.VarChar(50)
+  comment     String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workflow ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user     User             @relation("ApprovalCommentUser", fields: [userId], references: [id])
+
+  @@index([workflowId])
+  @@map("approval_comments")
+}
+
+model ApprovalDelegation {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  delegatorUserId String   @map("delegator_user_id") @db.Uuid
+  delegateUserId  String   @map("delegate_user_id") @db.Uuid
+  startDate       DateTime @map("start_date") @db.Date
+  endDate         DateTime @map("end_date") @db.Date
+  notes           String?  @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  delegator User      @relation("DelegationDelegator", fields: [delegatorUserId], references: [id])
+  delegate  User      @relation("DelegationDelegate", fields: [delegateUserId], references: [id])
+
+  @@index([workspaceId])
+  @@index([delegatorUserId])
+  @@map("approval_delegations")
+}
+
+model ReimbursementRequest {
+  id                String    @id @default(uuid()) @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  expenseId         String    @map("expense_id") @db.Uuid
+  requestedByUserId String    @map("requested_by_user_id") @db.Uuid
+  requestedAmount   Decimal   @map("requested_amount") @db.Decimal(14, 2)
+  currencyCode      String    @default("USD") @map("currency_code") @db.VarChar(10)
+  status            String    @default("pending_approval") @db.VarChar(50)
+  notes             String?   @db.Text
+  approvedByUserId  String?   @map("approved_by_user_id") @db.Uuid
+  approvedAt        DateTime? @map("approved_at") @db.Timestamptz(6)
+  rejectedByUserId  String?   @map("rejected_by_user_id") @db.Uuid
+  rejectedAt        DateTime? @map("rejected_at") @db.Timestamptz(6)
+  rejectionNote     String?   @map("rejection_note") @db.Text
+  paidAmount        Decimal   @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  expense     Expense   @relation(fields: [expenseId], references: [id])
+  requestedBy User      @relation("ReimbursementRequestedBy", fields: [requestedByUserId], references: [id])
+  approvedBy  User?     @relation("ReimbursementApprovedBy", fields: [approvedByUserId], references: [id])
+  rejectedBy  User?     @relation("ReimbursementRejectedBy", fields: [rejectedByUserId], references: [id])
+
+  payments  ReimbursementPayment[]
+  auditLogs ApprovalAuditLog[]
+
+  @@index([workspaceId])
+  @@index([expenseId])
+  @@index([status])
+  @@map("reimbursement_requests")
+}
+
+model ReimbursementPayment {
+  id               String   @id @default(uuid()) @db.Uuid
+  reimbursementId  String   @map("reimbursement_id") @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  amount           Decimal  @db.Decimal(14, 2)
+  currencyCode     String   @default("USD") @map("currency_code") @db.VarChar(10)
+  paymentDate      DateTime @map("payment_date") @db.Date
+  paymentMethod    String   @map("payment_method") @db.VarChar(50)
+  referenceNumber  String?  @map("reference_number") @db.VarChar(100)
+  notes            String?  @db.Text
+  recordedByUserId String?  @map("recorded_by_user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reimbursement ReimbursementRequest @relation(fields: [reimbursementId], references: [id], onDelete: Cascade)
+  recordedBy    User?                @relation("ReimbursementPaymentRecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@index([reimbursementId])
+  @@index([workspaceId])
+  @@map("reimbursement_payments")
+}
+
+model ApprovalAuditLog {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  entityType      String    @map("entity_type") @db.VarChar(50)
+  entityId        String    @map("entity_id") @db.Uuid
+  workflowId      String?   @map("workflow_id") @db.Uuid
+  reimbursementId String?   @map("reimbursement_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  action          String    @db.VarChar(100)
+  previousStatus  String?   @map("previous_status") @db.VarChar(50)
+  newStatus       String?   @map("new_status") @db.VarChar(50)
+  comment         String?   @db.Text
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user          User                  @relation("ApprovalAuditLogUser", fields: [userId], references: [id])
+  workflow      ApprovalWorkflow?     @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  reimbursement ReimbursementRequest? @relation(fields: [reimbursementId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([entityId])
+  @@index([workflowId])
+  @@map("approval_audit_logs")
 }

@@ -36,6 +36,11 @@ import ExpenseFormPage from './features/expenses/pages/ExpenseFormPage.jsx';
 import ExpenseDetailPage from './features/expenses/pages/ExpenseDetailPage.jsx';
 import ExpenseCategoriesPage from './features/expenses/pages/ExpenseCategoriesPage.jsx';
 import SuppliersPage from './features/expenses/pages/SuppliersPage.jsx';
+import ApprovalsPage from './features/approvals/pages/ApprovalsPage.jsx';
+import ApprovalDetailPage from './features/approvals/pages/ApprovalDetailPage.jsx';
+import WorkflowConfigPage from './features/approvals/pages/WorkflowConfigPage.jsx';
+import ReimbursementsPage from './features/reimbursements/pages/ReimbursementsPage.jsx';
+import ReimbursementDetailPage from './features/reimbursements/pages/ReimbursementDetailPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -88,6 +93,11 @@ export default function App() {
           <Route path="/expenses/suppliers" element={<SuppliersPage />} />
           <Route path="/expenses/:id" element={<ExpenseDetailPage />} />
           <Route path="/expenses/:id/edit" element={<ExpenseFormPage />} />
+          <Route path="/approvals" element={<ApprovalsPage />} />
+          <Route path="/approvals/config" element={<WorkflowConfigPage />} />
+          <Route path="/approvals/:id" element={<ApprovalDetailPage />} />
+          <Route path="/reimbursements" element={<ReimbursementsPage />} />
+          <Route path="/reimbursements/:id" element={<ReimbursementDetailPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
