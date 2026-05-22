@@ -18,6 +18,9 @@ import {
   ShoppingCart,
   CheckSquare,
   Wallet,
+  Brain,
+  Target,
+  RefreshCw,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -28,9 +31,12 @@ const NAV_ITEMS = [
   { to: '/receivables',  label: 'Receivables',  icon: TrendingUp },
   { to: '/collections',  label: 'Collections',  icon: Activity },
   { to: '/statements',   label: 'Statements',   icon: Receipt },
-  { to: '/expenses',       label: 'Expenses',       icon: ShoppingCart },
-  { to: '/approvals',      label: 'Approvals',      icon: CheckSquare },
-  { to: '/reimbursements', label: 'Reimbursements', icon: Wallet },
+  { to: '/expenses',          label: 'Expenses',          icon: ShoppingCart },
+  { to: '/approvals',         label: 'Approvals',         icon: CheckSquare },
+  { to: '/reimbursements',    label: 'Reimbursements',    icon: Wallet },
+  { to: '/expense-insights',  label: 'Insights',          icon: Brain },
+  { to: '/budgets',           label: 'Budgets',           icon: Target },
+  { to: '/recurring-expenses',label: 'Recurring',         icon: RefreshCw },
   { to: '/members',        label: 'Members',        icon: Users },
   { to: '/billing',      label: 'Billing',      icon: CreditCard },
   { to: '/settings',     label: 'Settings',     icon: Settings },

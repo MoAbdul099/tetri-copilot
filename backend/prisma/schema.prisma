@@ -345,6 +345,8 @@ model User {
   reimbursementsRejected        ReimbursementRequest[] @relation("ReimbursementRejectedBy")
   reimbursementPaymentsRecorded ReimbursementPayment[] @relation("ReimbursementPaymentRecordedBy")
   approvalAuditLogs             ApprovalAuditLog[]     @relation("ApprovalAuditLogUser")
+  budgetsCreated                Budget[]               @relation("BudgetCreatedBy")
+  recurringExpensesCreated      RecurringExpense[]     @relation("RecurringExpenseCreatedBy")
 
   @@index([clerkUserId])
   @@index([email])
@@ -404,6 +406,11 @@ model Workspace {
   reimbursementRequests ReimbursementRequest[]
   reimbursementPayments ReimbursementPayment[]
   approvalAuditLogs    ApprovalAuditLog[]
+  budgets              Budget[]
+  recurringExpenses    RecurringExpense[]
+  recurringExpenseRuns RecurringExpenseRun[]
+  expenseInsights      ExpenseInsight[]
+  expenseAnomalies     ExpenseAnomaly[]
 
   @@map("workspaces")
 }
@@ -951,9 +958,11 @@ model ExpenseCategory {
   parentCategory  ExpenseCategory?  @relation("CategoryParent", fields: [parentCategoryId], references: [id])
   childCategories ExpenseCategory[] @relation("CategoryParent")
 
-  expenses            Expense[]     @relation("ExpenseCategory")
-  aiSuggestedExpenses Expense[]     @relation("AiSuggestedExpenseCategory")
-  approvalRules       ApprovalRule[] @relation("ApprovalRuleCategory")
+  expenses            Expense[]          @relation("ExpenseCategory")
+  aiSuggestedExpenses Expense[]          @relation("AiSuggestedExpenseCategory")
+  approvalRules       ApprovalRule[]     @relation("ApprovalRuleCategory")
+  budgets             Budget[]           @relation("BudgetCategory")
+  recurringExpenses   RecurringExpense[]  @relation("RecurringExpenseCategory")
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
@@ -980,7 +989,8 @@ model Supplier {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdByUser User?     @relation("SupplierCreatedBy", fields: [createdByUserId], references: [id])
-  expenses      Expense[]
+  expenses         Expense[]
+  recurringExpenses RecurringExpense[] @relation("RecurringExpenseSupplier")
 
   @@index([workspaceId])
   @@map("suppliers")
@@ -1035,6 +1045,7 @@ model Expense {
   expenseAttachments    ExpenseAttachment[]
   approvalWorkflow      ApprovalWorkflow?
   reimbursementRequests ReimbursementRequest[]
+  anomalies             ExpenseAnomaly[]       @relation("ExpenseAnomalyExpense")
 
   @@unique([workspaceId, expenseNumber])
   @@index([workspaceId])
@@ -1725,4 +1736,128 @@ model ApprovalAuditLog {
   @@index([entityId])
   @@index([workflowId])
   @@map("approval_audit_logs")
+}
+
+// =========================================================
+// EXPENSE INSIGHTS, BUDGETS & RECURRING EXPENSES
+// =========================================================
+
+model Budget {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  name            String    @db.VarChar(255)
+  budgetType      String    @default("category") @map("budget_type") @db.VarChar(50)
+  amount          Decimal   @db.Decimal(14, 2)
+  currencyCode    String    @default("USD") @map("currency_code") @db.VarChar(10)
+  period          String    @default("monthly") @db.VarChar(50)
+  startDate       DateTime  @map("start_date") @db.Date
+  endDate         DateTime? @map("end_date") @db.Date
+  categoryId      String?   @map("category_id") @db.Uuid
+  department      String?   @db.VarChar(150)
+  project         String?   @db.VarChar(150)
+  alertAt75       Boolean   @default(true) @map("alert_at_75")
+  alertAt90       Boolean   @default(true) @map("alert_at_90")
+  alertAt100      Boolean   @default(true) @map("alert_at_100")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  ExpenseCategory? @relation("BudgetCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy User?            @relation("BudgetCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@index([workspaceId])
+  @@map("budgets")
+}
+
+model RecurringExpense {
+  id              String      @id @default(uuid()) @db.Uuid
+  workspaceId     String      @map("workspace_id") @db.Uuid
+  name            String      @db.VarChar(255)
+  supplierId      String?     @map("supplier_id") @db.Uuid
+  categoryId      String?     @map("category_id") @db.Uuid
+  vendorName      String?     @map("vendor_name") @db.VarChar(255)
+  description     String      @db.Text
+  amount          Decimal     @db.Decimal(14, 2)
+  currencyCode    String      @default("USD") @map("currency_code") @db.VarChar(10)
+  expenseType     ExpenseType @default(company) @map("expense_type")
+  department      String?     @db.VarChar(150)
+  project         String?     @db.VarChar(150)
+  frequency       String      @db.VarChar(50)
+  nextRunDate     DateTime    @map("next_run_date") @db.Date
+  lastRunDate     DateTime?   @map("last_run_date") @db.Date
+  endDate         DateTime?   @map("end_date") @db.Date
+  autoCreate      Boolean     @default(true) @map("auto_create")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdByUserId String?     @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  supplier  Supplier?        @relation("RecurringExpenseSupplier", fields: [supplierId], references: [id], onDelete: SetNull)
+  category  ExpenseCategory? @relation("RecurringExpenseCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy User?            @relation("RecurringExpenseCreatedBy", fields: [createdByUserId], references: [id])
+
+  runs RecurringExpenseRun[]
+
+  @@index([workspaceId])
+  @@index([nextRunDate])
+  @@map("recurring_expenses")
+}
+
+model RecurringExpenseRun {
+  id                 String   @id @default(uuid()) @db.Uuid
+  recurringExpenseId String   @map("recurring_expense_id") @db.Uuid
+  workspaceId        String   @map("workspace_id") @db.Uuid
+  expenseId          String?  @map("expense_id") @db.Uuid
+  runDate            DateTime @map("run_date") @db.Date
+  status             String   @default("created") @db.VarChar(50)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recurringExpense RecurringExpense @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([recurringExpenseId])
+  @@index([workspaceId])
+  @@map("recurring_expense_runs")
+}
+
+model ExpenseInsight {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  insightType String   @map("insight_type") @db.VarChar(100)
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  severity    String   @default("info") @db.VarChar(20)
+  metadata    Json?
+  period      String?  @db.VarChar(50)
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([createdAt])
+  @@map("expense_insights")
+}
+
+model ExpenseAnomaly {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  expenseId   String?   @map("expense_id") @db.Uuid
+  anomalyType String    @map("anomaly_type") @db.VarChar(100)
+  riskLevel   String    @default("low") @map("risk_level") @db.VarChar(20)
+  explanation String    @db.Text
+  metadata    Json?
+  isReviewed  Boolean   @default(false) @map("is_reviewed")
+  reviewedAt  DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  expense   Expense?  @relation("ExpenseAnomalyExpense", fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([riskLevel])
+  @@map("expense_anomalies")
 }

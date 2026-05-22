@@ -41,6 +41,9 @@ import ApprovalDetailPage from './features/approvals/pages/ApprovalDetailPage.js
 import WorkflowConfigPage from './features/approvals/pages/WorkflowConfigPage.jsx';
 import ReimbursementsPage from './features/reimbursements/pages/ReimbursementsPage.jsx';
 import ReimbursementDetailPage from './features/reimbursements/pages/ReimbursementDetailPage.jsx';
+import ExpenseInsightsDashboardPage from './features/expense-insights/pages/ExpenseInsightsDashboardPage.jsx';
+import BudgetsPage from './features/budgets/pages/BudgetsPage.jsx';
+import RecurringExpensesPage from './features/recurring-expenses/pages/RecurringExpensesPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -98,6 +101,9 @@ export default function App() {
           <Route path="/approvals/:id" element={<ApprovalDetailPage />} />
           <Route path="/reimbursements" element={<ReimbursementsPage />} />
           <Route path="/reimbursements/:id" element={<ReimbursementDetailPage />} />
+          <Route path="/expense-insights" element={<ExpenseInsightsDashboardPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

@@ -73,8 +73,8 @@ const addPayment = async (reimbursementId, workspaceId, userId, data) => {
       reimbursementId,
       workspaceId,
       recordedByUserId: userId,
-      paymentDate: new Date(data.paymentDate),
       ...data,
+      paymentDate: new Date(data.paymentDate),
     },
   });
 

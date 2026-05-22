@@ -29,7 +29,10 @@ const suppliersRoutes = require('./modules/suppliers/suppliers.routes');
 const expensesRoutes = require('./modules/expenses/expenses.routes');
 const expenseApprovalsRoutes = require('./modules/expense-approvals/expense-approvals.routes');
 const approvalsRoutes = require('./modules/expense-approvals/approvals.routes');
-const reimbursementsRoutes = require('./modules/reimbursements/reimbursements.routes');
+const reimbursementsRoutes       = require('./modules/reimbursements/reimbursements.routes');
+const expenseInsightsRoutes      = require('./modules/expense-insights/expense-insights.routes');
+const budgetsRoutes              = require('./modules/budgets/budgets.routes');
+const recurringExpensesRoutes    = require('./modules/recurring-expenses/recurring-expenses.routes');
 
 const app = express();
 
@@ -80,6 +83,9 @@ app.use('/api/v1/expenses', expensesRoutes);
 app.use('/api/v1/expenses', expenseApprovalsRoutes);
 app.use('/api/v1/approvals', approvalsRoutes);
 app.use('/api/v1/reimbursements', reimbursementsRoutes);
+app.use('/api/v1/expense-insights', expenseInsightsRoutes);
+app.use('/api/v1/budgets', budgetsRoutes);
+app.use('/api/v1/recurring-expenses', recurringExpensesRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);
