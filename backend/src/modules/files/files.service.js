@@ -223,11 +223,16 @@ function getLocalPath(fileRecord) {
   return storage.getLocalFilePath(fileRecord);
 }
 
+async function getServeUrl(fileRecord) {
+  return storage.getServeUrl(fileRecord);
+}
+
 module.exports = {
   uploadFile,
   listFiles,
   getFile,
   getDownloadUrl,
+  getServeUrl,
   renameFile,
   deleteFile,
   restoreFile,

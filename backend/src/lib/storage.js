@@ -85,6 +85,18 @@ async function getDownloadUrl(fileRecord, expiresInSeconds = 900) {
   return null;
 }
 
+async function getServeUrl(fileRecord, expiresInSeconds = 900) {
+  if (fileRecord.storageProvider === 'cloudflare_r2' && isR2Configured()) {
+    const client = getS3Client();
+    const cmd = new GetObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME || fileRecord.bucketName,
+      Key:    fileRecord.objectKey,
+    });
+    return getSignedUrl(client, cmd, { expiresIn: expiresInSeconds });
+  }
+  return null;
+}
+
 async function deleteFromStorage(fileRecord) {
   if (fileRecord.storageProvider === 'cloudflare_r2' && isR2Configured()) {
     const client = getS3Client();
@@ -104,4 +116,4 @@ function getLocalFilePath(fileRecord) {
   return null;
 }
 
-module.exports = { upload, getDownloadUrl, deleteFromStorage, getLocalFilePath, isR2Configured };
+module.exports = { upload, getDownloadUrl, getServeUrl, deleteFromStorage, getLocalFilePath, isR2Configured };

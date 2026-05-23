@@ -8,7 +8,8 @@ async function upload(req, res) {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json(error('No files provided'));
     }
-    const { workspaceId, userId } = req;
+    const { workspaceId } = req;
+    const userId = req.user.id;
     const { description } = req.body;
 
     const results = [];
@@ -53,7 +54,7 @@ async function getOne(req, res) {
 
 async function download(req, res) {
   try {
-    const { url, file } = await svc.getDownloadUrl(req.params.id, req.workspaceId, req.userId);
+    const { url, file } = await svc.getDownloadUrl(req.params.id, req.workspaceId, req.user.id);
 
     if (url) {
       return res.redirect(url);
@@ -79,6 +80,11 @@ async function serve(req, res) {
     const file = await svc.getFile(req.params.id, req.workspaceId);
     if (file.isDeleted) return res.status(410).json(error('File has been deleted'));
 
+    // R2: redirect to signed URL (inline, no Content-Disposition attachment)
+    const signedUrl = await svc.getServeUrl(file);
+    if (signedUrl) return res.redirect(signedUrl);
+
+    // Local fallback: stream from disk
     const localPath = svc.getLocalPath(file);
     if (!localPath || !fs.existsSync(localPath)) {
       return res.status(404).json(error('File not found on disk'));
@@ -94,7 +100,7 @@ async function serve(req, res) {
 
 async function rename(req, res) {
   try {
-    const updated = await svc.renameFile(req.params.id, req.workspaceId, req.userId, req.body.fileName);
+    const updated = await svc.renameFile(req.params.id, req.workspaceId, req.user.id, req.body.fileName);
     return res.json(success(updated, 'File renamed'));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
@@ -103,7 +109,7 @@ async function rename(req, res) {
 
 async function remove(req, res) {
   try {
-    const deleted = await svc.deleteFile(req.params.id, req.workspaceId, req.userId);
+    const deleted = await svc.deleteFile(req.params.id, req.workspaceId, req.user.id);
     return res.json(success(deleted, 'File deleted'));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
@@ -112,7 +118,7 @@ async function remove(req, res) {
 
 async function restore(req, res) {
   try {
-    const restored = await svc.restoreFile(req.params.id, req.workspaceId, req.userId);
+    const restored = await svc.restoreFile(req.params.id, req.workspaceId, req.user.id);
     return res.json(success(restored, 'File restored'));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
@@ -125,7 +131,7 @@ async function link(req, res) {
     if (!fileId || !entityType || !entityId) {
       return res.status(400).json(error('fileId, entityType, and entityId are required'));
     }
-    const result = await svc.linkFile(req.workspaceId, req.userId, fileId, entityType, entityId);
+    const result = await svc.linkFile(req.workspaceId, req.user.id, fileId, entityType, entityId);
     return res.status(201).json(success(result, 'File linked'));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
@@ -134,7 +140,7 @@ async function link(req, res) {
 
 async function unlink(req, res) {
   try {
-    const result = await svc.unlinkFile(req.params.linkId, req.workspaceId, req.userId);
+    const result = await svc.unlinkFile(req.params.linkId, req.workspaceId, req.user.id);
     return res.json(success(result, 'File unlinked'));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
@@ -144,7 +150,7 @@ async function unlink(req, res) {
 async function entityFiles(req, res) {
   try {
     const { entityType, entityId } = req.params;
-    const links = await svc.getEntityFiles(req.workspaceId, entityType, entityId, req.userId);
+    const links = await svc.getEntityFiles(req.workspaceId, entityType, entityId, req.user.id);
     return res.json(success(links));
   } catch (err) {
     return res.status(err.statusCode || 500).json(error(err.message));
