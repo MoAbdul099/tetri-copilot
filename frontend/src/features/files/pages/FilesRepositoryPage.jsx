@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import {
   FolderOpen, Search, Upload, Eye, Download, Pencil, Trash2, RotateCcw,
   ChevronLeft, ChevronRight, Loader2, X,
 } from 'lucide-react';
 import { listFiles, deleteFile, restoreFile, renameFile } from '../services/filesService.js';
-import { setClerkTokenGetter } from '../../../lib/api.js';
 import FileUploadDropzone from '../components/FileUploadDropzone.jsx';
 import FilePreviewModal from '../components/FilePreviewModal.jsx';
 
@@ -89,13 +87,6 @@ function RenameModal({ file, onSave, onClose }) {
 const PAGE_SIZE = 20;
 
 export default function FilesRepositoryPage() {
-  const { getToken } = useAuth();
-
-  // Ensure the shared token getter is always current for this page's service calls
-  useEffect(() => {
-    setClerkTokenGetter(getToken);
-  }, [getToken]);
-
   const [files, setFiles] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
