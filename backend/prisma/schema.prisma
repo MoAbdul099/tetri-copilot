@@ -313,7 +313,10 @@ model User {
   workspaceMemberships      WorkspaceMember[]  @relation("WorkspaceMemberUser")
   invitedWorkspaceMembers   WorkspaceMember[]  @relation("WorkspaceMemberInvitedBy")
   sentInvitations           Invitation[]       @relation("InvitedBy")
-  uploadedFiles             File[]
+  uploadedFiles             File[]             @relation("FileUploadedBy")
+  deletedFiles              File[]             @relation("FileDeletedBy")
+  fileLinksCreated          FileLink[]         @relation("FileLinkCreatedBy")
+  fileActivities            FileActivityLog[]  @relation("FileActivityLogUser")
   createdCustomers          Customer[]
   createdInvoices           Invoice[]
   invoicePayments           InvoicePayment[]
@@ -411,6 +414,8 @@ model Workspace {
   recurringExpenseRuns RecurringExpenseRun[]
   expenseInsights      ExpenseInsight[]
   expenseAnomalies     ExpenseAnomaly[]
+  fileLinks            FileLink[]
+  fileActivityLogs     FileActivityLog[]
 
   @@map("workspaces")
 }
@@ -583,22 +588,33 @@ model File {
   id               String   @id @default(uuid()) @db.Uuid
   workspaceId      String   @map("workspace_id") @db.Uuid
   uploadedByUserId String?  @map("uploaded_by_user_id") @db.Uuid
-  storageProvider  String   @default("cloudflare_r2") @map("storage_provider") @db.VarChar(50)
-  bucketName       String?  @map("bucket_name") @db.VarChar(255)
-  objectKey        String   @map("object_key") @db.Text
-  originalFilename String?  @map("original_filename") @db.VarChar(255)
-  mimeType         String?  @map("mime_type") @db.VarChar(100)
-  fileSizeBytes    BigInt?  @map("file_size_bytes")
-  publicUrl        String?  @map("public_url") @db.Text
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  storageProvider  String    @default("cloudflare_r2") @map("storage_provider") @db.VarChar(50)
+  bucketName       String?   @map("bucket_name") @db.VarChar(255)
+  objectKey        String    @map("object_key") @db.Text
+  originalFilename String?   @map("original_filename") @db.VarChar(255)
+  fileName         String?   @map("file_name") @db.VarChar(255)
+  mimeType         String?   @map("mime_type") @db.VarChar(100)
+  fileSizeBytes    BigInt?   @map("file_size_bytes")
+  description      String?   @db.Text
+  publicUrl        String?   @map("public_url") @db.Text
+  isDeleted        Boolean   @default(false) @map("is_deleted")
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedByUserId  String?   @map("deleted_by_user_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  uploadedByUser User?     @relation(fields: [uploadedByUserId], references: [id])
+  uploadedByUser User?     @relation("FileUploadedBy", fields: [uploadedByUserId], references: [id])
+  deletedByUser  User?     @relation("FileDeletedBy", fields: [deletedByUserId], references: [id])
 
   companyLogoFor     Company[]          @relation("CompanyLogo")
   expenseReceipts    Expense[]          @relation("ExpenseReceipt")
   generatedDocuments GeneratedDocument[]
+  fileLinks          FileLink[]
+  activityLogs       FileActivityLog[]
 
+  @@index([workspaceId])
+  @@index([isDeleted])
   @@map("files")
 }
 
@@ -1860,4 +1876,46 @@ model ExpenseAnomaly {
   @@index([workspaceId])
   @@index([riskLevel])
   @@map("expense_anomalies")
+}
+
+// =========================================================
+// FILES & ATTACHMENTS
+// =========================================================
+
+model FileLink {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  fileId          String   @map("file_id") @db.Uuid
+  entityType      String   @map("entity_type") @db.VarChar(50)
+  entityId        String   @map("entity_id") @db.Uuid
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file      File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("FileLinkCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@unique([fileId, entityType, entityId])
+  @@index([workspaceId])
+  @@index([fileId])
+  @@index([entityId])
+  @@map("file_links")
+}
+
+model FileActivityLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  fileId        String   @map("file_id") @db.Uuid
+  activityType  String   @map("activity_type") @db.VarChar(50)
+  performedById String?  @map("performed_by_id") @db.Uuid
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file        File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  performedBy User?     @relation("FileActivityLogUser", fields: [performedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([fileId])
+  @@map("file_activity_logs")
 }

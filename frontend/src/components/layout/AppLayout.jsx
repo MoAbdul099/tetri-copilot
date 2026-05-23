@@ -21,6 +21,7 @@ import {
   Brain,
   Target,
   RefreshCw,
+  FolderOpen,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { to: '/expense-insights',  label: 'Insights',          icon: Brain },
   { to: '/budgets',           label: 'Budgets',           icon: Target },
   { to: '/recurring-expenses',label: 'Recurring',         icon: RefreshCw },
+  { to: '/files',               label: 'Files',             icon: FolderOpen },
   { to: '/members',        label: 'Members',        icon: Users },
   { to: '/billing',      label: 'Billing',      icon: CreditCard },
   { to: '/settings',     label: 'Settings',     icon: Settings },

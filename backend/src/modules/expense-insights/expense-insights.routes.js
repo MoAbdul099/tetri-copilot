@@ -1,9 +1,10 @@
 const express = require('express');
+const { protect } = require('../../middleware/requireAuth');
 const requireWorkspace = require('../../middleware/requireWorkspace');
 const ctrl = require('./expense-insights.controller');
 
 const router = express.Router();
-router.use(requireWorkspace);
+router.use(protect, requireWorkspace);
 
 router.get('/dashboard',             ctrl.getDashboard);
 router.get('/analytics',             ctrl.getAnalytics);

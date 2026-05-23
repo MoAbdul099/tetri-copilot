@@ -33,6 +33,7 @@ const reimbursementsRoutes       = require('./modules/reimbursements/reimburseme
 const expenseInsightsRoutes      = require('./modules/expense-insights/expense-insights.routes');
 const budgetsRoutes              = require('./modules/budgets/budgets.routes');
 const recurringExpensesRoutes    = require('./modules/recurring-expenses/recurring-expenses.routes');
+const filesRoutes                = require('./modules/files/files.routes');
 
 const app = express();
 
@@ -86,6 +87,7 @@ app.use('/api/v1/reimbursements', reimbursementsRoutes);
 app.use('/api/v1/expense-insights', expenseInsightsRoutes);
 app.use('/api/v1/budgets', budgetsRoutes);
 app.use('/api/v1/recurring-expenses', recurringExpensesRoutes);
+app.use('/api/v1/files', filesRoutes);
 
 // 404 and error handlers must be last
 app.use(notFound);
