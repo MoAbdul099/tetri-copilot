@@ -1,6 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Prisma returns fileSizeBytes as BigInt which JSON.stringify cannot serialize.
+// Convert to Number after every query that returns a file record.
+function normalize(file) {
+  if (!file) return file;
+  return { ...file, fileSizeBytes: file.fileSizeBytes != null ? Number(file.fileSizeBytes) : null };
+}
+
 // Field names matched exactly to schema.prisma
 const FILE_SELECT = {
   id: true,
@@ -45,11 +52,11 @@ async function list(workspaceId, { search, mimeType, isDeleted, uploadedByUserId
     prisma.file.count({ where }),
   ]);
 
-  return { files, total };
+  return { files: files.map(normalize), total };
 }
 
 async function findById(id, workspaceId) {
-  return prisma.file.findFirst({
+  const file = await prisma.file.findFirst({
     where: { id, workspaceId },
     select: {
       ...FILE_SELECT,
@@ -61,30 +68,31 @@ async function findById(id, workspaceId) {
       },
     },
   });
+  return normalize(file);
 }
 
 async function create(data) {
-  return prisma.file.create({ data, select: FILE_SELECT });
+  return normalize(await prisma.file.create({ data, select: FILE_SELECT }));
 }
 
 async function update(id, data) {
-  return prisma.file.update({ where: { id }, data, select: FILE_SELECT });
+  return normalize(await prisma.file.update({ where: { id }, data, select: FILE_SELECT }));
 }
 
 async function softDelete(id, deletedByUserId) {
-  return prisma.file.update({
+  return normalize(await prisma.file.update({
     where: { id },
     data: { isDeleted: true, deletedAt: new Date(), deletedByUserId },
     select: FILE_SELECT,
-  });
+  }));
 }
 
 async function restore(id) {
-  return prisma.file.update({
+  return normalize(await prisma.file.update({
     where: { id },
     data: { isDeleted: false, deletedAt: null, deletedByUserId: null },
     select: FILE_SELECT,
-  });
+  }));
 }
 
 async function createLink(data) {
@@ -96,7 +104,7 @@ async function deleteLink(id, workspaceId) {
 }
 
 async function getLinksByEntity(workspaceId, entityType, entityId) {
-  return prisma.fileLink.findMany({
+  const links = await prisma.fileLink.findMany({
     where: { workspaceId, entityType, entityId },
     include: {
       file: { select: FILE_SELECT },
@@ -104,6 +112,7 @@ async function getLinksByEntity(workspaceId, entityType, entityId) {
     },
     orderBy: { createdAt: 'desc' },
   });
+  return links.map((l) => ({ ...l, file: normalize(l.file) }));
 }
 
 async function logActivity(data) {
