@@ -1,9 +1,25 @@
-import api, { getApiToken } from '../../../lib/api.js';
+import api from '../../../lib/api.js';
 
 const base = () => api.defaults.baseURL || '';
 
+// Read auth token without any module-level dependency.
+// window.__clerkTokenGetter is set by setClerkTokenGetter() in api.js,
+// which ProtectedLayout and ClerkApiSync both call on mount.
+// window.Clerk.session is the Clerk SDK's live session object — always valid when signed in.
+async function getToken() {
+  if (window.__clerkTokenGetter) {
+    const t = await window.__clerkTokenGetter();
+    if (t) return t;
+  }
+  if (window.Clerk?.session) {
+    const t = await window.Clerk.session.getToken();
+    if (t) return t;
+  }
+  return null;
+}
+
 async function apiFetch(method, path, body) {
-  const token = await getApiToken();
+  const token = await getToken();
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   let fetchBody;
   if (body instanceof FormData) {

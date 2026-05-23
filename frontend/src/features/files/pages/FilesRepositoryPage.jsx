@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import {
   FolderOpen, Search, Upload, Eye, Download, Pencil, Trash2, RotateCcw,
-  Filter, ChevronLeft, ChevronRight, Loader2, X,
+  ChevronLeft, ChevronRight, Loader2, X,
 } from 'lucide-react';
 import { listFiles, deleteFile, restoreFile, renameFile } from '../services/filesService.js';
+import { setClerkTokenGetter } from '../../../lib/api.js';
 import FileUploadDropzone from '../components/FileUploadDropzone.jsx';
 import FilePreviewModal from '../components/FilePreviewModal.jsx';
-import api from '../../../lib/api.js';
 
 function humanSize(bytes) {
   if (!bytes) return '—';
@@ -88,6 +89,13 @@ function RenameModal({ file, onSave, onClose }) {
 const PAGE_SIZE = 20;
 
 export default function FilesRepositoryPage() {
+  const { getToken } = useAuth();
+
+  // Ensure the shared token getter is always current for this page's service calls
+  useEffect(() => {
+    setClerkTokenGetter(getToken);
+  }, [getToken]);
+
   const [files, setFiles] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -115,7 +123,8 @@ export default function FilesRepositoryPage() {
       setFiles(result.files || []);
       setTotal(result.total || 0);
     } catch (err) {
-      showToast('Failed to load files', 'error');
+      const msg = err?.response?.data?.error || err?.message || 'Failed to load files';
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -161,7 +170,7 @@ export default function FilesRepositoryPage() {
   }
 
   function handleDownload(file) {
-    const baseUrl = api.defaults.baseURL || '';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const a = document.createElement('a');
     a.href = `${baseUrl}/api/v1/files/${file.id}/download`;
     a.download = file.fileName || 'file';

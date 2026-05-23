@@ -1,29 +1,22 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import {
-  LayoutDashboard,
-  Settings,
-  Users,
-  Users2,
-  CreditCard,
-  FileText,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  TrendingUp,
-  Activity,
-  Receipt,
-  ShoppingCart,
-  CheckSquare,
-  Wallet,
-  Brain,
-  Target,
-  RefreshCw,
-  FolderOpen,
-  ChevronRight,
+  LayoutDashboard, Settings, Users, Users2, CreditCard, FileText,
+  LogOut, Menu, X, ChevronDown, ChevronRight,
+  TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
+  Wallet, Brain, Target, RefreshCw, FolderOpen,
+  Landmark, HardDrive, ShieldCheck,
 } from 'lucide-react';
+
+// Group icon color classes per group
+const GROUP_ICON_STYLES = {
+  Sales:           'bg-blue-50 text-blue-600',
+  Finance:         'bg-indigo-50 text-indigo-600',
+  Expenses:        'bg-orange-50 text-orange-600',
+  Storage:         'bg-teal-50 text-teal-600',
+  Administration:  'bg-slate-100 text-slate-600',
+};
 
 const NAV_CONFIG = [
   {
@@ -35,44 +28,49 @@ const NAV_CONFIG = [
   {
     type: 'group',
     label: 'Sales',
+    groupIcon: Users2,
     items: [
       { to: '/customers', label: 'Customers', icon: Users2 },
     ],
   },
   {
     type: 'group',
-    label: 'Invoicing',
+    label: 'Finance',
+    groupIcon: Landmark,
     items: [
-      { to: '/invoices',          label: 'Invoices',    icon: FileText },
-      { to: '/payments',          label: 'Payments',    icon: CreditCard },
-      { to: '/receivables',       label: 'Receivables', icon: TrendingUp },
-      { to: '/collections',       label: 'Collections', icon: Activity },
-      { to: '/statements',        label: 'Statements',  icon: Receipt },
-      { to: '/recurring-expenses',label: 'Recurring',   icon: RefreshCw },
+      { to: '/invoices',    label: 'Invoices',    icon: FileText },
+      { to: '/payments',    label: 'Payments',    icon: CreditCard },
+      { to: '/receivables', label: 'Receivables', icon: TrendingUp },
+      { to: '/collections', label: 'Collections', icon: Activity },
+      { to: '/statements',  label: 'Statements',  icon: Receipt },
     ],
   },
   {
     type: 'group',
     label: 'Expenses',
+    groupIcon: ShoppingCart,
     items: [
-      { to: '/expenses',       label: 'Expenses',       icon: ShoppingCart },
-      { to: '/approvals',      label: 'Approvals',      icon: CheckSquare },
-      { to: '/reimbursements', label: 'Reimbursements', icon: Wallet },
-      { to: '/budgets',        label: 'Budgets',        icon: Target },
+      { to: '/expenses',           label: 'Expenses',       icon: ShoppingCart },
+      { to: '/approvals',          label: 'Approvals',      icon: CheckSquare },
+      { to: '/reimbursements',     label: 'Reimbursements', icon: Wallet },
+      { to: '/budgets',            label: 'Budgets',        icon: Target },
+      { to: '/recurring-expenses', label: 'Recurring',      icon: RefreshCw },
+      { to: '/expense-insights',   label: 'Insights',       icon: Brain },
     ],
   },
   {
     type: 'group',
-    label: 'Insights',
+    label: 'Storage',
+    groupIcon: HardDrive,
     items: [
-      { to: '/expense-insights', label: 'Insights', icon: Brain },
+      { to: '/files', label: 'Files', icon: FolderOpen },
     ],
   },
   {
     type: 'group',
-    label: 'Admin & Settings',
+    label: 'Administration',
+    groupIcon: ShieldCheck,
     items: [
-      { to: '/files',    label: 'Files',    icon: FolderOpen },
       { to: '/members',  label: 'Members',  icon: Users },
       { to: '/billing',  label: 'Billing',  icon: CreditCard },
       { to: '/settings', label: 'Settings', icon: Settings },
@@ -88,35 +86,42 @@ function NavGroup({ group, onNavigate }) {
   const location = useLocation();
   const active = isGroupActive(group, location.pathname);
   const [open, setOpen] = useState(active);
+  const GroupIcon = group.groupIcon;
+  const iconStyle = GROUP_ICON_STYLES[group.label] || 'bg-blue-50 text-blue-600';
 
   return (
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
+        className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-tetri-bg transition-colors group"
       >
-        <span>{group.label}</span>
+        <span className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${iconStyle}`}>
+          <GroupIcon size={13} />
+        </span>
+        <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider text-tetri-neutral group-hover:text-tetri-text transition-colors">
+          {group.label}
+        </span>
         {open
-          ? <ChevronDown className="w-3.5 h-3.5" />
-          : <ChevronRight className="w-3.5 h-3.5" />
+          ? <ChevronDown className="w-3 h-3 text-tetri-neutral" />
+          : <ChevronRight className="w-3 h-3 text-tetri-neutral" />
         }
       </button>
       {open && (
-        <div className="mt-0.5 space-y-0.5">
+        <div className="mt-0.5 mb-1 space-y-0.5">
           {group.items.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium ml-2 transition-colors ${
+                `flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium ml-2 transition-colors ${
                   isActive
                     ? 'bg-[#eff4ff] text-tetri-blue'
                     : 'text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text'
                 }`
               }
             >
-              <Icon className="w-4 h-4 flex-shrink-0" size={16} />
+              <Icon className="w-4 h-4 flex-shrink-0" size={15} />
               {label}
             </NavLink>
           ))}
@@ -148,7 +153,7 @@ export default function AppLayout({ user, workspace }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_CONFIG.map((entry, i) => {
+        {NAV_CONFIG.map((entry) => {
           if (entry.type === 'item') {
             const Icon = entry.icon;
             return (
@@ -164,7 +169,7 @@ export default function AppLayout({ user, workspace }) {
                   }`
                 }
               >
-                <Icon className="w-4.5 h-4.5 flex-shrink-0" size={18} />
+                <Icon size={18} className="flex-shrink-0" />
                 {entry.label}
               </NavLink>
             );
@@ -229,16 +234,10 @@ export default function AppLayout({ user, workspace }) {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          <div
-            className="fixed inset-0 bg-black/30"
-            onClick={closeSidebar}
-          />
+          <div className="fixed inset-0 bg-black/30" onClick={closeSidebar} />
           <aside className="relative flex flex-col w-64 bg-tetri-surface border-r border-tetri-border z-50">
             <div className="absolute top-4 right-3">
-              <button
-                onClick={closeSidebar}
-                className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg"
-              >
+              <button onClick={closeSidebar} className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -249,18 +248,12 @@ export default function AppLayout({ user, workspace }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile top bar */}
         <header className="md:hidden bg-tetri-surface border-b border-tetri-border h-14 flex items-center px-4 gap-3 flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg">
             <Menu className="w-5 h-5" />
           </button>
           <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain" draggable={false} />
         </header>
-
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto py-6 px-6 md:px-8">
           <Outlet />
         </main>
