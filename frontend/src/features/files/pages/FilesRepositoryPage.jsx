@@ -300,7 +300,7 @@ export default function FilesRepositoryPage() {
                   </td>
                   <td className="px-4 py-3 text-tetri-neutral hidden lg:table-cell">
                     {file.uploadedByUser
-                      ? `${file.uploadedByUser.firstName || ''} ${file.uploadedByUser.lastName || ''}`.trim() || file.uploadedByUser.email
+                      ? file.uploadedByUser.fullName || file.uploadedByUser.email
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-tetri-neutral hidden md:table-cell">

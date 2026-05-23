@@ -25,10 +25,10 @@ const FILE_SELECT = {
   createdAt: true,
   updatedAt: true,
   uploadedByUser: {
-    select: { id: true, firstName: true, lastName: true, email: true },
+    select: { id: true, fullName: true, email: true },
   },
   deletedByUser: {
-    select: { id: true, firstName: true, lastName: true },
+    select: { id: true, fullName: true },
   },
 };
 
@@ -63,7 +63,7 @@ async function findById(id, workspaceId) {
       fileLinks: {
         select: {
           id: true, entityType: true, entityId: true, createdAt: true,
-          createdBy: { select: { id: true, firstName: true, lastName: true } },
+          createdBy: { select: { id: true, fullName: true } },
         },
       },
     },
