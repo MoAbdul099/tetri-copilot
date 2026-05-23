@@ -37,6 +37,12 @@ const filesRoutes                = require('./modules/files/files.routes');
 
 const app = express();
 
+// BigInt values (e.g. fileSizeBytes) cannot be serialized by JSON.stringify.
+// Convert them to numbers so res.json() never crashes on file-size fields.
+app.set('json replacer', (_, value) =>
+  typeof value === 'bigint' ? Number(value) : value
+);
+
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 
