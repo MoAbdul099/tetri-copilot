@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import {
   LayoutDashboard,
@@ -22,35 +22,117 @@ import {
   Target,
   RefreshCw,
   FolderOpen,
+  ChevronRight,
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { to: '/customers',    label: 'Customers',    icon: Users2 },
-  { to: '/invoices',     label: 'Invoices',     icon: FileText },
-  { to: '/payments',     label: 'Payments',     icon: CreditCard },
-  { to: '/receivables',  label: 'Receivables',  icon: TrendingUp },
-  { to: '/collections',  label: 'Collections',  icon: Activity },
-  { to: '/statements',   label: 'Statements',   icon: Receipt },
-  { to: '/expenses',          label: 'Expenses',          icon: ShoppingCart },
-  { to: '/approvals',         label: 'Approvals',         icon: CheckSquare },
-  { to: '/reimbursements',    label: 'Reimbursements',    icon: Wallet },
-  { to: '/expense-insights',  label: 'Insights',          icon: Brain },
-  { to: '/budgets',           label: 'Budgets',           icon: Target },
-  { to: '/recurring-expenses',label: 'Recurring',         icon: RefreshCw },
-  { to: '/files',               label: 'Files',             icon: FolderOpen },
-  { to: '/members',        label: 'Members',        icon: Users },
-  { to: '/billing',      label: 'Billing',      icon: CreditCard },
-  { to: '/settings',     label: 'Settings',     icon: Settings },
+const NAV_CONFIG = [
+  {
+    type: 'item',
+    to: '/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    type: 'group',
+    label: 'Sales',
+    items: [
+      { to: '/customers', label: 'Customers', icon: Users2 },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Invoicing',
+    items: [
+      { to: '/invoices',          label: 'Invoices',    icon: FileText },
+      { to: '/payments',          label: 'Payments',    icon: CreditCard },
+      { to: '/receivables',       label: 'Receivables', icon: TrendingUp },
+      { to: '/collections',       label: 'Collections', icon: Activity },
+      { to: '/statements',        label: 'Statements',  icon: Receipt },
+      { to: '/recurring-expenses',label: 'Recurring',   icon: RefreshCw },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Expenses',
+    items: [
+      { to: '/expenses',       label: 'Expenses',       icon: ShoppingCart },
+      { to: '/approvals',      label: 'Approvals',      icon: CheckSquare },
+      { to: '/reimbursements', label: 'Reimbursements', icon: Wallet },
+      { to: '/budgets',        label: 'Budgets',        icon: Target },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Insights',
+    items: [
+      { to: '/expense-insights', label: 'Insights', icon: Brain },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Admin & Settings',
+    items: [
+      { to: '/files',    label: 'Files',    icon: FolderOpen },
+      { to: '/members',  label: 'Members',  icon: Users },
+      { to: '/billing',  label: 'Billing',  icon: CreditCard },
+      { to: '/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ];
+
+function isGroupActive(group, pathname) {
+  return group.items.some((item) => pathname.startsWith(item.to));
+}
+
+function NavGroup({ group, onNavigate }) {
+  const location = useLocation();
+  const active = isGroupActive(group, location.pathname);
+  const [open, setOpen] = useState(active);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
+      >
+        <span>{group.label}</span>
+        {open
+          ? <ChevronDown className="w-3.5 h-3.5" />
+          : <ChevronRight className="w-3.5 h-3.5" />
+        }
+      </button>
+      {open && (
+        <div className="mt-0.5 space-y-0.5">
+          {group.items.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium ml-2 transition-colors ${
+                  isActive
+                    ? 'bg-[#eff4ff] text-tetri-blue'
+                    : 'text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text'
+                }`
+              }
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" size={16} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AppLayout({ user, workspace }) {
   const { signOut } = useClerk();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleSignOut = () => signOut({ redirectUrl: '/sign-in' });
+  const closeSidebar = () => setSidebarOpen(false);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -65,24 +147,32 @@ export default function AppLayout({ user, workspace }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={() => setSidebarOpen(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-[#eff4ff] text-tetri-blue'
-                  : 'text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text'
-              }`
-            }
-          >
-            <Icon className="w-4.5 h-4.5 flex-shrink-0" size={18} />
-            {label}
-          </NavLink>
-        ))}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {NAV_CONFIG.map((entry, i) => {
+          if (entry.type === 'item') {
+            const Icon = entry.icon;
+            return (
+              <NavLink
+                key={entry.to}
+                to={entry.to}
+                onClick={closeSidebar}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-[#eff4ff] text-tetri-blue'
+                      : 'text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text'
+                  }`
+                }
+              >
+                <Icon className="w-4.5 h-4.5 flex-shrink-0" size={18} />
+                {entry.label}
+              </NavLink>
+            );
+          }
+          return (
+            <NavGroup key={entry.label} group={entry} onNavigate={closeSidebar} />
+          );
+        })}
       </nav>
 
       {/* Workspace + User block */}
@@ -132,7 +222,7 @@ export default function AppLayout({ user, workspace }) {
   return (
     <div className="flex h-screen bg-tetri-bg overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-60 md:flex-col bg-tetri-surface border-r border-tetri-border flex-shrink-0">
+      <aside className="hidden md:flex md:w-56 md:flex-col bg-tetri-surface border-r border-tetri-border flex-shrink-0">
         <SidebarContent />
       </aside>
 
@@ -141,12 +231,12 @@ export default function AppLayout({ user, workspace }) {
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div
             className="fixed inset-0 bg-black/30"
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
           />
           <aside className="relative flex flex-col w-64 bg-tetri-surface border-r border-tetri-border z-50">
             <div className="absolute top-4 right-3">
               <button
-                onClick={() => setSidebarOpen(false)}
+                onClick={closeSidebar}
                 className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg"
               >
                 <X className="w-5 h-5" />

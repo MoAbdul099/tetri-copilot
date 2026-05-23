@@ -123,7 +123,7 @@ export default function AttachmentsPanel({ entityType, entityId }) {
                   <p className="text-xs font-medium text-tetri-text truncate">
                     {file?.fileName || file?.originalFilename || '—'}
                   </p>
-                  <p className="text-xs text-tetri-neutral">{humanSize(file?.fileSize)}</p>
+                  <p className="text-xs text-tetri-neutral">{humanSize(file?.fileSizeBytes)}</p>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button

@@ -296,11 +296,11 @@ export default function FilesRepositoryPage() {
                     {file.extension?.toUpperCase() || '—'}
                   </td>
                   <td className="px-4 py-3 text-tetri-neutral hidden lg:table-cell">
-                    {humanSize(file.fileSize)}
+                    {humanSize(file.fileSizeBytes)}
                   </td>
                   <td className="px-4 py-3 text-tetri-neutral hidden lg:table-cell">
-                    {file.uploadedBy
-                      ? `${file.uploadedBy.firstName || ''} ${file.uploadedBy.lastName || ''}`.trim() || file.uploadedBy.email
+                    {file.uploadedByUser
+                      ? `${file.uploadedByUser.firstName || ''} ${file.uploadedByUser.lastName || ''}`.trim() || file.uploadedByUser.email
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-tetri-neutral hidden md:table-cell">

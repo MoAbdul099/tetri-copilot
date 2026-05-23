@@ -41,7 +41,7 @@ export default function FilePreviewModal({ file, onClose }) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-tetri-text truncate">{file.fileName || file.originalFilename}</p>
             <p className="text-xs text-tetri-neutral mt-0.5">
-              {humanSize(file.fileSize)} · {file.mimeType}
+              {humanSize(file.fileSizeBytes)} · {file.mimeType}
             </p>
           </div>
           <div className="flex items-center gap-1.5">

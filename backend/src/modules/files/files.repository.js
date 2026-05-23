@@ -1,14 +1,14 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Field names matched exactly to schema.prisma
 const FILE_SELECT = {
   id: true,
   workspaceId: true,
   fileName: true,
   originalFilename: true,
   mimeType: true,
-  extension: true,
-  fileSize: true,
+  fileSizeBytes: true,
   storageProvider: true,
   objectKey: true,
   publicUrl: true,
@@ -17,7 +17,7 @@ const FILE_SELECT = {
   deletedAt: true,
   createdAt: true,
   updatedAt: true,
-  uploadedBy: {
+  uploadedByUser: {
     select: { id: true, firstName: true, lastName: true, email: true },
   },
   deletedByUser: {
@@ -25,7 +25,7 @@ const FILE_SELECT = {
   },
 };
 
-async function list(workspaceId, { search, mimeType, isDeleted, uploadedById, page, limit }) {
+async function list(workspaceId, { search, mimeType, isDeleted, uploadedByUserId, page, limit }) {
   const where = { workspaceId };
   if (search) {
     where.OR = [
@@ -34,24 +34,14 @@ async function list(workspaceId, { search, mimeType, isDeleted, uploadedById, pa
     ];
   }
   if (mimeType) where.mimeType = { contains: mimeType, mode: 'insensitive' };
-  if (uploadedById) where.uploadedById = uploadedById;
-  if (typeof isDeleted === 'boolean') {
-    where.isDeleted = isDeleted;
-  } else {
-    where.isDeleted = false;
-  }
+  if (uploadedByUserId) where.uploadedByUserId = uploadedByUserId;
+  where.isDeleted = typeof isDeleted === 'boolean' ? isDeleted : false;
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
   const [files, total] = await Promise.all([
-    prisma.file.findMany({
-      where,
-      select: FILE_SELECT,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take,
-    }),
+    prisma.file.findMany({ where, select: FILE_SELECT, orderBy: { createdAt: 'desc' }, skip, take }),
     prisma.file.count({ where }),
   ]);
 
@@ -61,52 +51,38 @@ async function list(workspaceId, { search, mimeType, isDeleted, uploadedById, pa
 async function findById(id, workspaceId) {
   return prisma.file.findFirst({
     where: { id, workspaceId },
-    select: { ...FILE_SELECT, fileLinks: {
-      select: {
-        id: true, entityType: true, entityId: true, createdAt: true,
-        createdBy: { select: { id: true, firstName: true, lastName: true } },
+    select: {
+      ...FILE_SELECT,
+      fileLinks: {
+        select: {
+          id: true, entityType: true, entityId: true, createdAt: true,
+          createdBy: { select: { id: true, firstName: true, lastName: true } },
+        },
       },
-    }},
+    },
   });
 }
 
 async function create(data) {
-  return prisma.file.create({
-    data,
+  return prisma.file.create({ data, select: FILE_SELECT });
+}
+
+async function update(id, data) {
+  return prisma.file.update({ where: { id }, data, select: FILE_SELECT });
+}
+
+async function softDelete(id, deletedByUserId) {
+  return prisma.file.update({
+    where: { id },
+    data: { isDeleted: true, deletedAt: new Date(), deletedByUserId },
     select: FILE_SELECT,
   });
 }
 
-async function update(id, workspaceId, data) {
+async function restore(id) {
   return prisma.file.update({
     where: { id },
-    data: { ...data, workspaceId },
-    select: FILE_SELECT,
-  });
-}
-
-async function softDelete(id, workspaceId, deletedByUserId) {
-  return prisma.file.update({
-    where: { id },
-    data: {
-      isDeleted: true,
-      deletedAt: new Date(),
-      deletedByUserId,
-      workspaceId,
-    },
-    select: FILE_SELECT,
-  });
-}
-
-async function restore(id, workspaceId) {
-  return prisma.file.update({
-    where: { id },
-    data: {
-      isDeleted: false,
-      deletedAt: null,
-      deletedByUserId: null,
-      workspaceId,
-    },
+    data: { isDeleted: false, deletedAt: null, deletedByUserId: null },
     select: FILE_SELECT,
   });
 }
@@ -135,14 +111,6 @@ async function logActivity(data) {
 }
 
 module.exports = {
-  list,
-  findById,
-  create,
-  update,
-  softDelete,
-  restore,
-  createLink,
-  deleteLink,
-  getLinksByEntity,
-  logActivity,
+  list, findById, create, update, softDelete, restore,
+  createLink, deleteLink, getLinksByEntity, logActivity,
 };

@@ -1,36 +1,59 @@
-import api from '../../../lib/api.js';
+import api, { getApiToken } from '../../../lib/api.js';
+
+const base = () => api.defaults.baseURL || '';
+
+async function apiFetch(method, path, body) {
+  const token = await getApiToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  let fetchBody;
+  if (body instanceof FormData) {
+    fetchBody = body;
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    fetchBody = JSON.stringify(body);
+  }
+  const res = await fetch(`${base()}${path}`, { method, headers, body: fetchBody });
+  const data = await res.json();
+  if (!res.ok) throw Object.assign(new Error(data.error || 'Request failed'), { response: { data }, status: res.status });
+  return data.data;
+}
+
+function buildQuery(params) {
+  if (!params) return '';
+  const entries = Object.entries(params).filter(([, v]) => v != null && v !== '');
+  if (!entries.length) return '';
+  return '?' + new URLSearchParams(entries).toString();
+}
 
 export const uploadFiles = (formData) =>
-  api.post('/api/v1/files/upload', formData, {
-    headers: { 'Content-Type': undefined },
-  }).then((r) => r.data.data);
+  apiFetch('POST', '/api/v1/files/upload', formData);
 
 export const listFiles = (params) =>
-  api.get('/api/v1/files', { params }).then((r) => r.data.data);
+  apiFetch('GET', `/api/v1/files${buildQuery(params)}`);
 
 export const getFile = (id) =>
-  api.get(`/api/v1/files/${id}`).then((r) => r.data.data);
+  apiFetch('GET', `/api/v1/files/${id}`);
 
 export const downloadFile = (id) =>
-  `${api.defaults.baseURL || ''}/api/v1/files/${id}/download`;
+  `${base()}/api/v1/files/${id}/download`;
 
 export const serveFile = (id) =>
-  `${api.defaults.baseURL || ''}/api/v1/files/${id}/serve`;
+  `${base()}/api/v1/files/${id}/serve`;
 
 export const renameFile = (id, fileName) =>
-  api.put(`/api/v1/files/${id}`, { fileName }).then((r) => r.data.data);
+  apiFetch('PUT', `/api/v1/files/${id}`, { fileName });
 
 export const deleteFile = (id) =>
-  api.delete(`/api/v1/files/${id}`).then((r) => r.data.data);
+  apiFetch('DELETE', `/api/v1/files/${id}`);
 
 export const restoreFile = (id) =>
-  api.post(`/api/v1/files/${id}/restore`).then((r) => r.data.data);
+  apiFetch('POST', `/api/v1/files/${id}/restore`);
 
 export const linkFile = (fileId, entityType, entityId) =>
-  api.post('/api/v1/files/link', { fileId, entityType, entityId }).then((r) => r.data.data);
+  apiFetch('POST', '/api/v1/files/link', { fileId, entityType, entityId });
 
 export const unlinkFile = (linkId) =>
-  api.delete(`/api/v1/files/link/${linkId}`).then((r) => r.data.data);
+  apiFetch('DELETE', `/api/v1/files/link/${linkId}`);
 
 export const getEntityFiles = (entityType, entityId) =>
-  api.get(`/api/v1/files/entity/${entityType}/${entityId}`).then((r) => r.data.data);
+  apiFetch('GET', `/api/v1/files/entity/${entityType}/${entityId}`);

@@ -1,12 +1,11 @@
+const fs = require('fs');
 const svc = require('./files.service');
 const { success, error } = require('../../utils/response');
-const fs = require('fs');
-const path = require('path');
 
-async function upload(req, res) {
+async function upload(req, res, next) {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json(error('No files provided'));
+      return error(res, 'No files provided', 400);
     }
     const { workspaceId } = req;
     const userId = req.user.id;
@@ -24,136 +23,124 @@ async function upload(req, res) {
       }
     }
 
-    return res.status(201).json(success(
-      { uploaded: results, errors },
-      `${results.length} file(s) uploaded successfully`
-    ));
+    return success(res, { uploaded: results, errors }, `${results.length} file(s) uploaded successfully`, 201);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function list(req, res) {
+async function list(req, res, next) {
   try {
-    const { workspaceId } = req;
-    const result = await svc.listFiles(workspaceId, req.query);
-    return res.json(success(result));
+    const result = await svc.listFiles(req.workspaceId, req.query);
+    return success(res, result);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function getOne(req, res) {
+async function getOne(req, res, next) {
   try {
     const file = await svc.getFile(req.params.id, req.workspaceId);
-    return res.json(success(file));
+    return success(res, file);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function download(req, res) {
+async function download(req, res, next) {
   try {
     const { url, file } = await svc.getDownloadUrl(req.params.id, req.workspaceId, req.user.id);
+    if (url) return res.redirect(url);
 
-    if (url) {
-      return res.redirect(url);
-    }
-
-    // Local storage — stream the file
     const localPath = svc.getLocalPath(file);
     if (!localPath || !fs.existsSync(localPath)) {
-      return res.status(404).json(error('File not found on disk'));
+      return error(res, 'File not found on disk', 404);
     }
-
     const filename = encodeURIComponent(file.fileName || file.originalFilename || 'download');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     if (file.mimeType) res.setHeader('Content-Type', file.mimeType);
     return fs.createReadStream(localPath).pipe(res);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function serve(req, res) {
+async function serve(req, res, next) {
   try {
     const file = await svc.getFile(req.params.id, req.workspaceId);
-    if (file.isDeleted) return res.status(410).json(error('File has been deleted'));
+    if (file.isDeleted) return error(res, 'File has been deleted', 410);
 
-    // R2: redirect to signed URL (inline, no Content-Disposition attachment)
     const signedUrl = await svc.getServeUrl(file);
     if (signedUrl) return res.redirect(signedUrl);
 
-    // Local fallback: stream from disk
     const localPath = svc.getLocalPath(file);
     if (!localPath || !fs.existsSync(localPath)) {
-      return res.status(404).json(error('File not found on disk'));
+      return error(res, 'File not found on disk', 404);
     }
-
     if (file.mimeType) res.setHeader('Content-Type', file.mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.fileName || 'file')}"`);
     return fs.createReadStream(localPath).pipe(res);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function rename(req, res) {
+async function rename(req, res, next) {
   try {
     const updated = await svc.renameFile(req.params.id, req.workspaceId, req.user.id, req.body.fileName);
-    return res.json(success(updated, 'File renamed'));
+    return success(res, updated, 'File renamed');
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function remove(req, res) {
+async function remove(req, res, next) {
   try {
     const deleted = await svc.deleteFile(req.params.id, req.workspaceId, req.user.id);
-    return res.json(success(deleted, 'File deleted'));
+    return success(res, deleted, 'File deleted');
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function restore(req, res) {
+async function restore(req, res, next) {
   try {
     const restored = await svc.restoreFile(req.params.id, req.workspaceId, req.user.id);
-    return res.json(success(restored, 'File restored'));
+    return success(res, restored, 'File restored');
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function link(req, res) {
+async function link(req, res, next) {
   try {
     const { fileId, entityType, entityId } = req.body;
     if (!fileId || !entityType || !entityId) {
-      return res.status(400).json(error('fileId, entityType, and entityId are required'));
+      return error(res, 'fileId, entityType, and entityId are required', 400);
     }
     const result = await svc.linkFile(req.workspaceId, req.user.id, fileId, entityType, entityId);
-    return res.status(201).json(success(result, 'File linked'));
+    return success(res, result, 'File linked', 201);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function unlink(req, res) {
+async function unlink(req, res, next) {
   try {
     const result = await svc.unlinkFile(req.params.linkId, req.workspaceId, req.user.id);
-    return res.json(success(result, 'File unlinked'));
+    return success(res, result, 'File unlinked');
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 
-async function entityFiles(req, res) {
+async function entityFiles(req, res, next) {
   try {
     const { entityType, entityId } = req.params;
     const links = await svc.getEntityFiles(req.workspaceId, entityType, entityId, req.user.id);
-    return res.json(success(links));
+    return success(res, links);
   } catch (err) {
-    return res.status(err.statusCode || 500).json(error(err.message));
+    next(err);
   }
 }
 

@@ -64,11 +64,10 @@ export default function FileUploadDropzone({ onUploaded, entityType, entityId })
 
       if (onUploaded) onUploaded(uploaded);
     } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Upload failed';
       setQueue((q) =>
         q.map((item) =>
-          item.status === 'uploading'
-            ? { ...item, status: 'error', error: err.response?.data?.error || err.message }
-            : item
+          item.status === 'uploading' ? { ...item, status: 'error', error: msg } : item
         )
       );
     } finally {

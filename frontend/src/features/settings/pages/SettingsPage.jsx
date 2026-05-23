@@ -8,6 +8,7 @@ import {
   Loader2,
   ArrowRight,
   Shield,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -443,6 +444,173 @@ function MembersTab() {
   );
 }
 
+// ─── Compliance Profile Tab ───────────────────────────────────────────────────
+function ComplianceTab({ isOwner, onToast }) {
+  const [form, setForm] = useState(null);
+  const [countries, setCountries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      companyService.getCompany(),
+      localizationService.getCountries(),
+    ])
+      .then(([c, ctrs]) => {
+        setCountries(ctrs);
+        setForm(
+          c
+            ? {
+                jurisdictionId:         c.jurisdictionId         || '',
+                taxRegistrationNumber:  c.taxRegistrationNumber  || '',
+                vatRegistered:          c.vatRegistered           ?? false,
+                vatRegistrationNumber:  c.vatRegistrationNumber  || '',
+                corporateTaxRegistered: c.corporateTaxRegistered  ?? false,
+                corporateTaxNumber:     c.corporateTaxNumber     || '',
+                tradeLicenseNumber:     c.tradeLicenseNumber     || '',
+                tradeLicenseExpiry:     c.tradeLicenseExpiry
+                  ? new Date(c.tradeLicenseExpiry).toISOString().slice(0, 10)
+                  : '',
+                // keep required base fields so upsert works
+                companyName: c.companyName || '',
+              }
+            : {
+                jurisdictionId: '', taxRegistrationNumber: '', vatRegistered: false,
+                vatRegistrationNumber: '', corporateTaxRegistered: false,
+                corporateTaxNumber: '', tradeLicenseNumber: '', tradeLicenseExpiry: '',
+                companyName: '',
+              }
+        );
+      })
+      .catch(() => onToast('error', 'Failed to load compliance profile'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const toggle = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  const nullable = (v) => (v?.trim() === '' ? null : v?.trim());
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await companyService.updateCompany({
+        companyName: form.companyName || 'My Company',
+        jurisdictionId:         nullable(form.jurisdictionId),
+        taxRegistrationNumber:  nullable(form.taxRegistrationNumber),
+        vatRegistered:          form.vatRegistered,
+        vatRegistrationNumber:  nullable(form.vatRegistrationNumber),
+        corporateTaxRegistered: form.corporateTaxRegistered,
+        corporateTaxNumber:     nullable(form.corporateTaxNumber),
+        tradeLicenseNumber:     nullable(form.tradeLicenseNumber),
+        tradeLicenseExpiry:     nullable(form.tradeLicenseExpiry),
+      });
+      onToast('success', 'Compliance profile saved');
+    } catch (err) {
+      onToast('error', err?.response?.data?.error || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 py-10 text-tetri-muted">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span className="text-sm">Loading…</span>
+      </div>
+    );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm font-semibold text-tetri-text mb-1">Jurisdiction</p>
+        <p className="text-xs text-tetri-muted mb-4">Select the primary legal jurisdiction for compliance purposes.</p>
+        <Field label="Jurisdiction / Country" id="c-jurisdiction">
+          <Select
+            value={form.jurisdictionId}
+            onValueChange={isOwner ? toggle('jurisdictionId') : undefined}
+            disabled={!isOwner}
+          >
+            <SelectTrigger id="c-jurisdiction">
+              <SelectValue placeholder="Select jurisdiction" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.countryName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-tetri-text mb-4">Tax Registration</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Field label="Tax Registration Number (TRN / TIN)" id="c-trn">
+              <Input id="c-trn" value={form.taxRegistrationNumber} onChange={set('taxRegistrationNumber')} readOnly={!isOwner} placeholder="e.g. 100123456789003" />
+            </Field>
+          </div>
+
+          <div className="sm:col-span-2 border border-tetri-border rounded-xl divide-y divide-tetri-border">
+            <div className="flex items-center justify-between px-4 py-3.5 gap-4">
+              <div>
+                <p className="text-sm font-medium text-tetri-text">VAT Registered</p>
+                <p className="text-xs text-tetri-muted">Company is registered for VAT</p>
+              </div>
+              <Switch checked={form.vatRegistered} onCheckedChange={isOwner ? toggle('vatRegistered') : undefined} disabled={!isOwner} />
+            </div>
+            <div className="flex items-center justify-between px-4 py-3.5 gap-4">
+              <div>
+                <p className="text-sm font-medium text-tetri-text">Corporate Tax Registered</p>
+                <p className="text-xs text-tetri-muted">Company is registered for corporate income tax</p>
+              </div>
+              <Switch checked={form.corporateTaxRegistered} onCheckedChange={isOwner ? toggle('corporateTaxRegistered') : undefined} disabled={!isOwner} />
+            </div>
+          </div>
+
+          {form.vatRegistered && (
+            <div className="sm:col-span-2">
+              <Field label="VAT Registration Number" id="c-vat">
+                <Input id="c-vat" value={form.vatRegistrationNumber} onChange={set('vatRegistrationNumber')} readOnly={!isOwner} placeholder="VAT number" />
+              </Field>
+            </div>
+          )}
+
+          {form.corporateTaxRegistered && (
+            <div className="sm:col-span-2">
+              <Field label="Corporate Tax Number" id="c-corp">
+                <Input id="c-corp" value={form.corporateTaxNumber} onChange={set('corporateTaxNumber')} readOnly={!isOwner} placeholder="Corporate tax registration number" />
+              </Field>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-tetri-text mb-4">Trade License</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Trade License Number" id="c-tl">
+            <Input id="c-tl" value={form.tradeLicenseNumber} onChange={set('tradeLicenseNumber')} readOnly={!isOwner} placeholder="License number" />
+          </Field>
+          <Field label="Trade License Expiry" id="c-tlexp">
+            <Input id="c-tlexp" type="date" value={form.tradeLicenseExpiry} onChange={set('tradeLicenseExpiry')} readOnly={!isOwner} />
+          </Field>
+        </div>
+      </div>
+
+      {isOwner && (
+        <div className="flex justify-end pt-2 border-t border-tetri-border">
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save compliance profile
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Settings Page ──────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { showToast, ToastContainer } = useToast();
@@ -470,6 +638,10 @@ export default function SettingsPage() {
             <Globe size={15} />
             Localization
           </TabsTrigger>
+          <TabsTrigger value="compliance" className="flex items-center gap-1.5">
+            <ShieldCheck size={15} />
+            Compliance
+          </TabsTrigger>
           <TabsTrigger value="members" className="flex items-center gap-1.5">
             <Users size={15} />
             Members
@@ -492,6 +664,9 @@ export default function SettingsPage() {
           </TabsContent>
           <TabsContent value="localization">
             <LocalizationTab isOwner={isOwner} onToast={showToast} />
+          </TabsContent>
+          <TabsContent value="compliance">
+            <ComplianceTab isOwner={isOwner} onToast={showToast} />
           </TabsContent>
           <TabsContent value="members">
             <MembersTab />

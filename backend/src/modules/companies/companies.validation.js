@@ -12,6 +12,15 @@ const patchCompanySchema = z.object({
   postalCode: z.string().max(50).optional().nullable(),
   taxNumber: z.string().max(100).optional().nullable(),
   registrationNumber: z.string().max(100).optional().nullable(),
+  // Compliance profile fields
+  jurisdictionId: z.string().uuid().optional().nullable(),
+  taxRegistrationNumber: z.string().max(100).optional().nullable(),
+  vatRegistered: z.boolean().optional(),
+  vatRegistrationNumber: z.string().max(100).optional().nullable(),
+  corporateTaxRegistered: z.boolean().optional(),
+  corporateTaxNumber: z.string().max(100).optional().nullable(),
+  tradeLicenseNumber: z.string().max(100).optional().nullable(),
+  tradeLicenseExpiry: z.string().optional().nullable(),
 });
 
 module.exports = { patchCompanySchema };

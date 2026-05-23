@@ -270,6 +270,7 @@ model CountryProfile {
 
   languages               CountryProfileLanguage[]
   workspaces              Workspace[]
+  companyJurisdictions    Company[]              @relation("CompanyJurisdiction")
   complianceCalendarItems ComplianceCalendarItem[]
   reminders               Reminder[]
   documentTemplates       DocumentTemplate[]
@@ -476,13 +477,23 @@ model Company {
   addressLine2       String?  @map("address_line2") @db.VarChar(255)
   city               String?  @db.VarChar(150)
   postalCode         String?  @map("postal_code") @db.VarChar(50)
-  taxNumber          String?  @map("tax_number") @db.VarChar(100)
-  registrationNumber String?  @map("registration_number") @db.VarChar(100)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  taxNumber               String?   @map("tax_number") @db.VarChar(100)
+  registrationNumber      String?   @map("registration_number") @db.VarChar(100)
+  // Compliance profile fields (Slice 8.1)
+  jurisdictionId          String?   @map("jurisdiction_id") @db.Uuid
+  taxRegistrationNumber   String?   @map("tax_registration_number") @db.VarChar(100)
+  vatRegistered           Boolean   @default(false) @map("vat_registered")
+  vatRegistrationNumber   String?   @map("vat_registration_number") @db.VarChar(100)
+  corporateTaxRegistered  Boolean   @default(false) @map("corporate_tax_registered")
+  corporateTaxNumber      String?   @map("corporate_tax_number") @db.VarChar(100)
+  tradeLicenseNumber      String?   @map("trade_license_number") @db.VarChar(100)
+  tradeLicenseExpiry      DateTime? @map("trade_license_expiry") @db.Date
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  logoFile  File?     @relation("CompanyLogo", fields: [logoFileId], references: [id], onDelete: SetNull)
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  logoFile     File?           @relation("CompanyLogo", fields: [logoFileId], references: [id], onDelete: SetNull)
+  jurisdiction CountryProfile? @relation("CompanyJurisdiction", fields: [jurisdictionId], references: [id])
 
   @@map("companies")
 }
