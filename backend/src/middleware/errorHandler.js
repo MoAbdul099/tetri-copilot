@@ -21,7 +21,8 @@ const errorHandler = (err, req, res, next) => {
   });
 
   const statusCode = err.statusCode || err.status || 500;
-  const message = statusCode === 500 ? 'Internal server error' : err.message;
+  const isDev = process.env.NODE_ENV !== 'production';
+  const message = statusCode === 500 && !isDev ? 'Internal server error' : err.message;
 
   return res.status(statusCode).json({
     success: false,
