@@ -358,6 +358,8 @@ model User {
   complianceSubmissions         ComplianceSubmission[] @relation("ComplianceSubmittedBy")
   complianceComments            ComplianceComment[]    @relation("ComplianceCommentAuthor")
   complianceActivityLogs        ComplianceActivityLog[] @relation("ComplianceActivityActor")
+  notificationItems             NotificationItem[]      @relation("NotificationItemRecipient")
+  notificationPreferences       NotificationPreference[] @relation("UserNotificationPreference")
 
   @@index([clerkUserId])
   @@index([email])
@@ -429,7 +431,12 @@ model Workspace {
   complianceSubmissions ComplianceSubmission[]
   complianceComments   ComplianceComment[]
   complianceActivityLogs ComplianceActivityLog[]
-  complianceCategories ComplianceCategory[]
+  complianceCategories    ComplianceCategory[]
+  notificationItems       NotificationItem[]
+  notificationProfiles    NotificationProfile[]
+  notificationPreferences NotificationPreference[]
+  escalationProfiles      EscalationProfile[]
+  escalationInstances     EscalationInstance[]
 
   @@map("workspaces")
 }
@@ -2097,9 +2104,10 @@ model ComplianceOccurrence {
   authority    ComplianceAuthority?    @relation(fields: [authorityId], references: [id])
   owner        User                    @relation("ComplianceOccurrenceOwner", fields: [ownerUserId], references: [id])
   backupOwner  User?                   @relation("ComplianceOccurrenceBackupOwner", fields: [backupOwnerUserId], references: [id])
-  submission   ComplianceSubmission?
-  comments     ComplianceComment[]
-  activityLogs ComplianceActivityLog[]
+  submission          ComplianceSubmission?
+  comments            ComplianceComment[]
+  activityLogs        ComplianceActivityLog[]
+  escalationInstances EscalationInstance[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, dueDate])
@@ -2161,4 +2169,163 @@ model ComplianceActivityLog {
   @@index([workspaceId])
   @@index([occurrenceId])
   @@map("compliance_activity_logs")
+}
+
+// =========================================================
+// NOTIFICATION ENGINE — Slice 9.2
+// =========================================================
+
+model NotificationProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rules     NotificationRule[]
+
+  @@index([workspaceId])
+  @@map("notification_profiles")
+}
+
+model NotificationRule {
+  id         String   @id @default(uuid()) @db.Uuid
+  profileId  String   @map("profile_id") @db.Uuid
+  name       String?  @db.VarChar(255)
+  offsetDays Int      @map("offset_days")
+  direction  String   @default("before") @db.VarChar(10)
+  channel    String   @default("both") @db.VarChar(20)
+  isActive   Boolean  @default(true) @map("is_active")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile           NotificationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  notificationItems NotificationItem[]
+
+  @@index([profileId])
+  @@map("notification_rules")
+}
+
+model NotificationItem {
+  id           String    @id @default(uuid()) @db.Uuid
+  workspaceId  String    @map("workspace_id") @db.Uuid
+  recipientId  String    @map("recipient_id") @db.Uuid
+  type         String    @db.VarChar(50)
+  moduleType   String    @map("module_type") @db.VarChar(50)
+  sourceType   String    @map("source_type") @db.VarChar(50)
+  sourceId     String    @map("source_id") @db.Uuid
+  title        String    @db.VarChar(255)
+  body         String    @db.Text
+  priority     String    @default("medium") @db.VarChar(20)
+  channel      String    @default("both") @db.VarChar(20)
+  status       String    @default("pending") @db.VarChar(20)
+  ruleId       String?   @map("rule_id") @db.Uuid
+  dedupeKey    String    @unique @map("dedupe_key") @db.VarChar(500)
+  emailSentAt  DateTime? @map("email_sent_at") @db.Timestamptz(6)
+  readAt       DateTime? @map("read_at") @db.Timestamptz(6)
+  archivedAt   DateTime? @map("archived_at") @db.Timestamptz(6)
+  snoozedUntil DateTime? @map("snoozed_until") @db.Timestamptz(6)
+  scheduledFor DateTime  @map("scheduled_for") @db.Timestamptz(6)
+  metadata     Json?     @default("{}")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipient User              @relation("NotificationItemRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  rule      NotificationRule? @relation(fields: [ruleId], references: [id])
+
+  @@index([workspaceId, recipientId, status])
+  @@index([workspaceId, status])
+  @@index([scheduledFor])
+  @@map("notification_items")
+}
+
+model NotificationPreference {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  enableInApp Boolean  @default(true) @map("enable_in_app")
+  enableEmail Boolean  @default(true) @map("enable_email")
+  frequency   String   @default("immediate") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User      @relation("UserNotificationPreference", fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("notification_preferences")
+}
+
+// =========================================================
+// ESCALATION ENGINE — Slice 9.2
+// =========================================================
+
+model EscalationProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace?          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rules     EscalationRule[]
+  instances EscalationInstance[]
+
+  @@index([workspaceId])
+  @@map("escalation_profiles")
+}
+
+model EscalationRule {
+  id               String   @id @default(uuid()) @db.Uuid
+  profileId        String   @map("profile_id") @db.Uuid
+  level            Int
+  triggerAfterDays Int      @map("trigger_after_days")
+  recipientTypes   String   @map("recipient_types") @db.VarChar(255)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile   EscalationProfile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  instances EscalationInstance[]
+
+  @@index([profileId])
+  @@map("escalation_rules")
+}
+
+model EscalationInstance {
+  id               String    @id @default(uuid()) @db.Uuid
+  workspaceId      String    @map("workspace_id") @db.Uuid
+  occurrenceId     String    @map("occurrence_id") @db.Uuid
+  profileId        String?   @map("profile_id") @db.Uuid
+  ruleId           String?   @map("rule_id") @db.Uuid
+  level            Int
+  status           String    @default("triggered") @db.VarChar(20)
+  recipientUserIds Json      @default("[]") @map("recipient_user_ids")
+  triggeredAt      DateTime  @default(now()) @map("triggered_at") @db.Timestamptz(6)
+  sentAt           DateTime? @map("sent_at") @db.Timestamptz(6)
+  acknowledgedAt   DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(6)
+  metadata         Json?     @default("{}")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  occurrence  ComplianceOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  profile     EscalationProfile?   @relation(fields: [profileId], references: [id])
+  rule        EscalationRule?      @relation(fields: [ruleId], references: [id])
+
+  @@unique([workspaceId, occurrenceId, ruleId])
+  @@index([workspaceId, status])
+  @@index([occurrenceId])
+  @@map("escalation_instances")
 }

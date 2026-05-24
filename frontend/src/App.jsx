@@ -54,6 +54,10 @@ import OccurrenceDetailPage from './features/compliance/pages/OccurrenceDetailPa
 import CalendarPage from './features/compliance/pages/CalendarPage.jsx';
 import CategoriesPage from './features/compliance/pages/CategoriesPage.jsx';
 import PacksPage from './features/compliance/pages/PacksPage.jsx';
+import NotificationCenterPage from './features/notifications/pages/NotificationCenterPage.jsx';
+import ReminderProfilesPage from './features/compliance/pages/ReminderProfilesPage.jsx';
+import EscalationProfilesPage from './features/compliance/pages/EscalationProfilesPage.jsx';
+import EscalationsPage from './features/compliance/pages/EscalationsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -125,6 +129,10 @@ export default function App() {
           <Route path="/compliance/calendar" element={<CalendarPage />} />
           <Route path="/compliance/categories" element={<CategoriesPage />} />
           <Route path="/compliance/packs" element={<PacksPage />} />
+          <Route path="/compliance/reminders/profiles" element={<ReminderProfilesPage />} />
+          <Route path="/compliance/escalations/profiles" element={<EscalationProfilesPage />} />
+          <Route path="/compliance/escalations" element={<EscalationsPage />} />
+          <Route path="/notifications" element={<NotificationCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

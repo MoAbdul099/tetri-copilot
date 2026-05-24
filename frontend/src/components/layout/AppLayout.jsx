@@ -7,7 +7,9 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
+  Bell, Siren,
 } from 'lucide-react';
+import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
 // Group icon color classes per group
 const GROUP_ICON_STYLES = {
@@ -68,8 +70,11 @@ const NAV_CONFIG = [
       { to: '/compliance/templates',   label: 'Templates',   icon: ClipboardList },
       { to: '/compliance/occurrences', label: 'Occurrences', icon: CheckSquare },
       { to: '/compliance/calendar',    label: 'Calendar',    icon: Calendar },
-      { to: '/compliance/categories',  label: 'Categories',  icon: Tag },
-      { to: '/compliance/packs',       label: 'Packs',       icon: BookOpen },
+      { to: '/compliance/categories',          label: 'Categories',      icon: Tag },
+      { to: '/compliance/packs',               label: 'Packs',           icon: BookOpen },
+      { to: '/compliance/reminders/profiles',  label: 'Reminders',       icon: Bell },
+      { to: '/compliance/escalations/profiles',label: 'Esc. Profiles',   icon: Siren },
+      { to: '/compliance/escalations',         label: 'Escalations',     icon: Siren },
     ],
   },
   {
@@ -196,6 +201,9 @@ export default function AppLayout({ user, workspace }) {
 
       {/* Workspace + User block */}
       <div className="px-3 pb-4 border-t border-tetri-border pt-4 space-y-2">
+        <div className="flex items-center justify-between px-1 pb-1">
+          <NotificationBell />
+        </div>
         <div className="px-3 py-2 rounded-xl bg-tetri-bg">
           <p className="text-xs text-tetri-neutral font-medium truncate">Workspace</p>
           <p className="text-sm font-semibold text-tetri-text truncate mt-0.5">
@@ -267,6 +275,7 @@ export default function AppLayout({ user, workspace }) {
             <Menu className="w-5 h-5" />
           </button>
           <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain" draggable={false} />
+          <div className="ml-auto"><NotificationBell /></div>
         </header>
         <main className="flex-1 overflow-y-auto py-6 px-6 md:px-8">
           <Outlet />
