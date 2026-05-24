@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit2, Copy, Trash2, Paperclip, Upload, Download, X, Loader2, Send, RotateCcw, Wallet } from 'lucide-react';
+import { ArrowLeft, Edit2, Copy, Trash2, Loader2, Send, RotateCcw, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageHeader from '../../../components/shared/PageHeader.jsx';
 import { useToast } from '../../../components/shared/Toast.jsx';
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.jsx';
-import {
-  getExpense, deleteExpense, duplicateExpense,
-  uploadExpenseAttachment, deleteExpenseAttachment, getAttachmentDownloadUrl,
-} from '../services/expensesService.js';
+import { getExpense, deleteExpense, duplicateExpense } from '../services/expensesService.js';
+import AttachmentsPanel from '../../files/components/AttachmentsPanel.jsx';
 import { submitExpense, withdrawExpense, getApprovalHistory } from '../../approvals/services/approvalsService.js';
 import { createReimbursement } from '../../reimbursements/services/reimbursementsService.js';
 
@@ -27,13 +25,6 @@ const STATUS_STYLES = {
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 const fmtAmt  = (n, c = '') => `${c} ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`.trim();
-const fmtSize = (bytes) => {
-  if (!bytes) return '—';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
-
 function LabelValue({ label, value }) {
   return (
     <div>
@@ -47,16 +38,11 @@ export default function ExpenseDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { showToast, ToastContainer } = useToast();
-  const fileRef = useRef(null);
-
   const [expense, setExpense] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [deleteAttTarget, setDeleteAttTarget] = useState(null);
-  const [deletingAtt, setDeletingAtt] = useState(false);
   const [workflow, setWorkflow] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -144,39 +130,6 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      await uploadExpenseAttachment(id, fd);
-      showToast('success', 'Attachment uploaded');
-      await load();
-    } catch {
-      showToast('error', 'Upload failed — check file type and size');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleDeleteAttachment = async () => {
-    if (!deleteAttTarget) return;
-    setDeletingAtt(true);
-    try {
-      await deleteExpenseAttachment(id, deleteAttTarget.id);
-      showToast('success', 'Attachment removed');
-      setDeleteAttTarget(null);
-      await load();
-    } catch {
-      showToast('error', 'Failed to remove attachment');
-    } finally {
-      setDeletingAtt(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -201,7 +154,6 @@ export default function ExpenseDetailPage() {
     );
   }
 
-  const attachments = expense.expenseAttachments || [];
 
   return (
     <div className="space-y-6">
@@ -310,59 +262,7 @@ export default function ExpenseDetailPage() {
       </div>
 
       {/* Attachments */}
-      <div className="bg-white border border-tetri-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-tetri-text flex items-center gap-2">
-            <Paperclip className="w-4 h-4" /> Attachments
-            {attachments.length > 0 && (
-              <span className="ml-1 text-xs bg-tetri-bg text-tetri-neutral px-1.5 py-0.5 rounded-full">{attachments.length}</span>
-            )}
-          </h3>
-          <div>
-            <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} className="hidden" />
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading} className="gap-2">
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {uploading ? 'Uploading…' : 'Upload'}
-            </Button>
-          </div>
-        </div>
-
-        {attachments.length === 0 ? (
-          <div className="py-8 text-center space-y-1">
-            <Paperclip className="w-8 h-8 text-tetri-border mx-auto" />
-            <p className="text-sm text-tetri-neutral">No attachments yet</p>
-            <p className="text-xs text-tetri-neutral/70">PDF, JPG, PNG up to 10MB</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-tetri-border">
-            {attachments.map((att) => (
-              <div key={att.id} className="flex items-center justify-between py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-tetri-text truncate">{att.fileName}</p>
-                  <p className="text-xs text-tetri-neutral">{att.mimeType} · {fmtSize(att.fileSize)}</p>
-                </div>
-                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                  <a
-                    href={getAttachmentDownloadUrl(id, att.id)}
-                    download={att.fileName}
-                    className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-4 h-4" />
-                  </a>
-                  <button
-                    onClick={() => setDeleteAttTarget(att)}
-                    className="p-1.5 rounded-lg text-tetri-neutral hover:bg-red-50 hover:text-tetri-error transition-colors"
-                    title="Remove"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <AttachmentsPanel entityType="expense" entityId={id} />
 
       {/* Metadata */}
       <div className="bg-tetri-bg border border-tetri-border rounded-xl px-5 py-4">
@@ -381,16 +281,6 @@ export default function ExpenseDetailPage() {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
-      />
-      <ConfirmDialog
-        open={!!deleteAttTarget}
-        title="Remove Attachment"
-        description={`Remove "${deleteAttTarget?.fileName}"? This cannot be undone.`}
-        confirmLabel="Remove"
-        variant="destructive"
-        loading={deletingAtt}
-        onConfirm={handleDeleteAttachment}
-        onCancel={() => setDeleteAttTarget(null)}
       />
     </div>
   );

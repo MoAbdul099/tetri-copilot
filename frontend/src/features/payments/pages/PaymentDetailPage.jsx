@@ -8,6 +8,7 @@ import PaymentStatusBadge from '../components/PaymentStatusBadge';
 import AllocationEditor from '../components/AllocationEditor';
 import { getPayment, postPayment, reversePayment, voidPayment, allocatePayment, autoAllocate, removeAllocation, createCredit } from '../services/paymentsService';
 import { useToast } from '../../../components/shared/Toast.jsx';
+import AttachmentsPanel from '../../files/components/AttachmentsPanel.jsx';
 
 const fmtDate  = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 const fmtMoney = (v, ccy = '') => `${ccy} ${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`.trim();
@@ -115,6 +116,7 @@ export default function PaymentDetailPage() {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="allocations">Allocations ({payment.allocations?.length || 0})</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="attachments">Attachments</TabsTrigger>
         </TabsList>
 
         {/* Details tab */}
@@ -220,6 +222,10 @@ export default function PaymentDetailPage() {
             ))}
             {!payment.statusHistory?.length && <p className="px-4 py-8 text-center text-muted-foreground">No history</p>}
           </div>
+        </TabsContent>
+
+        <TabsContent value="attachments" className="mt-4">
+          <AttachmentsPanel entityType="payment" entityId={id} />
         </TabsContent>
       </Tabs>
     </div>

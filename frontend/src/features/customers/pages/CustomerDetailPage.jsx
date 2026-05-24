@@ -6,7 +6,7 @@ import { useToast } from '../../../components/shared/Toast.jsx';
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.jsx';
 import ContactsTab from '../components/ContactsTab.jsx';
 import NotesTab from '../components/NotesTab.jsx';
-import AttachmentsTab from '../components/AttachmentsTab.jsx';
+import AttachmentsPanel from '../../files/components/AttachmentsPanel.jsx';
 import { getCustomer, archiveCustomer, restoreCustomer } from '../services/customersService.js';
 
 const TABS = [
@@ -347,7 +347,7 @@ export default function CustomerDetailPage() {
         {activeTab === 'address' && <AddressTab customer={customer} />}
         {activeTab === 'financial' && <FinancialTab customer={customer} />}
         {activeTab === 'notes' && <NotesTab customerId={id} />}
-        {activeTab === 'attachments' && <AttachmentsTab customerId={id} />}
+        {activeTab === 'attachments' && <AttachmentsPanel entityType="customer" entityId={id} />}
       </div>
 
       {confirm && (

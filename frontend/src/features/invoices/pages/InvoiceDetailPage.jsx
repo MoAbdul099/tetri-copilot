@@ -2,17 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Edit, Download, Send, CheckCircle, XCircle, Ban,
-  Copy, Loader2, Paperclip, Upload, Trash2, FileText, CreditCard,
+  Copy, Loader2, CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '../../../components/shared/Toast.jsx';
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.jsx';
 import InvoiceStatusBadge from '../components/InvoiceStatusBadge.jsx';
 import SendInvoiceDialog from '../components/SendInvoiceDialog.jsx';
+import AttachmentsPanel from '../../files/components/AttachmentsPanel.jsx';
 import {
   getInvoice, issueInvoice, cancelInvoice, voidInvoice, duplicateInvoice,
-  downloadInvoicePdf, listInvoiceAttachments, uploadInvoiceAttachment,
-  deleteInvoiceAttachment, getAttachmentDownloadUrl,
+  downloadInvoicePdf,
 } from '../services/invoicesService.js';
 
 // ── Amount in words ────────────────────────────────────────
@@ -96,10 +96,6 @@ export default function InvoiceDetailPage() {
   const [voidReason, setVoidReason] = useState('');
   const [cancelDialog, setCancelDialog] = useState(false);
 
-  const [attachments, setAttachments] = useState([]);
-  const [attLoading, setAttLoading] = useState(false);
-  const [deleteAtt, setDeleteAtt] = useState(null);
-  const [deletingAtt, setDeletingAtt] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -114,18 +110,6 @@ export default function InvoiceDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
-
-  const loadAttachments = useCallback(async () => {
-    if (activeTab !== 'Attachments') return;
-    try {
-      const atts = await listInvoiceAttachments(id);
-      setAttachments(atts || []);
-    } catch {
-      showToast('error', 'Failed to load attachments');
-    }
-  }, [id, activeTab]);
-
-  useEffect(() => { loadAttachments(); }, [loadAttachments]);
 
   const doAction = async (fn, label, extra = {}) => {
     setActionLoading(label);
@@ -169,39 +153,6 @@ export default function InvoiceDetailPage() {
       showToast('error', 'Failed to download PDF');
     } finally {
       setActionLoading('');
-    }
-  };
-
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setAttLoading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      await uploadInvoiceAttachment(id, fd);
-      showToast('success', 'File uploaded');
-      loadAttachments();
-    } catch (err) {
-      showToast('error', err.response?.data?.message || 'Upload failed');
-    } finally {
-      setAttLoading(false);
-      e.target.value = '';
-    }
-  };
-
-  const handleDeleteAtt = async () => {
-    if (!deleteAtt) return;
-    setDeletingAtt(true);
-    try {
-      await deleteInvoiceAttachment(id, deleteAtt.id);
-      showToast('success', 'Attachment deleted');
-      setDeleteAtt(null);
-      loadAttachments();
-    } catch {
-      showToast('error', 'Failed to delete attachment');
-    } finally {
-      setDeletingAtt(false);
     }
   };
 
@@ -316,13 +267,7 @@ export default function InvoiceDetailPage() {
       {activeTab === 'Line Items' && <LineItemsTab invoice={invoice} />}
       {activeTab === 'Delivery History' && <DeliveryTab invoice={invoice} />}
       {activeTab === 'Attachments' && (
-        <AttachmentsTab
-          invoiceId={id}
-          attachments={attachments}
-          loading={attLoading}
-          onUpload={handleUpload}
-          onDelete={setDeleteAtt}
-        />
+        <AttachmentsPanel entityType="invoice" entityId={id} />
       )}
 
       {/* Dialogs */}
@@ -345,16 +290,6 @@ export default function InvoiceDetailPage() {
         onCancel={() => setCancelDialog(false)}
       />
 
-      <ConfirmDialog
-        open={!!deleteAtt}
-        title="Delete Attachment"
-        description={`Delete "${deleteAtt?.fileName}"?`}
-        confirmLabel="Delete"
-        variant="destructive"
-        loading={deletingAtt}
-        onConfirm={handleDeleteAtt}
-        onCancel={() => setDeleteAtt(null)}
-      />
 
       {/* Void dialog (custom — needs reason input) */}
       {voidDialog && (
@@ -548,57 +483,3 @@ function DeliveryTab({ invoice }) {
   );
 }
 
-function AttachmentsTab({ invoiceId, attachments, loading, onUpload, onDelete }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-tetri-neutral">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</p>
-        <label className="cursor-pointer">
-          <input type="file" className="hidden" onChange={onUpload} disabled={loading} />
-          <Button size="sm" variant="outline" asChild className="gap-1.5 pointer-events-none">
-            <span>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Upload File
-            </span>
-          </Button>
-        </label>
-      </div>
-
-      {attachments.length === 0 ? (
-        <div className="py-12 text-center space-y-2 border border-dashed border-tetri-border rounded-xl">
-          <Paperclip className="w-8 h-8 text-tetri-border mx-auto" />
-          <p className="text-sm text-tetri-neutral">No attachments yet</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {attachments.map((att) => (
-            <div key={att.id} className="bg-white border border-tetri-border rounded-xl px-4 py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-tetri-neutral shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-tetri-text">{att.fileName}</p>
-                  <p className="text-xs text-tetri-neutral">{formatBytes(att.fileSize)} · {fmtDate(att.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={getAttachmentDownloadUrl(invoiceId, att.id)}
-                  download={att.fileName}
-                  className="p-1.5 rounded-lg text-tetri-neutral hover:text-tetri-primary hover:bg-tetri-bg transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
-                <button
-                  onClick={() => onDelete(att)}
-                  className="p-1.5 rounded-lg text-tetri-neutral hover:text-tetri-error hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
