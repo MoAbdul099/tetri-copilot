@@ -108,7 +108,7 @@ async function getLinksByEntity(workspaceId, entityType, entityId) {
     where: { workspaceId, entityType, entityId },
     include: {
       file: { select: FILE_SELECT },
-      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      createdBy: { select: { id: true, fullName: true } },
     },
     orderBy: { createdAt: 'desc' },
   });

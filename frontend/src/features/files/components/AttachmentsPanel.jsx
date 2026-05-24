@@ -25,18 +25,20 @@ function fileIcon(mimeType) {
 export default function AttachmentsPanel({ entityType, entityId }) {
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
   const [unlinking, setUnlinking] = useState(null);
 
   const load = useCallback(async () => {
     if (!entityType || !entityId) return;
+    setLoadError(null);
     try {
       setLoading(true);
       const data = await getEntityFiles(entityType, entityId);
       setLinks(data);
-    } catch {
-      /* silent */
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err?.message || 'Failed to load attachments');
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,12 @@ export default function AttachmentsPanel({ entityType, entityId }) {
     for (const file of uploaded) {
       try {
         await linkFile(file.id, entityType, entityId);
-      } catch { /* link may already exist */ }
+      } catch (err) {
+        const isDuplicate = err?.response?.status === 409;
+        if (!isDuplicate) {
+          setLoadError(err?.response?.data?.error || 'Failed to link file');
+        }
+      }
     }
     setShowUpload(false);
     await load();
@@ -107,6 +114,8 @@ export default function AttachmentsPanel({ entityType, entityId }) {
         <div className="flex items-center justify-center py-6">
           <Loader2 className="w-5 h-5 text-tetri-blue animate-spin" />
         </div>
+      ) : loadError ? (
+        <p className="text-xs text-tetri-error text-center py-4">{loadError}</p>
       ) : links.length === 0 ? (
         <p className="text-xs text-tetri-neutral text-center py-4">No attachments yet</p>
       ) : (
