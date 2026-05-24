@@ -6,7 +6,7 @@ import { setClerkTokenGetter } from '../../lib/api.js';
 import LoadingSpinner from '../ui/LoadingSpinner.jsx';
 import AppLayout from './AppLayout.jsx';
 
-const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments', '/receivables', '/collections', '/statements', '/expenses', '/approvals', '/reimbursements', '/expense-insights', '/budgets', '/recurring-expenses', '/files'];
+const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments', '/receivables', '/collections', '/statements', '/expenses', '/approvals', '/reimbursements', '/expense-insights', '/budgets', '/recurring-expenses', '/files', '/compliance'];
 
 export default function ProtectedLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
