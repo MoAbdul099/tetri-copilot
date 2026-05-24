@@ -45,6 +45,15 @@ import ExpenseInsightsDashboardPage from './features/expense-insights/pages/Expe
 import BudgetsPage from './features/budgets/pages/BudgetsPage.jsx';
 import RecurringExpensesPage from './features/recurring-expenses/pages/RecurringExpensesPage.jsx';
 import FilesRepositoryPage from './features/files/pages/FilesRepositoryPage.jsx';
+import CompliancePage from './features/compliance/pages/CompliancePage.jsx';
+import TemplatesPage from './features/compliance/pages/TemplatesPage.jsx';
+import TemplateFormPage from './features/compliance/pages/TemplateFormPage.jsx';
+import TemplateDetailPage from './features/compliance/pages/TemplateDetailPage.jsx';
+import OccurrencesPage from './features/compliance/pages/OccurrencesPage.jsx';
+import OccurrenceDetailPage from './features/compliance/pages/OccurrenceDetailPage.jsx';
+import CalendarPage from './features/compliance/pages/CalendarPage.jsx';
+import CategoriesPage from './features/compliance/pages/CategoriesPage.jsx';
+import PacksPage from './features/compliance/pages/PacksPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -106,6 +115,16 @@ export default function App() {
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />
           <Route path="/files" element={<FilesRepositoryPage />} />
+          <Route path="/compliance" element={<CompliancePage />} />
+          <Route path="/compliance/templates" element={<TemplatesPage />} />
+          <Route path="/compliance/templates/new" element={<TemplateFormPage />} />
+          <Route path="/compliance/templates/:id" element={<TemplateDetailPage />} />
+          <Route path="/compliance/templates/:id/edit" element={<TemplateFormPage />} />
+          <Route path="/compliance/occurrences" element={<OccurrencesPage />} />
+          <Route path="/compliance/occurrences/:id" element={<OccurrenceDetailPage />} />
+          <Route path="/compliance/calendar" element={<CalendarPage />} />
+          <Route path="/compliance/categories" element={<CategoriesPage />} />
+          <Route path="/compliance/packs" element={<PacksPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

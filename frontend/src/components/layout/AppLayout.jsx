@@ -6,7 +6,7 @@ import {
   LogOut, Menu, X, ChevronDown, ChevronRight,
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
-  Landmark, HardDrive, ShieldCheck,
+  Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
 } from 'lucide-react';
 
 // Group icon color classes per group
@@ -14,6 +14,7 @@ const GROUP_ICON_STYLES = {
   Sales:           'bg-blue-50 text-blue-600',
   Finance:         'bg-indigo-50 text-indigo-600',
   Expenses:        'bg-orange-50 text-orange-600',
+  Compliance:      'bg-emerald-50 text-emerald-600',
   Storage:         'bg-teal-50 text-teal-600',
   Administration:  'bg-slate-100 text-slate-600',
 };
@@ -56,6 +57,19 @@ const NAV_CONFIG = [
       { to: '/budgets',            label: 'Budgets',        icon: Target },
       { to: '/recurring-expenses', label: 'Recurring',      icon: RefreshCw },
       { to: '/expense-insights',   label: 'Insights',       icon: Brain },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Compliance',
+    groupIcon: Scale,
+    items: [
+      { to: '/compliance',             label: 'Overview',    icon: ShieldCheck },
+      { to: '/compliance/templates',   label: 'Templates',   icon: ClipboardList },
+      { to: '/compliance/occurrences', label: 'Occurrences', icon: CheckSquare },
+      { to: '/compliance/calendar',    label: 'Calendar',    icon: Calendar },
+      { to: '/compliance/categories',  label: 'Categories',  icon: Tag },
+      { to: '/compliance/packs',       label: 'Packs',       icon: BookOpen },
     ],
   },
   {

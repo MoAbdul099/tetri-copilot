@@ -351,6 +351,13 @@ model User {
   approvalAuditLogs             ApprovalAuditLog[]     @relation("ApprovalAuditLogUser")
   budgetsCreated                Budget[]               @relation("BudgetCreatedBy")
   recurringExpensesCreated      RecurringExpense[]     @relation("RecurringExpenseCreatedBy")
+  ownedComplianceTemplates      ComplianceTemplate[]   @relation("ComplianceTemplateOwner")
+  backupComplianceTemplates     ComplianceTemplate[]   @relation("ComplianceTemplateBackupOwner")
+  ownedComplianceOccurrences    ComplianceOccurrence[] @relation("ComplianceOccurrenceOwner")
+  backupComplianceOccurrences   ComplianceOccurrence[] @relation("ComplianceOccurrenceBackupOwner")
+  complianceSubmissions         ComplianceSubmission[] @relation("ComplianceSubmittedBy")
+  complianceComments            ComplianceComment[]    @relation("ComplianceCommentAuthor")
+  complianceActivityLogs        ComplianceActivityLog[] @relation("ComplianceActivityActor")
 
   @@index([clerkUserId])
   @@index([email])
@@ -417,6 +424,12 @@ model Workspace {
   expenseAnomalies     ExpenseAnomaly[]
   fileLinks            FileLink[]
   fileActivityLogs     FileActivityLog[]
+  complianceTemplates  ComplianceTemplate[]
+  complianceOccurrences ComplianceOccurrence[]
+  complianceSubmissions ComplianceSubmission[]
+  complianceComments   ComplianceComment[]
+  complianceActivityLogs ComplianceActivityLog[]
+  complianceCategories ComplianceCategory[]
 
   @@map("workspaces")
 }
@@ -1929,4 +1942,223 @@ model FileActivityLog {
   @@index([workspaceId])
   @@index([fileId])
   @@map("file_activity_logs")
+}
+
+// =========================================================
+// COMPLIANCE MANAGEMENT (Slice 9.1)
+// =========================================================
+
+model ComplianceJurisdiction {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @db.VarChar(150)
+  code            String   @unique @db.VarChar(20)
+  isoCode         String?  @map("iso_code") @db.VarChar(10)
+  defaultCurrency String?  @map("default_currency") @db.VarChar(10)
+  isActive        Boolean  @default(true) @map("is_active")
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  authorities ComplianceAuthority[]
+  templates   ComplianceTemplate[]
+  packs       CompliancePack[]
+  occurrences ComplianceOccurrence[]
+
+  @@map("compliance_jurisdictions")
+}
+
+model ComplianceAuthority {
+  id             String   @id @default(uuid()) @db.Uuid
+  jurisdictionId String   @map("jurisdiction_id") @db.Uuid
+  name           String   @db.VarChar(200)
+  website        String?  @db.VarChar(255)
+  contactInfo    String?  @map("contact_info") @db.Text
+  notes          String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  jurisdiction ComplianceJurisdiction @relation(fields: [jurisdictionId], references: [id])
+  templates    ComplianceTemplate[]
+  occurrences  ComplianceOccurrence[]
+
+  @@index([jurisdictionId])
+  @@map("compliance_authorities")
+}
+
+model ComplianceCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  color       String?  @default("#6366f1") @db.VarChar(20)
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  templates   ComplianceTemplate[]
+  occurrences ComplianceOccurrence[]
+
+  @@index([workspaceId])
+  @@map("compliance_categories")
+}
+
+model CompliancePack {
+  id             String   @id @default(uuid()) @db.Uuid
+  jurisdictionId String   @map("jurisdiction_id") @db.Uuid
+  name           String   @db.VarChar(200)
+  description    String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  jurisdiction ComplianceJurisdiction  @relation(fields: [jurisdictionId], references: [id])
+  items        CompliancePackTemplate[]
+
+  @@index([jurisdictionId])
+  @@map("compliance_packs")
+}
+
+model CompliancePackTemplate {
+  id         String   @id @default(uuid()) @db.Uuid
+  packId     String   @map("pack_id") @db.Uuid
+  name       String   @db.VarChar(255)
+  description String? @db.Text
+  frequency  String   @db.VarChar(50)
+  priority   String   @default("medium") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  pack CompliancePack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@index([packId])
+  @@map("compliance_pack_templates")
+}
+
+model ComplianceTemplate {
+  id                String    @id @default(uuid()) @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  jurisdictionId    String?   @map("jurisdiction_id") @db.Uuid
+  categoryId        String?   @map("category_id") @db.Uuid
+  authorityId       String?   @map("authority_id") @db.Uuid
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  frequency         String    @db.VarChar(50)
+  customInterval    Int?      @map("custom_interval")
+  customUnit        String?   @map("custom_unit") @db.VarChar(20)
+  startDate         DateTime  @map("start_date") @db.Date
+  endDate           DateTime? @map("end_date") @db.Date
+  maxOccurrences    Int?      @map("max_occurrences")
+  ownerUserId       String    @map("owner_user_id") @db.Uuid
+  backupOwnerUserId String?   @map("backup_owner_user_id") @db.Uuid
+  department        String?   @db.VarChar(150)
+  priority          String    @default("medium") @db.VarChar(20)
+  submissionMethod  String?   @map("submission_method") @db.VarChar(100)
+  notes             String?   @db.Text
+  isActive          Boolean   @default(true) @map("is_active")
+  autoGenerate      Boolean   @default(true) @map("auto_generate")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace    Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  jurisdiction ComplianceJurisdiction? @relation(fields: [jurisdictionId], references: [id])
+  category     ComplianceCategory?     @relation(fields: [categoryId], references: [id])
+  authority    ComplianceAuthority?    @relation(fields: [authorityId], references: [id])
+  owner        User                    @relation("ComplianceTemplateOwner", fields: [ownerUserId], references: [id])
+  backupOwner  User?                   @relation("ComplianceTemplateBackupOwner", fields: [backupOwnerUserId], references: [id])
+  occurrences  ComplianceOccurrence[]
+
+  @@index([workspaceId])
+  @@map("compliance_templates")
+}
+
+model ComplianceOccurrence {
+  id                String    @id @default(uuid()) @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  templateId        String    @map("template_id") @db.Uuid
+  jurisdictionId    String?   @map("jurisdiction_id") @db.Uuid
+  categoryId        String?   @map("category_id") @db.Uuid
+  authorityId       String?   @map("authority_id") @db.Uuid
+  name              String    @db.VarChar(255)
+  dueDate           DateTime  @map("due_date") @db.Date
+  status            String    @default("scheduled") @db.VarChar(50)
+  ownerUserId       String    @map("owner_user_id") @db.Uuid
+  backupOwnerUserId String?   @map("backup_owner_user_id") @db.Uuid
+  priority          String    @default("medium") @db.VarChar(20)
+  department        String?   @db.VarChar(150)
+  notes             String?   @db.Text
+  referenceNumber   String?   @map("reference_number") @db.VarChar(100)
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz(6)
+  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace    Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  template     ComplianceTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  jurisdiction ComplianceJurisdiction? @relation(fields: [jurisdictionId], references: [id])
+  category     ComplianceCategory?     @relation(fields: [categoryId], references: [id])
+  authority    ComplianceAuthority?    @relation(fields: [authorityId], references: [id])
+  owner        User                    @relation("ComplianceOccurrenceOwner", fields: [ownerUserId], references: [id])
+  backupOwner  User?                   @relation("ComplianceOccurrenceBackupOwner", fields: [backupOwnerUserId], references: [id])
+  submission   ComplianceSubmission?
+  comments     ComplianceComment[]
+  activityLogs ComplianceActivityLog[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, dueDate])
+  @@map("compliance_occurrences")
+}
+
+model ComplianceSubmission {
+  id                 String   @id @default(uuid()) @db.Uuid
+  occurrenceId       String   @unique @map("occurrence_id") @db.Uuid
+  workspaceId        String   @map("workspace_id") @db.Uuid
+  submissionDate     DateTime @map("submission_date") @db.Date
+  submittedByUserId  String   @map("submitted_by_user_id") @db.Uuid
+  authorityReference String?  @map("authority_reference") @db.VarChar(255)
+  internalReference  String?  @map("internal_reference") @db.VarChar(255)
+  outcome            String?  @db.VarChar(50)
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  occurrence   ComplianceOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  submittedBy  User                 @relation("ComplianceSubmittedBy", fields: [submittedByUserId], references: [id])
+
+  @@index([workspaceId])
+  @@map("compliance_submissions")
+}
+
+model ComplianceComment {
+  id           String   @id @default(uuid()) @db.Uuid
+  occurrenceId String   @map("occurrence_id") @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  authorId     String   @map("author_id") @db.Uuid
+  body         String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  occurrence ComplianceOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author     User                 @relation("ComplianceCommentAuthor", fields: [authorId], references: [id])
+
+  @@index([workspaceId])
+  @@index([occurrenceId])
+  @@map("compliance_comments")
+}
+
+model ComplianceActivityLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  occurrenceId String   @map("occurrence_id") @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  actorId      String   @map("actor_id") @db.Uuid
+  action       String   @db.VarChar(100)
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  occurrence ComplianceOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor      User                 @relation("ComplianceActivityActor", fields: [actorId], references: [id])
+
+  @@index([workspaceId])
+  @@index([occurrenceId])
+  @@map("compliance_activity_logs")
 }
