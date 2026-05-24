@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Siren, Plus, Trash2, Shield, ChevronDown, ChevronRight } from 'lucide-react';
 import { listEscalationProfiles, createEscalationProfile, addEscalationRule, deleteEscalationRule } from '../../notifications/services/notificationService';
-import Toast from '../../../components/shared/Toast.jsx';
+import { Toast } from '../../../components/shared/Toast.jsx';
 
 const RECIPIENT_LABELS = {
   owner:            'Owner',

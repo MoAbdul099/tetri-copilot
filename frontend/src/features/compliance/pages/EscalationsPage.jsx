@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Siren, CheckCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { listEscalations, acknowledgeEscalation } from '../../notifications/services/notificationService';
-import Toast from '../../../components/shared/Toast.jsx';
+import { Toast } from '../../../components/shared/Toast.jsx';
 
 const STATUS_BADGE = {
   triggered:    'bg-red-50 text-red-700 border-red-200',
