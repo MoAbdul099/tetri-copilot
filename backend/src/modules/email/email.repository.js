@@ -30,6 +30,9 @@ const findTemplateByCodeFallback = async (code) => {
   return t || prisma.emailTemplate.findFirst({ where: { code, status: 'published' } });
 };
 
+const existsByCode = (code) =>
+  prisma.emailTemplate.findFirst({ where: { code }, select: { id: true } });
+
 const createTemplate = (data) =>
   prisma.emailTemplate.create({ data, include: { createdBy: { select: { id: true, fullName: true } } } });
 
@@ -108,7 +111,7 @@ const listDeliveryLogs = async (workspaceId, { status, page = 1, limit = 25 } = 
 };
 
 module.exports = {
-  listTemplates, findTemplateById, findTemplateByCode, findTemplateByCodeFallback,
+  listTemplates, findTemplateById, findTemplateByCode, findTemplateByCodeFallback, existsByCode,
   createTemplate, updateTemplate, deleteTemplate, saveVersion, getVersions,
   createDeliveryLog, getDeliveryStats, listDeliveryLogs,
 };

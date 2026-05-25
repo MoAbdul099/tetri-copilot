@@ -23,7 +23,9 @@ const getTemplate = async (id) => {
 
 const createTemplate = async (userId, data) => {
   const { code, name, category, language = 'en', subject, bodyHtml, bodyText = '' } = data;
-  if (!code || !name || !subject || !bodyHtml) throw badRequest('code, name, subject, bodyHtml are required');
+  if (!code || !name || !subject || !bodyHtml) throw badRequest('code, name, subject, and HTML body are required');
+  const existing = await repo.existsByCode(code);
+  if (existing) throw badRequest(`A template with code "${code}" already exists. Use a different template code.`);
   return repo.createTemplate({ code, name, category, language, subject, bodyHtml, bodyText, version: 1, status: 'draft', createdById: userId, updatedById: userId });
 };
 
