@@ -6,15 +6,14 @@ import {
   LogOut, Menu, X, ChevronDown, ChevronRight,
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
-  Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
+  HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
   Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
 // Group icon color classes per group
 const GROUP_ICON_STYLES = {
-  Sales:           'bg-blue-50 text-blue-600',
-  Finance:         'bg-indigo-50 text-indigo-600',
+  Revenue:         'bg-blue-50 text-blue-600',
   Expenses:        'bg-orange-50 text-orange-600',
   Compliance:      'bg-emerald-50 text-emerald-600',
   Storage:         'bg-teal-50 text-teal-600',
@@ -46,17 +45,10 @@ const NAV_CONFIG = [
   },
   {
     type: 'group',
-    label: 'Sales',
-    groupIcon: Users2,
+    label: 'Revenue',
+    groupIcon: TrendingUp,
     items: [
-      { to: '/customers', label: 'Customers', icon: Users2 },
-    ],
-  },
-  {
-    type: 'group',
-    label: 'Finance',
-    groupIcon: Landmark,
-    items: [
+      { to: '/customers',   label: 'Customers',   icon: Users2 },
       { to: '/invoices',    label: 'Invoices',    icon: FileText },
       { to: '/payments',    label: 'Payments',    icon: CreditCard },
       { to: '/receivables', label: 'Receivables', icon: TrendingUp },
