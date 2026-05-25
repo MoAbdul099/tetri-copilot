@@ -54,7 +54,7 @@ const emit = async (eventType, workspaceId, recipientId, {
     title,
     body:        body || '',
     priority:    def.priority,
-    channel:     'inapp',
+    channel:     'both',  // both in-app + email delivery
     status:      'sent',
     dedupeKey,
     scheduledFor: new Date(),

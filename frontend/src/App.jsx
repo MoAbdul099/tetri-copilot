@@ -67,6 +67,9 @@ import RenewalsReportPage from './features/compliance/pages/RenewalsReportPage.j
 import OverdueReportPage from './features/compliance/pages/OverdueReportPage.jsx';
 import EscalationAnalyticsPage from './features/compliance/pages/EscalationAnalyticsPage.jsx';
 import ReminderAnalyticsPage from './features/compliance/pages/ReminderAnalyticsPage.jsx';
+import EmailTemplatesPage from './features/email/pages/EmailTemplatesPage.jsx';
+import EmailTemplateFormPage from './features/email/pages/EmailTemplateFormPage.jsx';
+import EmailAnalyticsPage from './features/email/pages/EmailAnalyticsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -151,6 +154,10 @@ export default function App() {
           <Route path="/notifications" element={<NotificationCenterPage />} />
           <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
           <Route path="/settings/notification-settings" element={<WorkspaceNotificationSettingsPage />} />
+          <Route path="/settings/email-templates" element={<EmailTemplatesPage />} />
+          <Route path="/settings/email-templates/new" element={<EmailTemplateFormPage />} />
+          <Route path="/settings/email-templates/:id/edit" element={<EmailTemplateFormPage />} />
+          <Route path="/settings/email-analytics" element={<EmailAnalyticsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

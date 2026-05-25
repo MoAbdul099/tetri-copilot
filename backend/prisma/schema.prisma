@@ -362,6 +362,9 @@ model User {
   notificationPreferences       NotificationPreference[] @relation("UserNotificationPreference")
   complianceSavedReports        ComplianceSavedReport[]  @relation("SavedReportUser")
   notificationAuditLogs         NotificationAuditLog[]
+  emailTemplatesCreated         EmailTemplate[]          @relation("EmailTemplateCreatedBy")
+  emailTemplatesUpdated         EmailTemplate[]          @relation("EmailTemplateUpdatedBy")
+  emailTemplateVersionsSaved    EmailTemplateVersion[]   @relation("EmailTemplateVersionSavedBy")
 
   @@index([clerkUserId])
   @@index([email])
@@ -442,6 +445,7 @@ model Workspace {
   complianceSavedReports       ComplianceSavedReport[]
   workspaceNotificationSettings WorkspaceNotificationSettings?
   notificationAuditLogs        NotificationAuditLog[]
+  emailDeliveryLogs            EmailDeliveryLog[]
 
   @@map("workspaces")
 }
@@ -2427,4 +2431,75 @@ model NotificationAuditLog {
   @@index([workspaceId])
   @@index([notificationId])
   @@map("notification_audit_logs")
+}
+
+// =========================================================
+// EMAIL TEMPLATES & DELIVERY — Slice 10.2
+// =========================================================
+
+model EmailTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(100)
+  name        String   @db.VarChar(255)
+  category    String   @db.VarChar(100)
+  language    String   @default("en") @db.VarChar(10)
+  subject     String   @db.Text
+  bodyHtml    String   @map("body_html") @db.Text
+  bodyText    String   @default("") @map("body_text") @db.Text
+  version     Int      @default(1)
+  status      String   @default("draft") @db.VarChar(20)
+  createdById String?  @map("created_by") @db.Uuid
+  updatedById String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  versions  EmailTemplateVersion[]
+  createdBy User?                  @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?                  @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([status])
+  @@map("email_templates")
+}
+
+model EmailTemplateVersion {
+  id         String   @id @default(uuid()) @db.Uuid
+  templateId String   @map("template_id") @db.Uuid
+  version    Int
+  subject    String   @db.Text
+  bodyHtml   String   @map("body_html") @db.Text
+  bodyText   String   @default("") @map("body_text") @db.Text
+  savedById  String?  @map("saved_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  template EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  savedBy  User?         @relation("EmailTemplateVersionSavedBy", fields: [savedById], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@map("email_template_versions")
+}
+
+model EmailDeliveryLog {
+  id               String    @id @default(uuid()) @db.Uuid
+  notificationId   String    @map("notification_id") @db.Uuid
+  workspaceId      String    @map("workspace_id") @db.Uuid
+  recipientEmail   String    @map("recipient_email") @db.VarChar(255)
+  templateCode     String?   @map("template_code") @db.VarChar(100)
+  subject          String    @db.Text
+  status           String    @default("sent") @db.VarChar(30)
+  providerMessageId String?  @map("provider_message_id") @db.VarChar(255)
+  failureReason    String?   @map("failure_reason") @db.Text
+  attemptCount     Int       @default(1) @map("attempt_count")
+  openedAt         DateTime? @map("opened_at") @db.Timestamptz(6)
+  openCount        Int       @default(0) @map("open_count")
+  sentAt           DateTime  @default(now()) @map("sent_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([notificationId])
+  @@index([status])
+  @@index([sentAt])
+  @@map("email_delivery_logs")
 }

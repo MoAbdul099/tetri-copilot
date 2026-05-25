@@ -36,7 +36,9 @@ const recurringExpensesRoutes    = require('./modules/recurring-expenses/recurri
 const filesRoutes                = require('./modules/files/files.routes');
 const complianceRoutes           = require('./modules/compliance/compliance.routes');
 const notificationsRoutes        = require('./modules/notifications/notifications.routes');
+const emailRoutes                = require('./modules/email/email.routes');
 const { startReminderEngine }    = require('./modules/notifications/reminder.engine');
+const { startEmailWorker }       = require('./modules/email/email.worker');
 
 const app = express();
 
@@ -99,9 +101,11 @@ app.use('/api/v1/recurring-expenses', recurringExpensesRoutes);
 app.use('/api/v1/files', filesRoutes);
 app.use('/api/v1/compliance', complianceRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/email-templates', emailRoutes);
 
 // Start background engines
 startReminderEngine();
+startEmailWorker();
 
 // 404 and error handlers must be last
 app.use(notFound);
