@@ -83,8 +83,8 @@ async function revenueAnalytics(workspaceId) {
   });
 
   const customerIds = topCustomers.map((t) => t.customerId).filter(Boolean);
-  const customers   = await prisma.customer.findMany({ where: { id: { in: customerIds } }, select: { id: true, displayName: true } });
-  const custMap     = Object.fromEntries(customers.map((c) => [c.id, c.displayName]));
+  const customers   = await prisma.customer.findMany({ where: { id: { in: customerIds } }, select: { id: true, name: true } });
+  const custMap     = Object.fromEntries(customers.map((c) => [c.id, c.name]));
 
   const totalRevCurrent = values[values.length - 1] || 1;
   const topCustomerData = topCustomers.map((t) => ({
@@ -239,7 +239,7 @@ async function customerAnalytics(workspaceId) {
 
   const [total, active] = await Promise.all([
     prisma.customer.count({ where: { workspaceId } }),
-    prisma.customer.count({ where: { workspaceId, status: 'active' } }),
+    prisma.customer.count({ where: { workspaceId, isActive: true } }),
   ]);
 
   return { monthly, total, active };
