@@ -1,6 +1,6 @@
 import api from '../../../lib/api';
 
-const BASE = '/notifications';
+const BASE = '/api/v1/notifications';
 
 export const listNotifications    = (params) => api.get(BASE, { params }).then((r) => r.data.data);
 export const getUnreadCount       = ()        => api.get(`${BASE}/unread-count`).then((r) => r.data.data);
