@@ -6,7 +6,8 @@ const env = require('./config/env');
 const { requestLogger } = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
-const healthRoutes = require('./modules/health/health.routes');
+const healthRoutes    = require('./modules/health/health.routes');
+const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const workspacesRoutes = require('./modules/workspaces/workspaces.routes');
 const companiesRoutes = require('./modules/companies/companies.routes');
@@ -77,7 +78,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
 // Routes
-app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/health',     healthRoutes);
+app.use('/api/v1/dashboard',  dashboardRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspacesRoutes);
 app.use('/api/v1/company', companiesRoutes);

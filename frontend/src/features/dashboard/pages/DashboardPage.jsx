@@ -1,115 +1,165 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Building2, ShieldCheck, ArrowRight, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  DollarSign, TrendingUp, Wallet, ShieldCheck, Bell, CreditCard,
+  RefreshCw,
+} from 'lucide-react';
 import authService from '../../auth/services/authService.js';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../../../components/shared/PageHeader.jsx';
+import {
+  useDashboardSummary,
+  useReceivables,
+  useSubscriptionUsage,
+} from '../hooks/useDashboard.js';
 
-const ROLE_LABELS = {
-  owner: 'Owner',
-  user: 'User',
-  viewer: 'Viewer',
-  admin: 'Admin',
-};
+import WelcomeBanner         from '../components/WelcomeBanner.jsx';
+import QuickActionsPanel     from '../components/QuickActionsPanel.jsx';
+import KpiCard               from '../components/KpiCard.jsx';
+import FinancialSnapshotWidget from '../components/FinancialSnapshotWidget.jsx';
+import ReceivablesWidget     from '../components/ReceivablesWidget.jsx';
+import ExpenseSummaryWidget  from '../components/ExpenseSummaryWidget.jsx';
+import ComplianceSummaryWidget from '../components/ComplianceSummaryWidget.jsx';
+import ActivityFeedWidget    from '../components/ActivityFeedWidget.jsx';
+import SubscriptionUsageWidget from '../components/SubscriptionUsageWidget.jsx';
+import UpcomingTasksWidget   from '../components/UpcomingTasksWidget.jsx';
+
+const fmtPct = (n) => (n == null ? null : n);
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile]   = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    authService
-      .getMe()
-      .then((data) => setProfile(data))
+    authService.getMe()
+      .then(setProfile)
       .catch(() => setProfile(null))
-      .finally(() => setLoading(false));
+      .finally(() => setProfileLoading(false));
   }, []);
 
-  if (loading) {
-    return <LoadingSpinner message="Loading dashboard…" />;
-  }
+  const { data: summary, loading: summaryLoading, refresh: refreshSummary } = useDashboardSummary();
+  const { data: aging,   loading: agingLoading }   = useReceivables();
+  const { data: subData, loading: subLoading }     = useSubscriptionUsage();
+
+  const s = summary || {};
+  const ar          = s.ar          || {};
+  const revenue     = s.revenue     || {};
+  const collections = s.collections || {};
+  const expenses    = s.expenses    || {};
+  const compliance  = s.compliance  || {};
+  const notifs      = s.notifications || {};
+
+  if (profileLoading) return <LoadingSpinner message="Loading dashboard…" />;
 
   const { user, workspace } = profile || {};
 
   return (
-    <div className="px-4 sm:px-8 py-8 max-w-5xl mx-auto">
-      <PageHeader
-        title={`Welcome back${user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}`}
-        subtitle="Your workspace is ready. Here's an overview."
+    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-5">
+
+      {/* Welcome banner */}
+      <WelcomeBanner
+        user={user}
+        workspace={workspace}
+        subscription={subData}
       />
 
-      {/* Info cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-card border border-tetri-border p-5 flex items-start gap-4">
-          <div className="w-10 h-10 bg-[#eff4ff] rounded-xl flex items-center justify-center flex-shrink-0">
-            <User className="w-5 h-5 text-tetri-blue" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-tetri-neutral uppercase tracking-wide font-medium">Account</p>
-            <p className="text-sm font-semibold text-tetri-text mt-0.5 truncate">
-              {user?.fullName || '—'}
-            </p>
-            <p className="text-xs text-tetri-muted truncate">{user?.email}</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-card border border-tetri-border p-5 flex items-start gap-4">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-tetri-neutral uppercase tracking-wide font-medium">Workspace</p>
-            <p className="text-sm font-semibold text-tetri-text mt-0.5 truncate">
-              {workspace?.name || '—'}
-            </p>
-            <p className="text-xs text-tetri-muted">Active</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-card border border-tetri-border p-5 flex items-start gap-4">
-          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <ShieldCheck className="w-5 h-5 text-amber-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-tetri-neutral uppercase tracking-wide font-medium">Role</p>
-            <p className="text-sm font-semibold text-tetri-text mt-0.5">
-              {ROLE_LABELS[workspace?.role] || workspace?.role || '—'}
-            </p>
-            <p className="text-xs text-tetri-muted">Workspace permissions</p>
-          </div>
-        </div>
+      {/* Refresh + timestamp */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={refreshSummary}
+          className="flex items-center gap-1.5 text-xs text-tetri-muted hover:text-tetri-blue transition-colors"
+        >
+          <RefreshCw className="w-3 h-3" />
+          Refresh
+        </button>
       </div>
 
       {/* Quick actions */}
-      {workspace?.role === 'owner' && (
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-tetri-text mb-3">Quick actions</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link
-              to="/settings"
-              className="flex items-center justify-between gap-3 px-5 py-4 bg-white rounded-card border border-tetri-border hover:border-tetri-blue/30 hover:bg-[#fafcff] transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#eff4ff] rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Settings className="w-4.5 h-4.5 text-tetri-blue" size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-tetri-text">Workspace settings</p>
-                  <p className="text-xs text-tetri-muted">Company profile, team, localization</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-tetri-neutral group-hover:text-tetri-blue transition-colors" />
-            </Link>
-          </div>
-        </div>
-      )}
+      <QuickActionsPanel />
 
-      {/* Coming soon placeholder */}
-      <div className="bg-white rounded-card border border-dashed border-tetri-border p-10 text-center">
-        <p className="text-tetri-neutral text-sm font-medium">Dashboard coming in Sprint 3</p>
-        <p className="text-tetri-border text-xs mt-1">
-          Invoices, expenses, AI assistant, and more on the way.
-        </p>
+      {/* KPI cards */}
+      <div>
+        <p className="text-xs font-semibold text-tetri-muted uppercase tracking-wide mb-3">Key Performance Indicators</p>
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          <KpiCard
+            title="Outstanding AR"
+            value={ar.outstanding}
+            sub={`${ar.openInvoices || 0} open invoices`}
+            currency
+            accent="blue"
+            icon={DollarSign}
+            loading={summaryLoading}
+          />
+          <KpiCard
+            title="Overdue"
+            value={ar.overdue}
+            sub={`${ar.collectionRate || 0}% collection rate`}
+            currency
+            accent="red"
+            icon={DollarSign}
+            loading={summaryLoading}
+          />
+          <KpiCard
+            title="Revenue (Month)"
+            value={revenue.current}
+            change={fmtPct(revenue.growth)}
+            changeLabel="vs last month"
+            currency
+            accent="green"
+            icon={TrendingUp}
+            loading={summaryLoading}
+          />
+          <KpiCard
+            title="Collections"
+            value={collections.current}
+            sub={`${collections.count || 0} payments`}
+            change={fmtPct(collections.growth)}
+            changeLabel="vs last month"
+            currency
+            accent="green"
+            icon={TrendingUp}
+            loading={summaryLoading}
+          />
+          <KpiCard
+            title="Expenses (Month)"
+            value={expenses.current}
+            sub={`${expenses.count || 0} transactions`}
+            change={fmtPct(expenses.change)}
+            changeLabel="vs last month"
+            currency
+            accent="amber"
+            icon={Wallet}
+            loading={summaryLoading}
+          />
+          <KpiCard
+            title="Notifications"
+            value={notifs.unread}
+            sub={`${notifs.pendingApprovals || 0} pending approvals`}
+            accent="purple"
+            icon={Bell}
+            loading={summaryLoading}
+          />
+        </div>
       </div>
+
+      {/* Main content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Financial + Receivables */}
+        <div className="lg:col-span-2 space-y-4">
+          <FinancialSnapshotWidget />
+          <ReceivablesWidget aging={aging} />
+          <ExpenseSummaryWidget data={expenses} />
+        </div>
+
+        {/* Right: Compliance + Tasks + Subscription + Activity */}
+        <div className="space-y-4">
+          <ComplianceSummaryWidget data={compliance} />
+          <UpcomingTasksWidget />
+          <SubscriptionUsageWidget data={subData} />
+        </div>
+      </div>
+
+      {/* Activity feed — full width */}
+      <ActivityFeedWidget />
+
     </div>
   );
 }

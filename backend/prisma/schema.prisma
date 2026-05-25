@@ -367,6 +367,7 @@ model User {
   emailTemplateVersionsSaved    EmailTemplateVersion[]   @relation("EmailTemplateVersionSavedBy")
   announcementsCreated          Announcement[]           @relation("AnnouncementCreatedBy")
   announcementReads             AnnouncementRead[]
+  dashboardPreferences          DashboardPreference[]
 
   @@index([clerkUserId])
   @@index([email])
@@ -451,6 +452,7 @@ model Workspace {
   workspaceReminderRules       WorkspaceReminderRule[]
   workspaceEscalationRules     WorkspaceEscalationRule[]
   announcements                Announcement[]
+  dashboardPreferences         DashboardPreference[]
 
   @@map("workspaces")
 }
@@ -2621,4 +2623,35 @@ model AnnouncementRead {
 
   @@unique([announcementId, userId])
   @@map("announcement_reads")
+}
+
+// =========================================================
+// DASHBOARD — Slice 11.1
+// =========================================================
+
+model DashboardPreference {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  layoutJson    Json?    @map("layout_json")
+  hiddenWidgets String[] @default([]) @map("hidden_widgets")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("dashboard_preferences")
+}
+
+model DashboardWidgetConfig {
+  id              String   @id @default(uuid()) @db.Uuid
+  widgetCode      String   @unique @map("widget_code") @db.VarChar(100)
+  widgetName      String   @map("widget_name") @db.VarChar(255)
+  enabled         Boolean  @default(true)
+  defaultPosition Int      @default(0) @map("default_position")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("dashboard_widget_configs")
 }
