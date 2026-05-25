@@ -21,8 +21,10 @@ const listActive = (workspaceId, userId) => {
     where: {
       workspaceId,
       status: 'published',
-      OR: [{ publishAt: null }, { publishAt: { lte: now } }],
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      AND: [
+        { OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      ],
     },
     include: {
       reads: { where: { userId }, select: { readAt: true } },
