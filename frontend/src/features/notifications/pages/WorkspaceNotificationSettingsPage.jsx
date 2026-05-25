@@ -25,8 +25,8 @@ export default function WorkspaceNotificationSettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const toggle = (key) => setSettings((s) => ({ ...s, [key]: !s[key] }));
-  const set    = (key, val) => setSettings((s) => ({ ...s, [key]: val }));
+  const toggle = (key) => setSettings((s) => s ? { ...s, [key]: !s[key] } : s);
+  const set    = (key, val) => setSettings((s) => s ? { ...s, [key]: val } : s);
 
   const handleSave = async () => {
     setSaving(true);
@@ -73,18 +73,19 @@ export default function WorkspaceNotificationSettingsPage() {
           { key: 'inAppEnabled',         label: 'In-app notifications',       desc: 'Show notifications in the notification center and bell' },
           { key: 'toastEnabled',         label: 'Toast notifications',        desc: 'Show brief pop-up toasts for new events' },
         ].map(({ key, label, desc }) => (
-          <label key={key} className="flex items-center justify-between gap-4">
+          <div key={key} className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-tetri-text">{label}</p>
               <p className="text-xs text-tetri-muted">{desc}</p>
             </div>
             <button
+              type="button"
               onClick={() => toggle(key)}
               className={`relative w-10 h-5 rounded-full transition-colors ${settings?.[key] ? 'bg-tetri-blue' : 'bg-tetri-border'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings?.[key] ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
-          </label>
+          </div>
         ))}
       </div>
 
@@ -126,11 +127,15 @@ export default function WorkspaceNotificationSettingsPage() {
       </div>
 
       {/* Future channels (read-only preview) */}
-      <div className="bg-tetri-bg border border-tetri-border rounded-2xl p-5 opacity-60">
-        <h2 className="text-sm font-semibold text-tetri-text mb-3">Coming Soon</h2>
+      <div className="bg-tetri-bg border border-tetri-border rounded-2xl p-5">
+        <h2 className="text-sm font-semibold text-tetri-text mb-3">Other Channels</h2>
         <div className="space-y-2">
-          {['Email notifications', 'Reminders engine', 'Escalation automation'].map((item) => (
-            <div key={item} className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-tetri-muted">Email notifications</p>
+            <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">Active</span>
+          </div>
+          {['Reminders engine', 'Escalation automation'].map((item) => (
+            <div key={item} className="flex items-center justify-between opacity-60">
               <p className="text-sm text-tetri-muted">{item}</p>
               <span className="text-xs text-tetri-neutral bg-tetri-border/50 px-2 py-0.5 rounded-full">Upcoming</span>
             </div>

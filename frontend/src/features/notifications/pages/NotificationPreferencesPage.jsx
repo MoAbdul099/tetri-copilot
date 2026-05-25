@@ -78,30 +78,32 @@ export default function NotificationPreferencesPage() {
       <div className="bg-tetri-surface border border-tetri-border rounded-2xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-tetri-text">Global Settings</h2>
         <div className="space-y-3">
-          <label className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-tetri-text">In-app notifications</p>
               <p className="text-xs text-tetri-muted">Receive notifications in the notification center</p>
             </div>
             <button
-              onClick={() => setPrefs((p) => ({ ...p, enableInApp: !p.enableInApp }))}
+              type="button"
+              onClick={() => setPrefs((p) => p ? { ...p, enableInApp: !p.enableInApp } : p)}
               className={`relative w-10 h-5 rounded-full transition-colors ${prefs?.enableInApp ? 'bg-tetri-blue' : 'bg-tetri-border'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${prefs?.enableInApp ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
-          </label>
-          <label className="flex items-center justify-between gap-4">
+          </div>
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-tetri-text">Email notifications</p>
-              <p className="text-xs text-tetri-muted">Receive notifications via email (when email delivery is enabled)</p>
+              <p className="text-xs text-tetri-muted">Receive notifications via email</p>
             </div>
             <button
-              onClick={() => setPrefs((p) => ({ ...p, enableEmail: !p.enableEmail }))}
+              type="button"
+              onClick={() => setPrefs((p) => p ? { ...p, enableEmail: !p.enableEmail } : p)}
               className={`relative w-10 h-5 rounded-full transition-colors ${prefs?.enableEmail ? 'bg-tetri-blue' : 'bg-tetri-border'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${prefs?.enableEmail ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
-          </label>
+          </div>
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-tetri-text">Delivery frequency</p>
