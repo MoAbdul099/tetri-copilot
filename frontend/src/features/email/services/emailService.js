@@ -1,6 +1,6 @@
 import api from '../../../lib/api.js';
 
-const BASE = '/email-templates';
+const BASE = '/api/v1/email-templates';
 
 export const listTemplates    = (params) => api.get(BASE, { params }).then((r) => r.data.data);
 export const getTemplate      = (id)     => api.get(`${BASE}/${id}`).then((r) => r.data.data);

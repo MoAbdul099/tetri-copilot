@@ -143,9 +143,9 @@ export default function WorkspaceNotificationSettingsPage() {
             <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">Active</span>
           </div>
           {['Reminders engine', 'Escalation automation'].map((item) => (
-            <div key={item} className="flex items-center justify-between opacity-60">
+            <div key={item} className="flex items-center justify-between">
               <p className="text-sm text-tetri-muted">{item}</p>
-              <span className="text-xs text-tetri-neutral bg-tetri-border/50 px-2 py-0.5 rounded-full">Upcoming</span>
+              <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">Active</span>
             </div>
           ))}
         </div>

@@ -1,6 +1,6 @@
 import api from '../../../lib/api.js';
 
-const BASE = '/escalation-rules';
+const BASE = '/api/v1/escalation-rules';
 
 export const listEscalationRules    = ()       => api.get(BASE).then((r) => r.data.data);
 export const getEscalationStats     = ()       => api.get(`${BASE}/stats`).then((r) => r.data.data);

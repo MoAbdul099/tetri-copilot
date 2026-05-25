@@ -1,6 +1,6 @@
 import api from '../../../lib/api.js';
 
-const BASE = '/announcements';
+const BASE = '/api/v1/announcements';
 
 export const listAnnouncements   = (params) => api.get(BASE, { params }).then((r) => r.data.data);
 export const getActiveAnnouncements = () => api.get(`${BASE}/active`).then((r) => r.data.data);

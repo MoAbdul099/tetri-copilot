@@ -1,6 +1,6 @@
 import api from '../../../lib/api.js';
 
-const BASE = '/reminder-rules';
+const BASE = '/api/v1/reminder-rules';
 
 export const listReminderRules   = ()       => api.get(BASE).then((r) => r.data.data);
 export const getReminderStats    = ()       => api.get(`${BASE}/stats`).then((r) => r.data.data);
