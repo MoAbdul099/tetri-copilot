@@ -37,8 +37,12 @@ const filesRoutes                = require('./modules/files/files.routes');
 const complianceRoutes           = require('./modules/compliance/compliance.routes');
 const notificationsRoutes        = require('./modules/notifications/notifications.routes');
 const emailRoutes                = require('./modules/email/email.routes');
+const announcementsRoutes        = require('./modules/announcements/announcements.routes');
+const reminderRulesRoutes        = require('./modules/reminder-rules/reminder-rules.routes');
+const escalationRulesRoutes      = require('./modules/escalation-rules/escalation-rules.routes');
 const { startReminderEngine }    = require('./modules/notifications/reminder.engine');
 const { startEmailWorker }       = require('./modules/email/email.worker');
+const { startAnnouncementEngine } = require('./modules/announcements/announcement.engine');
 
 const app = express();
 
@@ -102,10 +106,14 @@ app.use('/api/v1/files', filesRoutes);
 app.use('/api/v1/compliance', complianceRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/email-templates', emailRoutes);
+app.use('/api/v1/announcements', announcementsRoutes);
+app.use('/api/v1/reminder-rules', reminderRulesRoutes);
+app.use('/api/v1/escalation-rules', escalationRulesRoutes);
 
 // Start background engines
 startReminderEngine();
 startEmailWorker();
+startAnnouncementEngine();
 
 // 404 and error handlers must be last
 app.use(notFound);

@@ -70,6 +70,10 @@ import ReminderAnalyticsPage from './features/compliance/pages/ReminderAnalytics
 import EmailTemplatesPage from './features/email/pages/EmailTemplatesPage.jsx';
 import EmailTemplateFormPage from './features/email/pages/EmailTemplateFormPage.jsx';
 import EmailAnalyticsPage from './features/email/pages/EmailAnalyticsPage.jsx';
+import AnnouncementsPage from './features/announcements/pages/AnnouncementsPage.jsx';
+import AnnouncementFormPage from './features/announcements/pages/AnnouncementFormPage.jsx';
+import ReminderRulesPage from './features/reminder-rules/pages/ReminderRulesPage.jsx';
+import EscalationRulesPage from './features/escalation-rules/pages/EscalationRulesPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -158,6 +162,11 @@ export default function App() {
           <Route path="/settings/email-templates/new" element={<EmailTemplateFormPage />} />
           <Route path="/settings/email-templates/:id/edit" element={<EmailTemplateFormPage />} />
           <Route path="/settings/email-analytics" element={<EmailAnalyticsPage />} />
+          <Route path="/announcements" element={<AnnouncementsPage />} />
+          <Route path="/announcements/new" element={<AnnouncementFormPage />} />
+          <Route path="/announcements/:id/edit" element={<AnnouncementFormPage />} />
+          <Route path="/settings/reminder-rules" element={<ReminderRulesPage />} />
+          <Route path="/settings/escalation-rules" element={<EscalationRulesPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

@@ -365,6 +365,8 @@ model User {
   emailTemplatesCreated         EmailTemplate[]          @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated         EmailTemplate[]          @relation("EmailTemplateUpdatedBy")
   emailTemplateVersionsSaved    EmailTemplateVersion[]   @relation("EmailTemplateVersionSavedBy")
+  announcementsCreated          Announcement[]           @relation("AnnouncementCreatedBy")
+  announcementReads             AnnouncementRead[]
 
   @@index([clerkUserId])
   @@index([email])
@@ -446,6 +448,9 @@ model Workspace {
   workspaceNotificationSettings WorkspaceNotificationSettings?
   notificationAuditLogs        NotificationAuditLog[]
   emailDeliveryLogs            EmailDeliveryLog[]
+  workspaceReminderRules       WorkspaceReminderRule[]
+  workspaceEscalationRules     WorkspaceEscalationRule[]
+  announcements                Announcement[]
 
   @@map("workspaces")
 }
@@ -2502,4 +2507,118 @@ model EmailDeliveryLog {
   @@index([status])
   @@index([sentAt])
   @@map("email_delivery_logs")
+}
+
+// =========================================================
+// SLICE 10.3 — Reminders, Escalations & Announcements
+// =========================================================
+
+model WorkspaceReminderRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  category    String   @db.VarChar(100)
+  schedule    Json
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  instances WorkspaceReminderInstance[]
+
+  @@index([workspaceId])
+  @@map("workspace_reminder_rules")
+}
+
+model WorkspaceReminderInstance {
+  id          String    @id @default(uuid()) @db.Uuid
+  ruleId      String    @map("rule_id") @db.Uuid
+  entityType  String    @map("entity_type") @db.VarChar(100)
+  entityId    String    @map("entity_id") @db.Uuid
+  dedupeKey   String    @unique @map("dedupe_key") @db.VarChar(500)
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz(6)
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  status      String    @default("sent") @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rule WorkspaceReminderRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([entityId])
+  @@map("workspace_reminder_instances")
+}
+
+model WorkspaceEscalationRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  triggerType String   @map("trigger_type") @db.VarChar(100)
+  levels      Json
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace                    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  instances WorkspaceEscalationInstance[]
+
+  @@index([workspaceId])
+  @@map("workspace_escalation_rules")
+}
+
+model WorkspaceEscalationInstance {
+  id           String    @id @default(uuid()) @db.Uuid
+  ruleId       String    @map("rule_id") @db.Uuid
+  workspaceId  String    @map("workspace_id") @db.Uuid
+  entityType   String    @map("entity_type") @db.VarChar(100)
+  entityId     String    @map("entity_id") @db.Uuid
+  dedupeKey    String    @unique @map("dedupe_key") @db.VarChar(500)
+  currentLevel Int       @default(1) @map("current_level")
+  status       String    @default("active") @db.VarChar(50)
+  resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz(6)
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rule WorkspaceEscalationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([workspaceId, status])
+  @@map("workspace_escalation_instances")
+}
+
+model Announcement {
+  id            String    @id @default(uuid()) @db.Uuid
+  workspaceId   String?   @map("workspace_id") @db.Uuid
+  title         String    @db.VarChar(255)
+  summary       String    @db.Text
+  content       String    @db.Text
+  priority      String    @default("info") @db.VarChar(50)
+  audienceType  String    @default("workspace") @map("audience_type") @db.VarChar(50)
+  audienceRoles String[]  @map("audience_roles") @default([])
+  publishAt     DateTime? @map("publish_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+  status        String    @default("draft") @db.VarChar(50)
+  createdById   String?   @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace?       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?            @relation("AnnouncementCreatedBy", fields: [createdById], references: [id])
+  reads     AnnouncementRead[]
+
+  @@index([workspaceId, status])
+  @@index([publishAt])
+  @@map("announcements")
+}
+
+model AnnouncementRead {
+  id             String   @id @default(uuid()) @db.Uuid
+  announcementId String   @map("announcement_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  readAt         DateTime @default(now()) @map("read_at") @db.Timestamptz(6)
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([announcementId, userId])
+  @@map("announcement_reads")
 }

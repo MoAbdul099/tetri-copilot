@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -97,6 +97,9 @@ const NAV_CONFIG = [
       { to: '/settings/notification-settings',   label: 'Notifications',   icon: BellRing },
       { to: '/settings/email-templates',         label: 'Email Templates', icon: Mail },
       { to: '/settings/email-analytics',         label: 'Email Analytics', icon: LineChart },
+      { to: '/announcements',                    label: 'Announcements',   icon: Megaphone },
+      { to: '/settings/reminder-rules',          label: 'Reminder Rules',  icon: Bell },
+      { to: '/settings/escalation-rules',        label: 'Escalation Rules',icon: Siren },
     ],
   },
 ];
