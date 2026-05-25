@@ -1,6 +1,7 @@
 const repo = require('./expenses.repository');
 const path = require('path');
 const fs = require('fs');
+const notifier = require('../notifications/notification.emitter');
 
 const UPLOAD_DIR = path.join(__dirname, '../../../../uploads/expenses');
 
@@ -16,7 +17,16 @@ const getOne = async (workspaceId, id) => {
   return expense;
 };
 
-const create = (workspaceId, userId, data) => repo.create(workspaceId, userId, data);
+const create = async (workspaceId, userId, data) => {
+  const expense = await repo.create(workspaceId, userId, data);
+  notifier.emitToAdmins('EXPENSE_SUBMITTED', workspaceId, {
+    sourceId: expense.id, sourceType: 'expense',
+    title: 'New expense submitted',
+    body: expense.description || 'An expense has been submitted.',
+    actorId: userId,
+  }).catch(() => {});
+  return expense;
+};
 
 const update = async (workspaceId, userId, id, data) => {
   await getOne(workspaceId, id);

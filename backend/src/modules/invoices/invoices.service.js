@@ -11,6 +11,7 @@ const {
 } = require('./invoices.validation');
 const { VALID_TRANSITIONS, EDITABLE_STATUSES, ALLOWED_MIME_TYPES, MAX_ATTACHMENT_BYTES } = require('./invoices.constants');
 const prisma = require('../../lib/prisma');
+const notifier = require('../notifications/notification.emitter');
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads/invoices');
 
@@ -137,6 +138,13 @@ const createInvoice = async (workspaceId, userId, rawPayload) => {
 
   logActivity({ workspaceId, userId, action: 'invoice.created', entityType: 'invoice', entityId: inv.id,
     description: `Invoice ${inv.invoiceNumber} created` });
+
+  notifier.emitToAdmins('INVOICE_CREATED', workspaceId, {
+    sourceId: inv.id, sourceType: 'invoice',
+    title: `Invoice ${inv.invoiceNumber} created`,
+    body: `A new invoice has been created for ${customer.name}.`,
+    actorId: userId,
+  }).catch(() => {});
 
   return formatInvoice(inv);
 };
@@ -323,6 +331,13 @@ const sendInvoice = async (id, workspaceId, userId, role, rawPayload) => {
 
   logActivity({ workspaceId, userId, action: 'invoice.sent', entityType: 'invoice', entityId: id,
     description: `Invoice ${inv.invoiceNumber} sent to ${to}` });
+
+  notifier.emitToAdmins('INVOICE_SENT', workspaceId, {
+    sourceId: id, sourceType: 'invoice',
+    title: `Invoice ${inv.invoiceNumber} sent`,
+    body: `Invoice sent to ${to}.`,
+    actorId: userId,
+  }).catch(() => {});
 
   return { success: result.success, skipped: result.skipped, to };
 };

@@ -8,6 +8,7 @@ const {
 } = require('./payments.validation');
 const { VALID_TRANSITIONS, ALLOWED_MIME_TYPES, MAX_ATTACHMENT_BYTES } = require('./payments.constants');
 const prisma = require('../../lib/prisma');
+const notifier = require('../notifications/notification.emitter');
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads/payments');
 
@@ -151,6 +152,13 @@ const postPayment = async (id, workspaceId, userId, role) => {
   logActivity({ workspaceId, userId, action: 'payment.posted', entityType: 'payment', entityId: id,
     description: `Payment ${existing.paymentNumber} posted` });
 
+  notifier.emitToAdmins('PAYMENT_RECEIVED', workspaceId, {
+    sourceId: id, sourceType: 'payment',
+    title: `Payment ${existing.paymentNumber} posted`,
+    body: 'A payment has been posted and is ready for allocation.',
+    actorId: userId,
+  }).catch(() => {});
+
   return repo.findById(id, workspaceId).then(formatPayment);
 };
 
@@ -184,6 +192,13 @@ const reversePayment = async (id, workspaceId, userId, role, rawPayload) => {
     description: `Payment ${existing.paymentNumber} reversed: ${reason}` });
   logAudit({ workspaceId, adminUserId: userId, action: 'payment.reversed', entityType: 'payment', entityId: id,
     oldValue: { status: existing.status }, newValue: { status: 'reversed', reason } });
+
+  notifier.emitToAdmins('PAYMENT_REVERSED', workspaceId, {
+    sourceId: id, sourceType: 'payment',
+    title: `Payment ${existing.paymentNumber} reversed`,
+    body: `Reason: ${reason}`,
+    actorId: userId,
+  }).catch(() => {});
 
   return repo.findById(id, workspaceId).then(formatPayment);
 };

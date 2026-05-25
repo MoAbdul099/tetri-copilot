@@ -40,9 +40,13 @@ const emailRoutes                = require('./modules/email/email.routes');
 const announcementsRoutes        = require('./modules/announcements/announcements.routes');
 const reminderRulesRoutes        = require('./modules/reminder-rules/reminder-rules.routes');
 const escalationRulesRoutes      = require('./modules/escalation-rules/escalation-rules.routes');
+const notificationEventsRoutes   = require('./modules/notifications/notification-events.routes');
 const { startReminderEngine }    = require('./modules/notifications/reminder.engine');
 const { startEmailWorker }       = require('./modules/email/email.worker');
 const { startAnnouncementEngine } = require('./modules/announcements/announcement.engine');
+const { seedEventRegistry }      = require('./modules/notifications/notification.emitter');
+const adminRoutes                = require('./modules/admin/index');
+const publicRoutes               = require('./modules/public/index');
 
 const app = express();
 
@@ -109,11 +113,19 @@ app.use('/api/v1/email-templates', emailRoutes);
 app.use('/api/v1/announcements', announcementsRoutes);
 app.use('/api/v1/reminder-rules', reminderRulesRoutes);
 app.use('/api/v1/escalation-rules', escalationRulesRoutes);
+app.use('/api/v1/notification-events', notificationEventsRoutes);
+
+// Slice 10.5 — App boundary namespaces
+app.use('/api/public', publicRoutes);
+app.use('/api/admin',  adminRoutes);
 
 // Start background engines
 startReminderEngine();
 startEmailWorker();
 startAnnouncementEngine();
+
+// Seed notification event registry (non-blocking)
+seedEventRegistry().catch(() => {});
 
 // 404 and error handlers must be last
 app.use(notFound);
