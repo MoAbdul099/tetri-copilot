@@ -11,22 +11,30 @@ const PRIORITY_OPTIONS = [
   { value: 'critical', label: 'Critical only' },
 ];
 
+const DEFAULT_SETTINGS = {
+  notificationsEnabled: true,
+  inAppEnabled: true,
+  toastEnabled: true,
+  minimumToastPriority: 'medium',
+  retentionMonths: 24,
+};
+
 export default function WorkspaceNotificationSettingsPage() {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [toast, setToast]       = useState(null);
 
   useEffect(() => {
     getWorkspaceSettings()
-      .then(setSettings)
+      .then((data) => { if (data) setSettings((s) => ({ ...s, ...data })); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const toggle = (key) => setSettings((s) => s ? { ...s, [key]: !s[key] } : s);
-  const set    = (key, val) => setSettings((s) => s ? { ...s, [key]: val } : s);
+  const toggle = (key) => setSettings((s) => ({ ...s, [key]: !s[key] }));
+  const set    = (key, val) => setSettings((s) => ({ ...s, [key]: val }));
 
   const handleSave = async () => {
     setSaving(true);

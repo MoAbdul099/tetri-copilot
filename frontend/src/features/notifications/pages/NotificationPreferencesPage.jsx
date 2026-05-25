@@ -20,16 +20,22 @@ const CATEGORY_ROWS = [
   { code: 'system',     label: 'System',      description: 'General system notices' },
 ];
 
+const DEFAULT_PREFS = {
+  enableInApp: true,
+  enableEmail: true,
+  frequency: 'immediate',
+};
+
 export default function NotificationPreferencesPage() {
   const navigate = useNavigate();
-  const [prefs, setPrefs]     = useState(null);
+  const [prefs, setPrefs]     = useState(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [toast, setToast]     = useState(null);
 
   useEffect(() => {
     getPreference()
-      .then(setPrefs)
+      .then((data) => { if (data) setPrefs((p) => ({ ...p, ...data })); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
