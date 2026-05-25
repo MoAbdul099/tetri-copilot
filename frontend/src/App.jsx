@@ -76,6 +76,8 @@ import ReminderRulesPage from './features/reminder-rules/pages/ReminderRulesPage
 import EscalationRulesPage from './features/escalation-rules/pages/EscalationRulesPage.jsx';
 import ReportsPage from './features/reports/pages/ReportsPage.jsx';
 import ReportViewerPage from './features/reports/pages/ReportViewerPage.jsx';
+import AnalyticsDashboardPage from './features/analytics/pages/AnalyticsDashboardPage.jsx';
+import InsightsCenterPage from './features/analytics/pages/InsightsCenterPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -171,6 +173,8 @@ export default function App() {
           <Route path="/settings/escalation-rules" element={<EscalationRulesPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/reports/:reportCode" element={<ReportViewerPage />} />
+          <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+          <Route path="/analytics/insights" element={<InsightsCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

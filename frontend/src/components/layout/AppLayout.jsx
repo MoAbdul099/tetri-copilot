@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -19,6 +19,7 @@ const GROUP_ICON_STYLES = {
   Compliance:      'bg-emerald-50 text-emerald-600',
   Storage:         'bg-teal-50 text-teal-600',
   Administration:  'bg-slate-100 text-slate-600',
+  Analytics:       'bg-violet-50 text-violet-600',
 };
 
 const NAV_CONFIG = [
@@ -33,6 +34,15 @@ const NAV_CONFIG = [
     to: '/reports',
     label: 'Reports',
     icon: BarChart2,
+  },
+  {
+    type: 'group',
+    label: 'Analytics',
+    groupIcon: LineChart,
+    items: [
+      { to: '/analytics',           label: 'Analytics',       icon: LineChart },
+      { to: '/analytics/insights',  label: 'Insights Center', icon: Sparkles },
+    ],
   },
   {
     type: 'group',
