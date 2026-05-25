@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X, CheckCheck, ExternalLink } from 'lucide-react';
 import { getUnreadCount, listNotifications, markRead, markAllRead } from '../services/notificationService';
@@ -9,13 +10,19 @@ const TYPE_COLORS = {
   system:     'bg-slate-50 text-slate-600',
 };
 
+const PANEL_WIDTH  = 320;
+const PANEL_HEIGHT = 460; // approximate max
+
 export default function NotificationBell() {
-  const [count, setCount]       = useState(0);
-  const [open, setOpen]         = useState(false);
-  const [items, setItems]       = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const panelRef                = useRef(null);
-  const navigate                = useNavigate();
+  const [count, setCount]     = useState(0);
+  const [open, setOpen]       = useState(false);
+  const [items, setItems]     = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pos, setPos]         = useState({ top: 0, left: 0 });
+
+  const btnRef   = useRef(null);
+  const panelRef = useRef(null);
+  const navigate = useNavigate();
 
   const loadCount = async () => {
     try { const d = await getUnreadCount(); setCount(d.count || 0); } catch {}
@@ -23,29 +30,60 @@ export default function NotificationBell() {
 
   const loadItems = async () => {
     setLoading(true);
-    try {
-      const d = await listNotifications({ limit: 10 });
-      setItems(d.items || []);
-    } catch {}
+    try { const d = await listNotifications({ limit: 10 }); setItems(d.items || []); } catch {}
     setLoading(false);
   };
 
   useEffect(() => {
     loadCount();
-    const interval = setInterval(loadCount, 60000);
-    return () => clearInterval(interval);
+    const t = setInterval(loadCount, 60000);
+    return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    if (open) loadItems();
-  }, [open]);
+  useEffect(() => { if (open) loadItems(); }, [open]);
+
+  const computePos = useCallback(() => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Prefer opening to the right of the button; fall back to left if not enough room
+    let left = r.right + 8;
+    if (left + PANEL_WIDTH > vw - 8) left = r.left - PANEL_WIDTH - 8;
+    left = Math.max(8, left);
+
+    // Prefer opening upward from the button; fall back to downward
+    let top = r.bottom + 4;
+    if (top + PANEL_HEIGHT > vh - 8) top = r.top - PANEL_HEIGHT - 4;
+    top = Math.max(8, top);
+
+    setPos({ top, left });
+  }, []);
+
+  const handleToggle = () => {
+    if (!open) computePos();
+    setOpen((v) => !v);
+  };
 
   // Close on outside click
   useEffect(() => {
-    const handle = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false); };
+    const handle = (e) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target) &&
+        btnRef.current   && !btnRef.current.contains(e.target)
+      ) setOpen(false);
+    };
     if (open) document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, [open]);
+
+  // Recompute if window resizes while open
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener('resize', computePos);
+    return () => window.removeEventListener('resize', computePos);
+  }, [open, computePos]);
 
   const handleMarkRead = async (id) => {
     await markRead(id);
@@ -67,10 +105,73 @@ export default function NotificationBell() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  const panel = open && createPortal(
+    <div
+      ref={panelRef}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, width: PANEL_WIDTH, zIndex: 9999 }}
+      className="bg-tetri-surface border border-tetri-border rounded-2xl shadow-xl overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-tetri-border">
+        <span className="text-sm font-semibold text-tetri-text">Notifications</span>
+        <div className="flex items-center gap-2">
+          {count > 0 && (
+            <button onClick={handleMarkAll} className="text-xs text-tetri-blue hover:underline flex items-center gap-1">
+              <CheckCheck className="w-3 h-3" /> All read
+            </button>
+          )}
+          <button onClick={() => setOpen(false)} className="text-tetri-neutral hover:text-tetri-text">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Items */}
+      <div className="max-h-[360px] overflow-y-auto">
+        {loading ? (
+          <p className="text-xs text-tetri-neutral text-center py-8">Loading…</p>
+        ) : items.length === 0 ? (
+          <p className="text-xs text-tetri-neutral text-center py-8">No notifications</p>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              className={`px-4 py-3 border-b border-tetri-border/50 hover:bg-tetri-bg transition-colors cursor-pointer ${!item.readAt ? 'bg-blue-50/30' : ''}`}
+              onClick={() => handleMarkRead(item.id)}
+            >
+              <div className="flex items-start gap-3">
+                <span className={`mt-0.5 px-1.5 py-0.5 text-[10px] font-semibold rounded uppercase flex-shrink-0 ${TYPE_COLORS[item.type] || TYPE_COLORS.system}`}>
+                  {item.type}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-medium truncate ${!item.readAt ? 'text-tetri-text' : 'text-tetri-muted'}`}>{item.title}</p>
+                  <p className="text-[11px] text-tetri-neutral mt-0.5">{timeSince(item.createdAt)}</p>
+                </div>
+                {!item.readAt && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1 flex-shrink-0" />}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2.5 border-t border-tetri-border">
+        <button
+          onClick={() => { setOpen(false); navigate('/notifications'); }}
+          className="w-full text-xs text-tetri-blue hover:underline flex items-center justify-center gap-1"
+        >
+          View all notifications <ExternalLink className="w-3 h-3" />
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
-    <div className="relative" ref={panelRef}>
+    <>
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={btnRef}
+        onClick={handleToggle}
         className="relative p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
       >
         <Bell className="w-5 h-5" />
@@ -80,63 +181,7 @@ export default function NotificationBell() {
           </span>
         )}
       </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-tetri-surface border border-tetri-border rounded-2xl shadow-xl z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-tetri-border">
-            <span className="text-sm font-semibold text-tetri-text">Notifications</span>
-            <div className="flex items-center gap-2">
-              {count > 0 && (
-                <button onClick={handleMarkAll} className="text-xs text-tetri-blue hover:underline flex items-center gap-1">
-                  <CheckCheck className="w-3 h-3" /> All read
-                </button>
-              )}
-              <button onClick={() => setOpen(false)} className="text-tetri-neutral hover:text-tetri-text">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Items */}
-          <div className="max-h-[360px] overflow-y-auto">
-            {loading ? (
-              <p className="text-xs text-tetri-neutral text-center py-8">Loading…</p>
-            ) : items.length === 0 ? (
-              <p className="text-xs text-tetri-neutral text-center py-8">No notifications</p>
-            ) : (
-              items.map((item) => (
-                <div
-                  key={item.id}
-                  className={`px-4 py-3 border-b border-tetri-border/50 hover:bg-tetri-bg transition-colors cursor-pointer ${!item.readAt ? 'bg-blue-50/30' : ''}`}
-                  onClick={() => handleMarkRead(item.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-0.5 px-1.5 py-0.5 text-[10px] font-semibold rounded uppercase ${TYPE_COLORS[item.type] || TYPE_COLORS.system}`}>
-                      {item.type}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium truncate ${!item.readAt ? 'text-tetri-text' : 'text-tetri-muted'}`}>{item.title}</p>
-                      <p className="text-[11px] text-tetri-neutral mt-0.5">{timeSince(item.createdAt)}</p>
-                    </div>
-                    {!item.readAt && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1 flex-shrink-0" />}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="px-4 py-2.5 border-t border-tetri-border">
-            <button
-              onClick={() => { setOpen(false); navigate('/notifications'); }}
-              className="w-full text-xs text-tetri-blue hover:underline flex items-center justify-center gap-1"
-            >
-              View all notifications <ExternalLink className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      {panel}
+    </>
   );
 }
