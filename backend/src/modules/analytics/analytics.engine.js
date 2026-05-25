@@ -204,27 +204,32 @@ async function expenseAnalytics(workspaceId) {
 
 async function complianceAnalytics(workspaceId) {
   const slots = monthSlots(6);
+  const today = new Date();
 
-  const monthly = await Promise.all(slots.map(async (start) => {
-    const end = monthEnd(start);
-    const [total, completed, overdue] = await Promise.all([
-      prisma.complianceOccurrence.count({ where: { workspaceId, dueDate: { gte: start, lt: end } } }),
-      prisma.complianceOccurrence.count({ where: { workspaceId, dueDate: { gte: start, lt: end }, status: 'completed' } }),
-      prisma.complianceOccurrence.count({ where: { workspaceId, dueDate: { gte: start, lt: end }, status: { notIn: ['completed', 'cancelled'] }, } }),
-    ]);
-    return { month: label(start), total, completed, overdue, rate: total > 0 ? Math.round((completed / total) * 100) : 100 };
-  }));
+  // Single query per slot (groupBy status) instead of 3 count queries
+  const [monthlyRaw, upcoming, totalOverdue] = await Promise.all([
+    Promise.all(slots.map(async (start) => {
+      const end = monthEnd(start);
+      const groups = await prisma.complianceOccurrence.groupBy({
+        by: ['status'],
+        where: { workspaceId, dueDate: { gte: start, lt: end } },
+        _count: true,
+      });
+      const total     = groups.reduce((s, g) => s + g._count, 0);
+      const completed = groups.find((g) => g.status === 'completed')?._count || 0;
+      const overdue   = groups.filter((g) => g.status !== 'completed' && g.status !== 'cancelled').reduce((s, g) => s + g._count, 0);
+      return { month: label(start), total, completed, overdue, rate: total > 0 ? Math.round((completed / total) * 100) : 100 };
+    })),
+    prisma.complianceOccurrence.count({
+      where: { workspaceId, dueDate: { gte: today, lte: new Date(today.getTime() + 30 * 86400000) }, status: { notIn: ['completed', 'cancelled'] } },
+    }),
+    prisma.complianceOccurrence.count({
+      where: { workspaceId, dueDate: { lt: today }, status: { notIn: ['completed', 'cancelled'] } },
+    }),
+  ]);
 
-  const today      = new Date();
-  const upcoming   = await prisma.complianceOccurrence.count({
-    where: { workspaceId, dueDate: { gte: today, lte: new Date(today.getTime() + 30 * 86400000) }, status: { notIn: ['completed', 'cancelled'] } },
-  });
-  const totalOverdue = await prisma.complianceOccurrence.count({
-    where: { workspaceId, dueDate: { lt: today }, status: { notIn: ['completed', 'cancelled'] } },
-  });
-  const avgRate = Math.round(monthly.reduce((s, m) => s + m.rate, 0) / (monthly.length || 1));
-
-  return { monthly, avgCompletionRate: avgRate, upcoming30Days: upcoming, totalOverdue };
+  const avgRate = Math.round(monthlyRaw.reduce((s, m) => s + m.rate, 0) / (monthlyRaw.length || 1));
+  return { monthly: monthlyRaw, avgCompletionRate: avgRate, upcoming30Days: upcoming, totalOverdue };
 }
 
 // ── Customer ──────────────────────────────────────────────────
@@ -247,13 +252,17 @@ async function customerAnalytics(workspaceId) {
 
 // ── Health Score ──────────────────────────────────────────────
 
-async function computeHealthScore(workspaceId) {
-  const [rev, col, exp, comp] = await Promise.all([
-    revenueAnalytics(workspaceId),
-    collectionAnalytics(workspaceId),
-    expenseAnalytics(workspaceId),
-    complianceAnalytics(workspaceId),
-  ]);
+async function computeHealthScore(workspaceId, precomputed = {}) {
+  const [rev, col, exp, comp] = await (
+    precomputed.rev
+      ? Promise.resolve([precomputed.rev, precomputed.col, precomputed.exp, precomputed.comp])
+      : Promise.all([
+          revenueAnalytics(workspaceId),
+          collectionAnalytics(workspaceId),
+          expenseAnalytics(workspaceId),
+          complianceAnalytics(workspaceId),
+        ])
+  );
 
   // Financial (40%): collection rate, overdue %, revenue trend
   const colRate   = col.avgCollectionRate;

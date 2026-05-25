@@ -11,14 +11,13 @@ async function getFullAnalytics(workspaceId) {
     engine.customerAnalytics(workspaceId),
   ]);
 
-  const health = await engine.computeHealthScore(workspaceId);
-  const cash   = engine.cashForecast(col.forecast, exp.forecast);
-  const cashRisk = engine.cashRisk(cash);
-
-  const [insights, risks] = await Promise.all([
+  const [health, insights, risks] = await Promise.all([
+    engine.computeHealthScore(workspaceId, { rev, col, exp, comp }),
     repo.listInsights(workspaceId),
     repo.listRiskAlerts(workspaceId),
   ]);
+  const cash     = engine.cashForecast(col.forecast, exp.forecast);
+  const cashRisk = engine.cashRisk(cash);
 
   return { revenue: rev, collections: col, expenses: exp, compliance: comp, customers: cust, health, cash, cashRisk, insights, risks };
 }
@@ -36,7 +35,7 @@ async function refreshAnalytics(workspaceId) {
     engine.customerAnalytics(workspaceId),
   ]);
 
-  const health = await engine.computeHealthScore(workspaceId);
+  const health = await engine.computeHealthScore(workspaceId, { rev, col, exp, comp });
   const cash   = engine.cashForecast(col.forecast, exp.forecast);
   const cashRiskLevel = engine.cashRisk(cash);
 
