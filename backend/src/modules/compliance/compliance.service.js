@@ -318,6 +318,23 @@ const getRecommendations = async (workspaceId, company) => {
   return { packs: recommended, company: companyRecord };
 };
 
+// ── Analytics & Reports (Slice 9.3) ───────────────────────
+
+const getDashboard     = (workspaceId) => repo.getDashboard(workspaceId);
+const getTrends        = (workspaceId, months) => repo.getTrends(workspaceId, months);
+const getCategoryAnalytics    = (workspaceId) => repo.getCategoryAnalytics(workspaceId);
+const getJurisdictionAnalytics = (workspaceId) => repo.getJurisdictionAnalytics(workspaceId);
+const getEscalationAnalytics  = (workspaceId) => repo.getEscalationAnalytics(workspaceId);
+const getReminderAnalytics    = (workspaceId) => repo.getReminderAnalytics(workspaceId);
+const getRegisterReport       = (workspaceId, query) => repo.getRegisterReport(workspaceId, query);
+const getFilingsReport        = (workspaceId, query) => repo.getFilingsReport(workspaceId, query);
+const getRenewalsReport       = (workspaceId, days) => repo.getRenewalsReport(workspaceId, days);
+const getOverdueReport        = (workspaceId, query) => repo.getOverdueReport(workspaceId, query);
+const listSavedReports        = (workspaceId, userId) => repo.listSavedReports(workspaceId, userId);
+const createSavedReport       = (workspaceId, userId, data) => repo.createSavedReport(workspaceId, userId, data);
+const updateSavedReport       = (id, workspaceId, data) => repo.updateSavedReport(id, workspaceId, data);
+const deleteSavedReport       = (id, workspaceId) => repo.deleteSavedReport(id, workspaceId);
+
 module.exports = {
   listJurisdictions,
   listAuthorities,
@@ -344,4 +361,19 @@ module.exports = {
   getStats,
   getRecommendations,
   generateOccurrences,
+  // Slice 9.3
+  getDashboard,
+  getTrends,
+  getCategoryAnalytics,
+  getJurisdictionAnalytics,
+  getEscalationAnalytics,
+  getReminderAnalytics,
+  getRegisterReport,
+  getFilingsReport,
+  getRenewalsReport,
+  getOverdueReport,
+  listSavedReports,
+  createSavedReport,
+  updateSavedReport,
+  deleteSavedReport,
 };

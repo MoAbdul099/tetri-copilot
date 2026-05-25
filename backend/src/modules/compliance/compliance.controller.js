@@ -164,6 +164,120 @@ const getRecommendations = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// ── Analytics & Reports (Slice 9.3) ───────────────────────
+
+const getDashboard = async (req, res, next) => {
+  try { success(res, await svc.getDashboard(req.workspaceId)); } catch (e) { next(e); }
+};
+
+const getTrends = async (req, res, next) => {
+  try { success(res, await svc.getTrends(req.workspaceId, req.query.months)); } catch (e) { next(e); }
+};
+
+const getCategoryAnalytics = async (req, res, next) => {
+  try { success(res, await svc.getCategoryAnalytics(req.workspaceId)); } catch (e) { next(e); }
+};
+
+const getJurisdictionAnalytics = async (req, res, next) => {
+  try { success(res, await svc.getJurisdictionAnalytics(req.workspaceId)); } catch (e) { next(e); }
+};
+
+const getEscalationAnalytics = async (req, res, next) => {
+  try { success(res, await svc.getEscalationAnalytics(req.workspaceId)); } catch (e) { next(e); }
+};
+
+const getReminderAnalytics = async (req, res, next) => {
+  try { success(res, await svc.getReminderAnalytics(req.workspaceId)); } catch (e) { next(e); }
+};
+
+const getRegisterReport = async (req, res, next) => {
+  try { success(res, await svc.getRegisterReport(req.workspaceId, req.query)); } catch (e) { next(e); }
+};
+
+const getFilingsReport = async (req, res, next) => {
+  try { success(res, await svc.getFilingsReport(req.workspaceId, req.query)); } catch (e) { next(e); }
+};
+
+const getRenewalsReport = async (req, res, next) => {
+  try { success(res, await svc.getRenewalsReport(req.workspaceId, req.query.days)); } catch (e) { next(e); }
+};
+
+const getOverdueReport = async (req, res, next) => {
+  try { success(res, await svc.getOverdueReport(req.workspaceId, req.query)); } catch (e) { next(e); }
+};
+
+const exportReport = async (req, res, next) => {
+  try {
+    const { type, format = 'csv' } = req.body;
+    let data = [];
+    let filename = 'compliance-report';
+
+    if (type === 'register') {
+      const result = await svc.getRegisterReport(req.workspaceId, { ...req.body.filters, limit: 5000 });
+      data = result.items;
+      filename = 'compliance-register';
+    } else if (type === 'filings') {
+      const result = await svc.getFilingsReport(req.workspaceId, { ...req.body.filters, limit: 5000 });
+      data = result.items;
+      filename = 'filing-history';
+    } else if (type === 'renewals') {
+      data = await svc.getRenewalsReport(req.workspaceId, req.body.days || 90);
+      filename = 'renewals-report';
+    } else if (type === 'overdue') {
+      data = await svc.getOverdueReport(req.workspaceId, req.body.filters || {});
+      filename = 'overdue-report';
+    }
+
+    if (format === 'csv') {
+      const today = new Date().toISOString().split('T')[0];
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}-${today}.csv"`);
+
+      let csv = '';
+      if (data.length > 0) {
+        const keys = ['name', 'status', 'priority', 'dueDate', 'jurisdiction', 'authority', 'category', 'owner', 'referenceNumber', 'completedAt'];
+        csv += keys.join(',') + '\n';
+        for (const item of data) {
+          const occ = item.occurrence || item;
+          const row = [
+            `"${(occ.name || '').replace(/"/g, '""')}"`,
+            occ.status || '',
+            occ.priority || '',
+            occ.dueDate ? new Date(occ.dueDate).toISOString().split('T')[0] : '',
+            `"${(occ.jurisdiction?.name || item.occurrence?.jurisdiction?.name || '').replace(/"/g, '""')}"`,
+            `"${(occ.authority?.name || item.occurrence?.authority?.name || '').replace(/"/g, '""')}"`,
+            `"${(occ.category?.name || item.occurrence?.category?.name || '').replace(/"/g, '""')}"`,
+            `"${(occ.owner?.fullName || item.occurrence?.owner?.fullName || '').replace(/"/g, '""')}"`,
+            occ.referenceNumber || '',
+            occ.completedAt ? new Date(occ.completedAt).toISOString().split('T')[0] : '',
+          ];
+          csv += row.join(',') + '\n';
+        }
+      }
+
+      return res.send(csv);
+    }
+
+    success(res, { exported: data.length });
+  } catch (e) { next(e); }
+};
+
+const listSavedReports = async (req, res, next) => {
+  try { success(res, await svc.listSavedReports(req.workspaceId, req.user.id)); } catch (e) { next(e); }
+};
+
+const createSavedReport = async (req, res, next) => {
+  try { success(res, await svc.createSavedReport(req.workspaceId, req.user.id, req.body), '', 201); } catch (e) { next(e); }
+};
+
+const updateSavedReport = async (req, res, next) => {
+  try { success(res, await svc.updateSavedReport(req.params.id, req.workspaceId, req.body)); } catch (e) { next(e); }
+};
+
+const deleteSavedReport = async (req, res, next) => {
+  try { await svc.deleteSavedReport(req.params.id, req.workspaceId); success(res, null, 'Deleted'); } catch (e) { next(e); }
+};
+
 module.exports = {
   listJurisdictions,
   listAuthorities,
@@ -189,4 +303,20 @@ module.exports = {
   getCalendarEvents,
   getStats,
   getRecommendations,
+  // Slice 9.3
+  getDashboard,
+  getTrends,
+  getCategoryAnalytics,
+  getJurisdictionAnalytics,
+  getEscalationAnalytics,
+  getReminderAnalytics,
+  getRegisterReport,
+  getFilingsReport,
+  getRenewalsReport,
+  getOverdueReport,
+  exportReport,
+  listSavedReports,
+  createSavedReport,
+  updateSavedReport,
+  deleteSavedReport,
 };

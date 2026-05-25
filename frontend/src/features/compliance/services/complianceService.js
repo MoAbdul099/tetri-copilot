@@ -77,3 +77,25 @@ export const getStats = () =>
 
 export const getRecommendations = () =>
   api.get("/api/v1/compliance/recommendations").then((r) => r.data.data);
+
+// Slice 9.3 — Dashboard & Analytics
+export const getDashboard            = () => api.get("/api/v1/compliance/dashboard").then((r) => r.data.data);
+export const getTrends               = (months = 6) => api.get(`/api/v1/compliance/analytics/trends?months=${months}`).then((r) => r.data.data);
+export const getCategoryAnalytics    = () => api.get("/api/v1/compliance/analytics/categories").then((r) => r.data.data);
+export const getJurisdictionAnalytics = () => api.get("/api/v1/compliance/analytics/jurisdictions").then((r) => r.data.data);
+export const getEscalationAnalytics  = () => api.get("/api/v1/compliance/analytics/escalations").then((r) => r.data.data);
+export const getReminderAnalytics    = () => api.get("/api/v1/compliance/analytics/reminders").then((r) => r.data.data);
+
+// Reports
+export const getRegisterReport  = (params) => api.get(`/api/v1/compliance/reports/register${q(params)}`).then((r) => r.data.data);
+export const getFilingsReport   = (params) => api.get(`/api/v1/compliance/reports/filings${q(params)}`).then((r) => r.data.data);
+export const getRenewalsReport  = (days = 90) => api.get(`/api/v1/compliance/reports/renewals?days=${days}`).then((r) => r.data.data);
+export const getOverdueReport   = (params) => api.get(`/api/v1/compliance/reports/overdue${q(params)}`).then((r) => r.data.data);
+export const exportReport       = (type, filters = {}, format = 'csv') =>
+  api.post("/api/v1/compliance/reports/export", { type, filters, format }, { responseType: 'blob' });
+
+// Saved reports
+export const listSavedReports   = () => api.get("/api/v1/compliance/reports/saved").then((r) => r.data.data);
+export const createSavedReport  = (data) => api.post("/api/v1/compliance/reports/saved", data).then((r) => r.data.data);
+export const updateSavedReport  = (id, data) => api.put(`/api/v1/compliance/reports/saved/${id}`, data).then((r) => r.data.data);
+export const deleteSavedReport  = (id) => api.delete(`/api/v1/compliance/reports/saved/${id}`).then((r) => r.data.data);

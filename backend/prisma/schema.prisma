@@ -360,6 +360,7 @@ model User {
   complianceActivityLogs        ComplianceActivityLog[] @relation("ComplianceActivityActor")
   notificationItems             NotificationItem[]      @relation("NotificationItemRecipient")
   notificationPreferences       NotificationPreference[] @relation("UserNotificationPreference")
+  complianceSavedReports        ComplianceSavedReport[]  @relation("SavedReportUser")
 
   @@index([clerkUserId])
   @@index([email])
@@ -437,6 +438,7 @@ model Workspace {
   notificationPreferences NotificationPreference[]
   escalationProfiles      EscalationProfile[]
   escalationInstances     EscalationInstance[]
+  complianceSavedReports  ComplianceSavedReport[]
 
   @@map("workspaces")
 }
@@ -2328,4 +2330,26 @@ model EscalationInstance {
   @@index([workspaceId, status])
   @@index([occurrenceId])
   @@map("escalation_instances")
+}
+
+// =========================================================
+// COMPLIANCE ANALYTICS — Slice 9.3
+// =========================================================
+
+model ComplianceSavedReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  reportType  String   @map("report_type") @db.VarChar(50)
+  filters     Json     @default("{}")
+  isFavorite  Boolean  @default(false) @map("is_favorite")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("SavedReportUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+  @@map("compliance_saved_reports")
 }

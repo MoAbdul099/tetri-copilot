@@ -58,6 +58,13 @@ import NotificationCenterPage from './features/notifications/pages/NotificationC
 import ReminderProfilesPage from './features/compliance/pages/ReminderProfilesPage.jsx';
 import EscalationProfilesPage from './features/compliance/pages/EscalationProfilesPage.jsx';
 import EscalationsPage from './features/compliance/pages/EscalationsPage.jsx';
+import ReportsHubPage from './features/compliance/pages/ReportsHubPage.jsx';
+import RegisterReportPage from './features/compliance/pages/RegisterReportPage.jsx';
+import FilingsReportPage from './features/compliance/pages/FilingsReportPage.jsx';
+import RenewalsReportPage from './features/compliance/pages/RenewalsReportPage.jsx';
+import OverdueReportPage from './features/compliance/pages/OverdueReportPage.jsx';
+import EscalationAnalyticsPage from './features/compliance/pages/EscalationAnalyticsPage.jsx';
+import ReminderAnalyticsPage from './features/compliance/pages/ReminderAnalyticsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -132,6 +139,13 @@ export default function App() {
           <Route path="/compliance/reminders/profiles" element={<ReminderProfilesPage />} />
           <Route path="/compliance/escalations/profiles" element={<EscalationProfilesPage />} />
           <Route path="/compliance/escalations" element={<EscalationsPage />} />
+          <Route path="/compliance/reports" element={<ReportsHubPage />} />
+          <Route path="/compliance/reports/register" element={<RegisterReportPage />} />
+          <Route path="/compliance/reports/filings" element={<FilingsReportPage />} />
+          <Route path="/compliance/reports/renewals" element={<RenewalsReportPage />} />
+          <Route path="/compliance/reports/overdue" element={<OverdueReportPage />} />
+          <Route path="/compliance/reports/escalations" element={<EscalationAnalyticsPage />} />
+          <Route path="/compliance/reports/reminders" element={<ReminderAnalyticsPage />} />
           <Route path="/notifications" element={<NotificationCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>

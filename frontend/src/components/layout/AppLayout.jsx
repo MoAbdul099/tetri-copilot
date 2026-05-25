@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
-  Bell, Siren,
+  Bell, Siren, BarChart2,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -75,6 +75,7 @@ const NAV_CONFIG = [
       { to: '/compliance/reminders/profiles',  label: 'Reminders',       icon: Bell },
       { to: '/compliance/escalations/profiles',label: 'Esc. Profiles',   icon: Siren },
       { to: '/compliance/escalations',         label: 'Escalations',     icon: Siren },
+      { to: '/compliance/reports',             label: 'Reports',         icon: BarChart2 },
     ],
   },
   {

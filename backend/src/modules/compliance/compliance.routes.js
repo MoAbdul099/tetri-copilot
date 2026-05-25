@@ -40,4 +40,25 @@ router.get('/calendar',             ctrl.getCalendarEvents);
 router.get('/stats',                ctrl.getStats);
 router.get('/recommendations',      ctrl.getRecommendations);
 
+// Dashboard & analytics (Slice 9.3)
+router.get('/dashboard',                    ctrl.getDashboard);
+router.get('/analytics/trends',             ctrl.getTrends);
+router.get('/analytics/categories',         ctrl.getCategoryAnalytics);
+router.get('/analytics/jurisdictions',      ctrl.getJurisdictionAnalytics);
+router.get('/analytics/escalations',        ctrl.getEscalationAnalytics);
+router.get('/analytics/reminders',          ctrl.getReminderAnalytics);
+
+// Reports
+router.get('/reports/register',             ctrl.getRegisterReport);
+router.get('/reports/filings',              ctrl.getFilingsReport);
+router.get('/reports/renewals',             ctrl.getRenewalsReport);
+router.get('/reports/overdue',              ctrl.getOverdueReport);
+router.post('/reports/export',              ctrl.exportReport);
+
+// Saved reports
+router.get('/reports/saved',                ctrl.listSavedReports);
+router.post('/reports/saved',               ctrl.createSavedReport);
+router.put('/reports/saved/:id',            ctrl.updateSavedReport);
+router.delete('/reports/saved/:id',         ctrl.deleteSavedReport);
+
 module.exports = router;
