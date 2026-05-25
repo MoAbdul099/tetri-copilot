@@ -1,4 +1,5 @@
-const service = require('./invoices.service');
+const service  = require('./invoices.service');
+const notifier = require('../notifications/notification.emitter');
 
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
 
@@ -24,6 +25,13 @@ const getInvoice = async (req, res, next) => {
 const createInvoice = async (req, res, next) => {
   try {
     const inv = await service.createInvoice(req.workspaceId, req.user.id, req.body);
+    notifier.emitToAdmins('INVOICE_CREATED', req.workspaceId, {
+      sourceId:   inv.id,
+      sourceType: 'invoice',
+      title:      `Invoice ${inv.invoiceNumber || inv.id} created`,
+      body:       `A new invoice has been created.`,
+      actorId:    req.user.id,
+    }).catch(() => {});
     ok(res, inv, 201);
   } catch (e) { next(e); }
 };

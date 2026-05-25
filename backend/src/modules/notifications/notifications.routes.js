@@ -12,6 +12,14 @@ router.put('/read-all',                ctrl.markAllRead);
 router.put('/:id/read',                ctrl.markRead);
 router.put('/:id/archive',             ctrl.archiveItem);
 router.put('/:id/snooze',              ctrl.snoozeItem);
+router.delete('/:id',                  ctrl.deleteItem);
+
+// Workspace notification settings
+router.get('/workspace-settings',      ctrl.getWorkspaceSettings);
+router.put('/workspace-settings',      ctrl.updateWorkspaceSettings);
+
+// Categories
+router.get('/categories',              ctrl.listCategories);
 
 // Preferences
 router.get('/preferences',             ctrl.getPreference);

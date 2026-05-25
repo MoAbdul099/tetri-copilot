@@ -10,6 +10,11 @@ const markRead         = async (req, res, next) => { try { const d = await svc.m
 const markAllRead      = async (req, res, next) => { try { await svc.markAllRead(req.workspaceId, req.user.id); res.json(success(null, 'All marked as read')); } catch (e) { next(e); } };
 const archiveItem      = async (req, res, next) => { try { const d = await svc.archiveNotification(req.workspaceId, req.user.id, req.params.id); res.json(success(d)); } catch (e) { next(e); } };
 const snoozeItem       = async (req, res, next) => { try { const d = await svc.snoozeNotification(req.workspaceId, req.user.id, req.params.id, req.body.until); res.json(success(d)); } catch (e) { next(e); } };
+const deleteItem       = async (req, res, next) => { try { await svc.deleteNotification(req.workspaceId, req.user.id, req.params.id); res.json(success(null, 'Deleted')); } catch (e) { next(e); } };
+
+const getWorkspaceSettings    = async (req, res, next) => { try { const d = await svc.getWorkspaceSettings(req.workspaceId); res.json(success(d)); } catch (e) { next(e); } };
+const updateWorkspaceSettings = async (req, res, next) => { try { const d = await svc.updateWorkspaceSettings(req.workspaceId, req.body); res.json(success(d)); } catch (e) { next(e); } };
+const listCategories          = async (req, res, next) => { try { const d = await svc.listCategories(); res.json(success(d)); } catch (e) { next(e); } };
 
 const listProfiles    = async (req, res, next) => { try { const d = await svc.listProfiles(req.workspaceId); res.json(success(d)); } catch (e) { next(e); } };
 const createProfile   = async (req, res, next) => { try { const d = await svc.createProfile(req.workspaceId, req.body); res.json(success(d, 'Profile created', 201)); } catch (e) { next(e); } };
@@ -31,7 +36,8 @@ const acknowledgeEsc   = async (req, res, next) => { try { const d = await svc.a
 
 module.exports = {
   getPreference, updatePreference,
-  listNotifications, getUnreadCount, markRead, markAllRead, archiveItem, snoozeItem,
+  getWorkspaceSettings, updateWorkspaceSettings, listCategories,
+  listNotifications, getUnreadCount, markRead, markAllRead, archiveItem, snoozeItem, deleteItem,
   listProfiles, createProfile, updateProfile, deleteProfile, addRule, updateRule, deleteRule,
   listEscProfiles, createEscProfile, updateEscProfile, addEscRule, updateEscRule, deleteEscRule,
   listEscalations, acknowledgeEsc,

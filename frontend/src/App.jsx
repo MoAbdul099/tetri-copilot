@@ -55,6 +55,8 @@ import CalendarPage from './features/compliance/pages/CalendarPage.jsx';
 import CategoriesPage from './features/compliance/pages/CategoriesPage.jsx';
 import PacksPage from './features/compliance/pages/PacksPage.jsx';
 import NotificationCenterPage from './features/notifications/pages/NotificationCenterPage.jsx';
+import NotificationPreferencesPage from './features/notifications/pages/NotificationPreferencesPage.jsx';
+import WorkspaceNotificationSettingsPage from './features/notifications/pages/WorkspaceNotificationSettingsPage.jsx';
 import ReminderProfilesPage from './features/compliance/pages/ReminderProfilesPage.jsx';
 import EscalationProfilesPage from './features/compliance/pages/EscalationProfilesPage.jsx';
 import EscalationsPage from './features/compliance/pages/EscalationsPage.jsx';
@@ -147,6 +149,8 @@ export default function App() {
           <Route path="/compliance/reports/escalations" element={<EscalationAnalyticsPage />} />
           <Route path="/compliance/reports/reminders" element={<ReminderAnalyticsPage />} />
           <Route path="/notifications" element={<NotificationCenterPage />} />
+          <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
+          <Route path="/settings/notification-settings" element={<WorkspaceNotificationSettingsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

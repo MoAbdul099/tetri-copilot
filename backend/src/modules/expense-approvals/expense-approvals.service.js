@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const repo = require('./expense-approvals.repository');
 const expRepo = require('../expenses/expenses.repository');
+const notifier = require('../notifications/notification.emitter');
 
 const notFound = (msg) => Object.assign(new Error(msg), { statusCode: 404 });
 const badRequest = (msg) => Object.assign(new Error(msg), { statusCode: 400 });
@@ -80,6 +81,16 @@ const submit = async (workspaceId, userId, expenseId) => {
   await repo.addComment(workflow.id, workspaceId, userId, 'submit', 'Expense submitted for approval');
   await repo.createAuditLog(workspaceId, expenseId, workflow.id, null, userId, 'submit', expense.status, 'pending_approval', null);
 
+  // Notify each approver
+  for (const approverUserId of approvers) {
+    notifier.emit('EXPENSE_APPROVAL_REQUIRED', workspaceId, approverUserId, {
+      sourceId: expenseId, sourceType: 'expense',
+      title: 'Expense approval required',
+      body: expense.description || 'An expense is waiting for your approval.',
+      actorId: userId,
+    }).catch(() => {});
+  }
+
   return repo.findWorkflowByExpenseId(expenseId);
 };
 
@@ -105,6 +116,13 @@ const approve = async (workspaceId, userId, expenseId, { comment } = {}) => {
   }
   await repo.createAuditLog(workspaceId, expenseId, workflow.id, null, userId, 'approve', 'pending_approval', 'approved', comment);
 
+  notifier.emit('EXPENSE_APPROVED', workspaceId, expense.createdByUserId, {
+    sourceId: expenseId, sourceType: 'expense',
+    title: 'Expense approved',
+    body: `Your expense "${expense.description || 'expense'}" has been approved.`,
+    actorId: userId,
+  }).catch(() => {});
+
   return repo.findWorkflowByExpenseId(expenseId);
 };
 
@@ -128,6 +146,13 @@ const reject = async (workspaceId, userId, expenseId, { comment } = {}) => {
   await setExpenseStatus(expenseId, userId, 'rejected');
   await repo.addComment(workflow.id, workspaceId, userId, 'reject', comment);
   await repo.createAuditLog(workspaceId, expenseId, workflow.id, null, userId, 'reject', 'pending_approval', 'rejected', comment);
+
+  notifier.emit('EXPENSE_REJECTED', workspaceId, expense.createdByUserId, {
+    sourceId: expenseId, sourceType: 'expense',
+    title: 'Expense rejected',
+    body: `Your expense "${expense.description || 'expense'}" has been rejected. Reason: ${comment}`,
+    actorId: userId,
+  }).catch(() => {});
 
   return repo.findWorkflowByExpenseId(expenseId);
 };

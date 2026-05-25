@@ -59,6 +59,9 @@ const markAllRead = (workspaceId, recipientId) =>
     data:   { status: 'read', readAt: new Date() },
   });
 
+const deleteItem = (id, workspaceId, recipientId) =>
+  prisma.notificationItem.deleteMany({ where: { id, workspaceId, recipientId } });
+
 const createItem = async (data) => {
   try {
     return await prisma.notificationItem.create({ data });
@@ -81,6 +84,28 @@ const getPendingEmailItems = () =>
     },
     take: 200,
   });
+
+// ── Workspace notification settings ───────────────────────
+
+const getWorkspaceSettings = (workspaceId) =>
+  prisma.workspaceNotificationSettings.findUnique({ where: { workspaceId } });
+
+const upsertWorkspaceSettings = (workspaceId, data) =>
+  prisma.workspaceNotificationSettings.upsert({
+    where:  { workspaceId },
+    create: { workspaceId, ...data },
+    update: data,
+  });
+
+// ── Categories ─────────────────────────────────────────────
+
+const listCategories = () =>
+  prisma.notificationCategory.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+
+// ── Audit log ──────────────────────────────────────────────
+
+const createAuditLog = (data) =>
+  prisma.notificationAuditLog.create({ data });
 
 // ── Notification profiles ─────────────────────────────────
 
@@ -254,11 +279,16 @@ const getUpcomingOccurrences = (daysAhead) => {
 module.exports = {
   getPreference,
   upsertPreference,
+  getWorkspaceSettings,
+  upsertWorkspaceSettings,
+  listCategories,
+  createAuditLog,
   listItems,
   countUnread,
   findItem,
   updateItem,
   markAllRead,
+  deleteItem,
   createItem,
   getPendingEmailItems,
   listProfiles,

@@ -39,6 +39,12 @@ const archiveNotification = async (workspaceId, userId, id) => {
   return repo.updateItem(id, { status: 'archived', archivedAt: new Date() });
 };
 
+const deleteNotification = async (workspaceId, userId, id) => {
+  const item = await repo.findItem(id, workspaceId, userId);
+  if (!item) throw Object.assign(new Error('Notification not found'), { statusCode: 404 });
+  await repo.deleteItem(id, workspaceId, userId);
+};
+
 const snoozeNotification = async (workspaceId, userId, id, until) => {
   const item = await repo.findItem(id, workspaceId, userId);
   if (!item) throw Object.assign(new Error('Notification not found'), { statusCode: 404 });
@@ -149,15 +155,40 @@ const acknowledgeEscalation = async (workspaceId, id) => {
   return repo.updateEscalationInstance(id, { status: 'acknowledged', acknowledgedAt: new Date() });
 };
 
+// ── Workspace settings ─────────────────────────────────────
+
+const getWorkspaceSettings = async (workspaceId) => {
+  const s = await repo.getWorkspaceSettings(workspaceId);
+  return s || { workspaceId, notificationsEnabled: true, inAppEnabled: true, toastEnabled: true, retentionMonths: 24, minimumToastPriority: 'medium' };
+};
+
+const updateWorkspaceSettings = (workspaceId, data) => {
+  const allowed = {};
+  if (data.notificationsEnabled !== undefined) allowed.notificationsEnabled = !!data.notificationsEnabled;
+  if (data.inAppEnabled         !== undefined) allowed.inAppEnabled         = !!data.inAppEnabled;
+  if (data.toastEnabled         !== undefined) allowed.toastEnabled         = !!data.toastEnabled;
+  if (data.retentionMonths      !== undefined) allowed.retentionMonths      = parseInt(data.retentionMonths, 10) || 24;
+  if (['low', 'medium', 'high', 'critical'].includes(data.minimumToastPriority)) allowed.minimumToastPriority = data.minimumToastPriority;
+  return repo.upsertWorkspaceSettings(workspaceId, allowed);
+};
+
+// ── Categories ─────────────────────────────────────────────
+
+const listCategories = () => repo.listCategories();
+
 module.exports = {
   getPreference,
   updatePreference,
+  getWorkspaceSettings,
+  updateWorkspaceSettings,
+  listCategories,
   listNotifications,
   getUnreadCount,
   markRead,
   markAllRead,
   archiveNotification,
   snoozeNotification,
+  deleteNotification,
   listProfiles,
   getProfile,
   createProfile,

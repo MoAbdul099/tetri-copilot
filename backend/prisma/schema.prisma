@@ -361,6 +361,7 @@ model User {
   notificationItems             NotificationItem[]      @relation("NotificationItemRecipient")
   notificationPreferences       NotificationPreference[] @relation("UserNotificationPreference")
   complianceSavedReports        ComplianceSavedReport[]  @relation("SavedReportUser")
+  notificationAuditLogs         NotificationAuditLog[]
 
   @@index([clerkUserId])
   @@index([email])
@@ -433,12 +434,14 @@ model Workspace {
   complianceComments   ComplianceComment[]
   complianceActivityLogs ComplianceActivityLog[]
   complianceCategories    ComplianceCategory[]
-  notificationItems       NotificationItem[]
-  notificationProfiles    NotificationProfile[]
-  notificationPreferences NotificationPreference[]
-  escalationProfiles      EscalationProfile[]
-  escalationInstances     EscalationInstance[]
-  complianceSavedReports  ComplianceSavedReport[]
+  notificationItems            NotificationItem[]
+  notificationProfiles         NotificationProfile[]
+  notificationPreferences      NotificationPreference[]
+  escalationProfiles           EscalationProfile[]
+  escalationInstances          EscalationInstance[]
+  complianceSavedReports       ComplianceSavedReport[]
+  workspaceNotificationSettings WorkspaceNotificationSettings?
+  notificationAuditLogs        NotificationAuditLog[]
 
   @@map("workspaces")
 }
@@ -2352,4 +2355,76 @@ model ComplianceSavedReport {
 
   @@index([workspaceId, userId])
   @@map("compliance_saved_reports")
+}
+
+// =========================================================
+// NOTIFICATION FOUNDATION — Slice 10.1
+// =========================================================
+
+model NotificationCategory {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique @db.VarChar(100)
+  name            String   @db.VarChar(150)
+  description     String?  @db.Text
+  iconKey         String?  @map("icon_key") @db.VarChar(100)
+  colorKey        String?  @map("color_key") @db.VarChar(100)
+  defaultPriority String   @default("medium") @map("default_priority") @db.VarChar(20)
+  isActive        Boolean  @default(true) @map("is_active")
+  isMandatory     Boolean  @default(false) @map("is_mandatory")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("notification_categories")
+}
+
+model NotificationEventRegistry {
+  id              String   @id @default(uuid()) @db.Uuid
+  eventCode       String   @unique @map("event_code") @db.VarChar(150)
+  categoryCode    String   @map("category_code") @db.VarChar(100)
+  sourceModule    String   @map("source_module") @db.VarChar(100)
+  defaultPriority String   @default("medium") @map("default_priority") @db.VarChar(20)
+  defaultTitle    String?  @map("default_title") @db.VarChar(255)
+  defaultMessage  String?  @map("default_message") @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([categoryCode])
+  @@map("notification_event_registry")
+}
+
+model WorkspaceNotificationSettings {
+  id                    String   @id @default(uuid()) @db.Uuid
+  workspaceId           String   @unique @map("workspace_id") @db.Uuid
+  notificationsEnabled  Boolean  @default(true) @map("notifications_enabled")
+  inAppEnabled          Boolean  @default(true) @map("in_app_enabled")
+  toastEnabled          Boolean  @default(true) @map("toast_enabled")
+  retentionMonths       Int      @default(24) @map("retention_months")
+  minimumToastPriority  String   @default("medium") @map("minimum_toast_priority") @db.VarChar(20)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_notification_settings")
+}
+
+model NotificationAuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  notificationId String?  @map("notification_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  action         String   @db.VarChar(100)
+  performedBy    String?  @map("performed_by") @db.Uuid
+  metadata       Json?
+  ipAddress      String?  @map("ip_address") @db.VarChar(100)
+  userAgent      String?  @map("user_agent") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([notificationId])
+  @@map("notification_audit_logs")
 }

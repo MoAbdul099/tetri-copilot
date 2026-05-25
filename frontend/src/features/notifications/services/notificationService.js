@@ -29,3 +29,10 @@ export const deleteEscalationRule    = (ruleId)  => api.delete(`${BASE}/escalati
 
 export const listEscalations         = (params) => api.get(`${BASE}/escalations`, { params }).then((r) => r.data.data);
 export const acknowledgeEscalation   = (id)     => api.put(`${BASE}/escalations/${id}/acknowledge`).then((r) => r.data.data);
+
+export const deleteNotification      = (id)     => api.delete(`${BASE}/${id}`).then((r) => r.data);
+
+export const getWorkspaceSettings    = ()        => api.get(`${BASE}/workspace-settings`).then((r) => r.data.data);
+export const updateWorkspaceSettings = (data)    => api.put(`${BASE}/workspace-settings`, data).then((r) => r.data.data);
+
+export const listCategories          = ()        => api.get(`${BASE}/categories`).then((r) => r.data.data);

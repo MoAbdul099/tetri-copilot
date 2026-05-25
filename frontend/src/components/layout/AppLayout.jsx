@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   Landmark, HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
-  Bell, Siren, BarChart2,
+  Bell, Siren, BarChart2, BellRing,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -91,9 +91,10 @@ const NAV_CONFIG = [
     label: 'Administration',
     groupIcon: ShieldCheck,
     items: [
-      { to: '/members',  label: 'Members',  icon: Users },
-      { to: '/billing',  label: 'Billing',  icon: CreditCard },
-      { to: '/settings', label: 'Settings', icon: Settings },
+      { to: '/members',                      label: 'Members',       icon: Users },
+      { to: '/billing',                      label: 'Billing',       icon: CreditCard },
+      { to: '/settings',                     label: 'Settings',      icon: Settings },
+      { to: '/settings/notification-settings', label: 'Notifications', icon: BellRing },
     ],
   },
 ];
@@ -233,6 +234,13 @@ export default function AppLayout({ user, workspace }) {
 
           {userMenuOpen && (
             <div className="absolute bottom-full left-0 right-0 mb-1 bg-tetri-surface border border-tetri-border rounded-xl shadow-lg py-1 z-50">
+              <button
+                onClick={() => { setUserMenuOpen(false); window.location.href = '/settings/notifications'; }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text transition-colors"
+              >
+                <BellRing className="w-4 h-4" />
+                Notification Preferences
+              </button>
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-tetri-muted hover:bg-tetri-bg hover:text-tetri-error transition-colors"
