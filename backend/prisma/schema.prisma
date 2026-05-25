@@ -368,6 +368,10 @@ model User {
   announcementsCreated          Announcement[]           @relation("AnnouncementCreatedBy")
   announcementReads             AnnouncementRead[]
   dashboardPreferences          DashboardPreference[]
+  savedReports                  SavedReport[]
+  scheduledReports              ScheduledReport[]
+  reportExportJobs              ReportExportJob[]
+  reportExecutionLogs           ReportExecutionLog[]
 
   @@index([clerkUserId])
   @@index([email])
@@ -453,6 +457,10 @@ model Workspace {
   workspaceEscalationRules     WorkspaceEscalationRule[]
   announcements                Announcement[]
   dashboardPreferences         DashboardPreference[]
+  savedReports                 SavedReport[]
+  scheduledReports             ScheduledReport[]
+  reportExportJobs             ReportExportJob[]
+  reportExecutionLogs          ReportExecutionLog[]
 
   @@map("workspaces")
 }
@@ -2654,4 +2662,114 @@ model DashboardWidgetConfig {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@map("dashboard_widget_configs")
+}
+
+// =========================================================
+// REPORTS ENGINE — Slice 11.2
+// =========================================================
+
+model SavedReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  reportCode  String   @map("report_code") @db.VarChar(100)
+  savedName   String   @map("saved_name") @db.VarChar(255)
+  filtersJson Json?    @map("filters_json")
+  sortingJson Json?    @map("sorting_json")
+  visibility  String   @default("private") @db.VarChar(20)
+  isFavorite  Boolean  @default(false) @map("is_favorite")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace        Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user             User                 @relation(fields: [userId], references: [id])
+  scheduledReports ScheduledReport[]
+  exportJobs       ReportExportJob[]
+  executionLogs    ReportExecutionLog[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("saved_reports")
+}
+
+model ScheduledReport {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  createdByUserId String    @map("created_by_user_id") @db.Uuid
+  savedReportId   String?   @map("saved_report_id") @db.Uuid
+  reportCode      String    @map("report_code") @db.VarChar(100)
+  scheduleName    String    @map("schedule_name") @db.VarChar(255)
+  frequency       String    @db.VarChar(20)
+  deliveryTime    String    @default("08:00") @map("delivery_time") @db.VarChar(5)
+  timezone        String    @default("UTC") @db.VarChar(100)
+  exportFormat    String    @default("csv") @map("export_format") @db.VarChar(10)
+  recipientsJson  Json      @map("recipients_json")
+  filtersJson     Json?     @map("filters_json")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastRunAt       DateTime? @map("last_run_at") @db.Timestamptz(6)
+  nextRunAt       DateTime? @map("next_run_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdByUserId], references: [id])
+  savedReport  SavedReport? @relation(fields: [savedReportId], references: [id])
+  exportJobs   ReportExportJob[]
+  executionLogs ReportExecutionLog[]
+
+  @@index([workspaceId])
+  @@index([nextRunAt])
+  @@map("scheduled_reports")
+}
+
+model ReportExportJob {
+  id                String    @id @default(uuid()) @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  reportCode        String    @map("report_code") @db.VarChar(100)
+  savedReportId     String?   @map("saved_report_id") @db.Uuid
+  scheduledReportId String?   @map("scheduled_report_id") @db.Uuid
+  exportFormat      String    @map("export_format") @db.VarChar(10)
+  filtersJson       Json?     @map("filters_json")
+  status            String    @default("pending") @db.VarChar(20)
+  fileUrl           String?   @map("file_url") @db.Text
+  fileKey           String?   @map("file_key") @db.Text
+  errorMessage      String?   @map("error_message") @db.Text
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(6)
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+  savedReport     SavedReport?     @relation(fields: [savedReportId], references: [id])
+  scheduledReport ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("report_export_jobs")
+}
+
+model ReportExecutionLog {
+  id                String   @id @default(uuid()) @db.Uuid
+  workspaceId       String   @map("workspace_id") @db.Uuid
+  userId            String?  @map("user_id") @db.Uuid
+  reportCode        String   @map("report_code") @db.VarChar(100)
+  savedReportId     String?  @map("saved_report_id") @db.Uuid
+  scheduledReportId String?  @map("scheduled_report_id") @db.Uuid
+  executionType     String   @default("manual") @map("execution_type") @db.VarChar(20)
+  filtersJson       Json?    @map("filters_json")
+  rowCount          Int?     @map("row_count")
+  durationMs        Int?     @map("duration_ms")
+  status            String   @default("success") @db.VarChar(20)
+  errorMessage      String?  @map("error_message") @db.Text
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user            User?            @relation(fields: [userId], references: [id])
+  savedReport     SavedReport?     @relation(fields: [savedReportId], references: [id])
+  scheduledReport ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+
+  @@index([workspaceId])
+  @@index([reportCode])
+  @@map("report_execution_logs")
 }

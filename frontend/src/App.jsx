@@ -74,6 +74,8 @@ import AnnouncementsPage from './features/announcements/pages/AnnouncementsPage.
 import AnnouncementFormPage from './features/announcements/pages/AnnouncementFormPage.jsx';
 import ReminderRulesPage from './features/reminder-rules/pages/ReminderRulesPage.jsx';
 import EscalationRulesPage from './features/escalation-rules/pages/EscalationRulesPage.jsx';
+import ReportsPage from './features/reports/pages/ReportsPage.jsx';
+import ReportViewerPage from './features/reports/pages/ReportViewerPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -167,6 +169,8 @@ export default function App() {
           <Route path="/announcements/:id/edit" element={<AnnouncementFormPage />} />
           <Route path="/settings/reminder-rules" element={<ReminderRulesPage />} />
           <Route path="/settings/escalation-rules" element={<EscalationRulesPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reports/:reportCode" element={<ReportViewerPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

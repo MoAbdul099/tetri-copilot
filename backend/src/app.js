@@ -46,6 +46,8 @@ const { startReminderEngine }    = require('./modules/notifications/reminder.eng
 const { startEmailWorker }       = require('./modules/email/email.worker');
 const { startAnnouncementEngine } = require('./modules/announcements/announcement.engine');
 const { seedEventRegistry }      = require('./modules/notifications/notification.emitter');
+const reportsRoutes              = require('./modules/reports/reports.routes');
+const { startReportScheduler }   = require('./modules/reports/reports.scheduler');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -116,6 +118,7 @@ app.use('/api/v1/announcements', announcementsRoutes);
 app.use('/api/v1/reminder-rules', reminderRulesRoutes);
 app.use('/api/v1/escalation-rules', escalationRulesRoutes);
 app.use('/api/v1/notification-events', notificationEventsRoutes);
+app.use('/api/v1/reports', reportsRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
@@ -125,6 +128,7 @@ app.use('/api/admin',  adminRoutes);
 startReminderEngine();
 startEmailWorker();
 startAnnouncementEngine();
+startReportScheduler();
 
 // Seed notification event registry (non-blocking)
 seedEventRegistry().catch(() => {});

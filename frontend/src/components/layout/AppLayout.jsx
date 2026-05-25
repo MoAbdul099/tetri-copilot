@@ -29,6 +29,12 @@ const NAV_CONFIG = [
     icon: LayoutDashboard,
   },
   {
+    type: 'item',
+    to: '/reports',
+    label: 'Reports',
+    icon: BarChart2,
+  },
+  {
     type: 'group',
     label: 'Sales',
     groupIcon: Users2,
