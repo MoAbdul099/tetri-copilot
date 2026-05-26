@@ -59,9 +59,11 @@ async function listForCurrentUser(userId, workspaceId, { limit = 50 } = {}) {
   });
 }
 
-async function recent(workspaceId, limit = 20) {
+async function recent(workspaceId, limit = 20, userId = null) {
+  const where = { workspaceId };
+  if (userId) where.userId = userId;
   return prisma.activityLog.findMany({
-    where: { workspaceId },
+    where,
     orderBy: { createdAt: 'desc' },
     take: parseInt(limit),
   });

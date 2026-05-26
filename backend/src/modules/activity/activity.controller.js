@@ -3,7 +3,10 @@ const { success, error } = require('../../utils/response');
 
 async function getActivityFeed(req, res) {
   try {
-    const result = await service.getActivityFeed(req.workspaceMember.workspaceId, req.query);
+    const filters = { ...req.query };
+    // Regular users can only see their own activity
+    if (req.role === 'user') filters.userId = req.user.id;
+    const result = await service.getActivityFeed(req.workspaceMember.workspaceId, filters);
     return success(res, result);
   } catch (err) {
     return error(res, err.message, err.status || 500);
@@ -48,7 +51,8 @@ async function getMyActivity(req, res) {
 async function getRecentActivity(req, res) {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    const items = await service.getRecentActivity(req.workspaceMember.workspaceId, limit);
+    const userId = req.role === 'user' ? req.user.id : null;
+    const items = await service.getRecentActivity(req.workspaceMember.workspaceId, limit, userId);
     return success(res, items);
   } catch (err) {
     return error(res, err.message, err.status || 500);
@@ -57,7 +61,9 @@ async function getRecentActivity(req, res) {
 
 async function exportActivity(req, res) {
   try {
-    const items = await service.exportActivity(req.workspaceMember.workspaceId, req.query);
+    const filters = { ...req.query };
+    if (req.role === 'user') filters.userId = req.user.id;
+    const items = await service.exportActivity(req.workspaceMember.workspaceId, filters);
 
     const headers = ['ID', 'Date', 'User', 'Action', 'Module', 'Category', 'Entity Type', 'Reference', 'Description'];
     const rows = items.map((r) => [

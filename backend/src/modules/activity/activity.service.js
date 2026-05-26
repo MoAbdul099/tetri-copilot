@@ -18,8 +18,8 @@ async function getMyActivity(userId, workspaceId, options) {
   return repo.listForCurrentUser(userId, workspaceId, options);
 }
 
-async function getRecentActivity(workspaceId, limit) {
-  return repo.recent(workspaceId, limit);
+async function getRecentActivity(workspaceId, limit, userId = null) {
+  return repo.recent(workspaceId, limit, userId);
 }
 
 async function exportActivity(workspaceId, filters) {
