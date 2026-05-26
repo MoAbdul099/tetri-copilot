@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, Brain, DollarSign, Zap,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
