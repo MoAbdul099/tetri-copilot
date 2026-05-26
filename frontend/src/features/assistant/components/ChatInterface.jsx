@@ -3,13 +3,14 @@ import { Send, Loader2, Bot, Sparkles } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import assistantService from '../services/assistantService';
 
-export default function ChatInterface({ session, onSessionUpdate, quickPrompts = [] }) {
+export default function ChatInterface({ session, onSessionUpdate, quickPrompts = [], initialPrompt }) {
   const [messages,  setMessages]  = useState([]);
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [loadingMsgs, setLoadingMsgs] = useState(true);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
+  const sentInitial = useRef(false);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,6 +32,15 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
   useEffect(() => {
     loadMessages();
   }, [loadMessages]);
+
+  // Auto-send the initial prompt once messages have loaded and the prompt hasn't been sent yet
+  useEffect(() => {
+    if (initialPrompt && !loadingMsgs && !sentInitial.current) {
+      sentInitial.current = true;
+      sendMessage(initialPrompt);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, loadingMsgs]);
 
   useEffect(() => {
     scrollToBottom();

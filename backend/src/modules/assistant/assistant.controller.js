@@ -9,7 +9,7 @@ async function createSession(req, res) {
   try {
     const session = await svc.createSession({
       workspaceId: req.workspaceId,
-      userId:      req.userId,
+      userId:      req.user.id,
       title:       req.body.title,
     });
     return success(res, session, 'Session created', 201);
@@ -22,8 +22,8 @@ async function listSessions(req, res) {
   try {
     const { status, search } = req.query;
     const sessions = search
-      ? await svc.searchSessions({ workspaceId: req.workspaceId, userId: req.userId, query: search })
-      : await svc.listSessions({ workspaceId: req.workspaceId, userId: req.userId, status });
+      ? await svc.searchSessions({ workspaceId: req.workspaceId, userId: req.user.id, query: search })
+      : await svc.listSessions({ workspaceId: req.workspaceId, userId: req.user.id, status });
     return success(res, sessions);
   } catch (err) {
     return error(res, err.message, err.status || 500);
@@ -58,8 +58,8 @@ async function chat(req, res) {
     const result = await svc.chat({
       sessionId:   req.params.id,
       workspaceId: req.workspaceId,
-      userId:      req.userId,
-      role:        req.workspaceRole,
+      userId:      req.user.id,
+      role:        req.role,
       userMessage: message.trim(),
     });
     return success(res, result);
@@ -87,7 +87,7 @@ async function submitFeedback(req, res) {
     const { messageId, rating, comment } = req.body;
     if (!messageId || !rating) return error(res, 'messageId and rating are required', 400);
 
-    const fb = await svc.submitFeedback({ messageId, userId: req.userId, rating, comment });
+    const fb = await svc.submitFeedback({ messageId, userId: req.user.id, rating, comment });
     return success(res, fb, 'Feedback submitted', 201);
   } catch (err) {
     return error(res, err.message, err.status || 500);

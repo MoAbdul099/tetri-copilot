@@ -3,28 +3,50 @@ const authRepository = require('./auth.repository');
 const prisma = require('../../lib/prisma');
 
 const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
-  const clerkUser = await clerkClient.users.getUser(clerkUserId);
+  // Check if user already exists in local DB
+  let localUser = await authRepository.getUserByClerkId(clerkUserId);
 
-  const primaryEmail = clerkUser.emailAddresses.find(
-    (e) => e.id === clerkUser.primaryEmailAddressId
-  );
-  const email    = primaryEmail?.emailAddress || '';
-  const fullName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
+  if (!localUser) {
+    // New user — fetch profile from Clerk to seed local record
+    let email = '';
+    let fullName = null;
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+      const primaryEmail = clerkUser.emailAddresses.find(
+        (e) => e.id === clerkUser.primaryEmailAddressId
+      );
+      email    = primaryEmail?.emailAddress || '';
+      fullName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
+    } catch (err) {
+      // Clerk API call failed — create user with no email/name; can be updated later
+      console.error('[auth.service] Clerk API error on new user lookup:', err?.message);
+    }
 
-  const isNewUser = !(await authRepository.getUserByClerkId(clerkUserId));
-  const user = await authRepository.upsertUser({ clerkUserId, email, fullName });
+    localUser = await authRepository.upsertUser({ clerkUserId, email, fullName });
 
-  await authRepository.createActivityLog({
-    userId:      user.id,
-    action:      isNewUser ? 'user.signup' : 'user.login',
-    entityType:  'user',
-    entityId:    user.id,
-    description: isNewUser ? 'User signed up via Clerk' : 'User logged in via Clerk',
-    ipAddress:   ipAddress || null,
-    userAgent:   userAgent || null,
-  });
+    await authRepository.createActivityLog({
+      userId:      localUser.id,
+      action:      'user.signup',
+      entityType:  'user',
+      entityId:    localUser.id,
+      description: 'User signed up via Clerk',
+      ipAddress:   ipAddress || null,
+      userAgent:   userAgent || null,
+    });
+  } else {
+    // Existing user — record the login without calling Clerk's REST API
+    await authRepository.createActivityLog({
+      userId:      localUser.id,
+      action:      'user.login',
+      entityType:  'user',
+      entityId:    localUser.id,
+      description: 'User logged in via Clerk',
+      ipAddress:   ipAddress || null,
+      userAgent:   userAgent || null,
+    });
+  }
 
-  const memberships = await authRepository.getWorkspaceMemberships(user.id);
+  const memberships = await authRepository.getWorkspaceMemberships(localUser.id);
 
   const workspaces = await Promise.all(memberships.map(async (m) => {
     const company = await prisma.company.findUnique({
@@ -40,16 +62,15 @@ const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
     };
   }));
 
-  // Backward-compat: expose the first workspace as `workspace`
   const workspace = workspaces[0] || null;
 
   return {
     user: {
-      id:              user.id,
-      email:           user.email,
-      fullName:        user.fullName,
-      status:          user.status,
-      isPlatformAdmin: user.isPlatformAdmin,
+      id:              localUser.id,
+      email:           localUser.email,
+      fullName:        localUser.fullName,
+      status:          localUser.status,
+      isPlatformAdmin: localUser.isPlatformAdmin,
     },
     workspaces,
     workspace,

@@ -165,7 +165,7 @@ async function upsertCostSummary({ period, periodKey, workspaceId, providerId, t
 // ── Quota Rules ───────────────────────────────────────────────────────────────
 
 async function getQuotaRule(scope, scopeId = null) {
-  return prisma.aiQuotaRule.findUnique({ where: { scope_scopeId: { scope, scopeId } } });
+  return prisma.aiQuotaRule.findFirst({ where: { scope, scopeId } });
 }
 
 async function listQuotaRules() {
@@ -173,11 +173,11 @@ async function listQuotaRules() {
 }
 
 async function upsertQuotaRule({ scope, scopeId = null, ...data }) {
-  return prisma.aiQuotaRule.upsert({
-    where: { scope_scopeId: { scope, scopeId } },
-    update: data,
-    create: { scope, scopeId, ...data },
-  });
+  const existing = await prisma.aiQuotaRule.findFirst({ where: { scope, scopeId } });
+  if (existing) {
+    return prisma.aiQuotaRule.update({ where: { id: existing.id }, data });
+  }
+  return prisma.aiQuotaRule.create({ data: { scope, scopeId, ...data } });
 }
 
 // ── Health Checks ─────────────────────────────────────────────────────────────

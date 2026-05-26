@@ -15,14 +15,15 @@ const logger = winston.createLogger({
         env.NODE_ENV === 'development'
           ? winston.format.combine(
               winston.format.colorize(),
-              winston.format.printf(({ timestamp, level, message, requestId, workspaceId, durationMs, statusCode }) => {
+              winston.format.printf(({ timestamp, level, message, requestId, workspaceId, durationMs, statusCode, stack }) => {
                 const extra = [
                   requestId ? `rid=${requestId.slice(0, 8)}` : null,
                   workspaceId ? `ws=${workspaceId.slice(0, 8)}` : null,
                   durationMs != null ? `${durationMs}ms` : null,
                   statusCode ? `[${statusCode}]` : null,
                 ].filter(Boolean).join(' ');
-                return `${timestamp} [${level}] ${message}${extra ? ' — ' + extra : ''}`;
+                const line = `${timestamp} [${level}] ${message}${extra ? ' — ' + extra : ''}`;
+                return stack ? `${line}\n${stack}` : line;
               })
             )
           : winston.format.json(),

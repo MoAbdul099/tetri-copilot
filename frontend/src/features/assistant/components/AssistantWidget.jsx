@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bot, X, Maximize2, Plus } from 'lucide-react';
+import { Bot, X, Maximize2, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ChatInterface from './ChatInterface';
 import assistantService from '../services/assistantService';
@@ -9,6 +9,7 @@ export default function AssistantWidget() {
   const [session,    setSession]    = useState(null);
   const [quickPrompts, setQuickPrompts] = useState([]);
   const [creating,   setCreating]   = useState(false);
+  const [sessionError, setSessionError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,11 +24,12 @@ export default function AssistantWidget() {
   const startNewSession = async () => {
     if (creating) return;
     setCreating(true);
+    setSessionError(null);
     try {
       const s = await assistantService.createSession({ title: `Chat — ${new Date().toLocaleDateString()}` });
       setSession(s);
-    } catch {
-      // silent
+    } catch (err) {
+      setSessionError(err?.response?.data?.error || 'Could not start session. Try again.');
     } finally {
       setCreating(false);
     }
@@ -95,9 +97,23 @@ export default function AssistantWidget() {
               ? <ChatInterface session={session} quickPrompts={quickPrompts} />
               : (
                 <div className="flex items-center justify-center h-full py-12">
-                  <div className="text-center">
+                  <div className="text-center px-4">
                     <Bot className="w-8 h-8 text-tetri-muted mx-auto mb-2" />
-                    <p className="text-sm text-tetri-muted">Starting session…</p>
+                    {sessionError ? (
+                      <>
+                        <p className="text-sm text-red-600 mb-3">{sessionError}</p>
+                        <button
+                          onClick={startNewSession}
+                          disabled={creating}
+                          className="flex items-center gap-1.5 mx-auto px-3 py-1.5 text-xs rounded-lg bg-tetri-blue text-white hover:bg-tetri-blue-hover transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Retry
+                        </button>
+                      </>
+                    ) : (
+                      <p className="text-sm text-tetri-muted">{creating ? 'Starting session…' : 'Loading…'}</p>
+                    )}
                   </div>
                 </div>
               )

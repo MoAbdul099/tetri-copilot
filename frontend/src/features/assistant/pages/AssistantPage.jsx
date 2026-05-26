@@ -53,6 +53,7 @@ export default function AssistantPage() {
   const [suggestions,  setSuggestions]  = useState([]);
   const [search,       setSearch]       = useState('');
   const [creating,     setCreating]     = useState(false);
+  const [createError,  setCreateError]  = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [pendingPrompt, setPendingPrompt] = useState(null);
 
@@ -96,12 +97,14 @@ export default function AssistantPage() {
   const createSession = async (title) => {
     if (creating) return;
     setCreating(true);
+    setCreateError(null);
     try {
       const session = await assistantService.createSession({ title });
       setSessions((prev) => [session, ...prev]);
       setActiveSession(session);
-    } catch {
-      // ignore
+    } catch (err) {
+      setCreateError(err?.response?.data?.error || 'Failed to start conversation. Please try again.');
+      setPendingPrompt(null);
     } finally {
       setCreating(false);
     }
@@ -141,7 +144,7 @@ export default function AssistantPage() {
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-tetri-blue text-white text-sm font-medium hover:bg-tetri-blue-hover transition-colors disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            New conversation
+            {creating ? 'Starting…' : 'New conversation'}
           </button>
         </div>
 
@@ -200,6 +203,12 @@ export default function AssistantPage() {
           />
         ) : (
           <div className="flex-1 overflow-y-auto px-8 py-8">
+            {createError && (
+              <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 flex items-center justify-between">
+                <span>{createError}</span>
+                <button onClick={() => setCreateError(null)} className="ml-3 text-red-400 hover:text-red-600 text-xs underline">Dismiss</button>
+              </div>
+            )}
             <PageHeader
               title="Workspace Assistant"
               subtitle="Ask questions about your workspace in plain language."
