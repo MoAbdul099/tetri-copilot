@@ -5,21 +5,16 @@ import ChatInterface from './ChatInterface';
 import assistantService from '../services/assistantService';
 
 export default function AssistantWidget() {
-  const [open,       setOpen]       = useState(false);
-  const [session,    setSession]    = useState(null);
+  const [open,         setOpen]         = useState(false);
+  const [session,      setSession]      = useState(null);
   const [quickPrompts, setQuickPrompts] = useState([]);
-  const [creating,   setCreating]   = useState(false);
+  const [creating,     setCreating]     = useState(false);
   const [sessionError, setSessionError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     assistantService.getQuickPrompts().then(setQuickPrompts).catch(() => {});
   }, []);
-
-  const openWidget = async () => {
-    setOpen(true);
-    if (!session) await startNewSession();
-  };
 
   const startNewSession = async () => {
     if (creating) return;
@@ -35,6 +30,11 @@ export default function AssistantWidget() {
     }
   };
 
+  const openWidget = async () => {
+    setOpen(true);
+    if (!session) await startNewSession();
+  };
+
   const openFullPage = () => {
     setOpen(false);
     navigate('/assistant');
@@ -46,7 +46,7 @@ export default function AssistantWidget() {
       {!open && (
         <button
           onClick={openWidget}
-          className="fixed bottom-6 right-6 z-50 w-13 h-13 rounded-2xl bg-tetri-blue text-white shadow-lg hover:bg-tetri-blue-hover transition-all flex items-center justify-center group"
+          className="fixed bottom-6 right-6 z-50 rounded-2xl bg-tetri-blue text-white shadow-lg hover:bg-tetri-blue-hover transition-all flex items-center justify-center"
           style={{ width: '52px', height: '52px' }}
           title="Open Tetri Copilot"
         >
@@ -68,7 +68,7 @@ export default function AssistantWidget() {
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={startNewSession}
+                onClick={() => { setSession(null); startNewSession(); }}
                 title="New conversation"
                 className="p-1.5 rounded-lg text-tetri-muted hover:bg-tetri-bg hover:text-tetri-text transition-colors"
               >
@@ -91,33 +91,32 @@ export default function AssistantWidget() {
             </div>
           </div>
 
-          {/* Chat */}
+          {/* Chat area */}
           <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-            {session
-              ? <ChatInterface session={session} quickPrompts={quickPrompts} />
-              : (
-                <div className="flex items-center justify-center h-full py-12">
-                  <div className="text-center px-4">
-                    <Bot className="w-8 h-8 text-tetri-muted mx-auto mb-2" />
-                    {sessionError ? (
-                      <>
-                        <p className="text-sm text-red-600 mb-3">{sessionError}</p>
-                        <button
-                          onClick={startNewSession}
-                          disabled={creating}
-                          className="flex items-center gap-1.5 mx-auto px-3 py-1.5 text-xs rounded-lg bg-tetri-blue text-white hover:bg-tetri-blue-hover transition-colors disabled:opacity-50"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Retry
-                        </button>
-                      </>
-                    ) : (
-                      <p className="text-sm text-tetri-muted">{creating ? 'Starting session…' : 'Loading…'}</p>
-                    )}
-                  </div>
+            {session ? (
+              <ChatInterface session={session} quickPrompts={quickPrompts} />
+            ) : (
+              <div className="flex items-center justify-center h-full py-12">
+                <div className="text-center px-4">
+                  <Bot className="w-8 h-8 text-tetri-muted mx-auto mb-2" />
+                  {sessionError ? (
+                    <>
+                      <p className="text-sm text-red-600 mb-3">{sessionError}</p>
+                      <button
+                        onClick={startNewSession}
+                        disabled={creating}
+                        className="flex items-center gap-1.5 mx-auto px-3 py-1.5 text-xs rounded-lg bg-tetri-blue text-white hover:bg-tetri-blue-hover transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Retry
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-sm text-tetri-muted">{creating ? 'Starting session…' : 'Loading…'}</p>
+                  )}
                 </div>
-              )
-            }
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -187,6 +187,55 @@ async function execute({ workspaceId, userId, feature, messages, options = {} })
   };
 }
 
+// ── Streaming execute ─────────────────────────────────────────────────────────
+
+async function *executeStream({ workspaceId, userId, feature, messages, options = {} }) {
+  const config = await getConfig();
+
+  const providerCode = options.provider || config.default_provider || 'gemini';
+  const modelName    = options.model    || config.default_model    || 'gemini-2.0-flash';
+  const temperature  = parseFloat(options.temperature ?? config.temperature ?? 0.7);
+  const maxTokens    = parseInt(options.maxTokens    ?? config.max_tokens    ?? 1000);
+
+  const providerRecord = await repo.getProviderByCode(providerCode);
+  if (!providerRecord?.enabled) throw Object.assign(new Error(`Provider "${providerCode}" is not enabled`), { status: 503 });
+
+  const modelRecord = await repo.getModelByName(modelName, providerRecord.id)
+    || await repo.getDefaultModel(providerRecord.id);
+  if (!modelRecord) throw Object.assign(new Error(`No active model found for provider "${providerCode}"`), { status: 503 });
+
+  await checkQuota(workspaceId, config);
+
+  const provider = registry.get(providerCode);
+  if (!provider.isConfigured()) throw Object.assign(new Error(`Provider "${providerCode}" API key not configured`), { status: 503 });
+
+  const start = Date.now();
+  let tokensInput = 0, tokensOutput = 0;
+
+  for await (const chunk of provider.generateStream({ messages, model: modelRecord.modelName, temperature, maxTokens })) {
+    if (chunk.done) {
+      tokensInput  = chunk.tokensInput;
+      tokensOutput = chunk.tokensOutput;
+    } else if (chunk.text) {
+      yield { type: 'chunk', text: chunk.text };
+    }
+  }
+
+  const durationMs = Date.now() - start;
+  const cost = (
+    ((tokensInput  || 0) / 1000) * (modelRecord.inputCostPer1k  || 0) +
+    ((tokensOutput || 0) / 1000) * (modelRecord.outputCostPer1k || 0)
+  );
+
+  repo.logUsage({
+    workspaceId, userId: userId || null,
+    providerId: providerRecord.id, modelId: modelRecord.id,
+    feature, tokensInput, tokensOutput, estimatedCost: cost, durationMs, success: true,
+  }).catch(() => {});
+
+  yield { type: 'done', provider: providerCode, model: modelRecord.modelName, tokensInput, tokensOutput, cost, durationMs };
+}
+
 // ── Admin helpers ─────────────────────────────────────────────────────────────
 
 async function runHealthChecks() {
@@ -275,7 +324,7 @@ async function getCostDashboard() {
 }
 
 module.exports = {
-  execute, getConfig, invalidateConfigCache,
+  execute, executeStream, getConfig, invalidateConfigCache,
   runHealthChecks, getHealthSummary,
   getUsageDashboard, getCostDashboard,
 };

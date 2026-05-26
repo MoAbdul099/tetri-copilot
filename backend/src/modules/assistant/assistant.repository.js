@@ -5,17 +5,26 @@ const prisma = require('../../lib/prisma');
 const createSession = (data) =>
   prisma.aiAssistantSession.create({ data });
 
-const listSessions = ({ workspaceId, userId, status } = {}) =>
-  prisma.aiAssistantSession.findMany({
-    where: {
-      workspaceId,
-      ...(userId ? { userId } : {}),
-      ...(status ? { status } : { status: { not: 'archived' } }),
+const listSessions = ({ workspaceId, userId, status } = {}) => {
+  let statusFilter;
+  if (status === 'archived')    statusFilter = { status: 'archived' };
+  else if (status === 'deleted') statusFilter = { status: 'deleted' };
+  else                           statusFilter = { status: 'active' };
+
+  return prisma.aiAssistantSession.findMany({
+    where: { workspaceId, ...(userId ? { userId } : {}), ...statusFilter },
+    include: {
+      _count: { select: { messages: true } },
+      messages: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { message: true, senderType: true, createdAt: true },
+      },
     },
-    include: { _count: { select: { messages: true } } },
     orderBy: { updatedAt: 'desc' },
     take: 50,
   });
+};
 
 const searchSessions = (workspaceId, userId, query) =>
   prisma.aiAssistantSession.findMany({
@@ -38,6 +47,9 @@ const getSession = (id, workspaceId) =>
 
 const updateSession = (id, data) =>
   prisma.aiAssistantSession.update({ where: { id }, data });
+
+const deleteSession = (id) =>
+  prisma.aiAssistantSession.update({ where: { id }, data: { status: 'deleted' } });
 
 // ── Messages ──────────────────────────────────────────────────────────────────
 
@@ -83,7 +95,7 @@ const listCapabilities = () =>
   prisma.aiCapabilityRegistry.findMany({ where: { enabled: true }, orderBy: { module: 'asc' } });
 
 module.exports = {
-  createSession, listSessions, searchSessions, getSession, updateSession,
+  createSession, listSessions, searchSessions, getSession, updateSession, deleteSession,
   createMessage, getMessages,
   createFeedback,
   upsertSuggestions, listSuggestions,

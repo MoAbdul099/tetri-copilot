@@ -35,6 +35,26 @@ class GroqProvider extends BaseProvider {
     };
   }
 
+  async *generateStream({ messages, model = 'llama-3.3-70b-versatile', temperature = 0.7, maxTokens = 1000 }) {
+    const client = this._getClient();
+    const stream = await client.chat.completions.create({
+      model, messages, temperature, max_tokens: maxTokens, stream: true,
+    });
+
+    let tokensInput = 0, tokensOutput = 0;
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content || '';
+      if (text) yield { text };
+      // Groq surfaces usage on the final chunk via x_groq
+      if (chunk.x_groq?.usage) {
+        tokensInput  = chunk.x_groq.usage.prompt_tokens     || 0;
+        tokensOutput = chunk.x_groq.usage.completion_tokens || 0;
+      }
+    }
+
+    yield { done: true, tokensInput, tokensOutput };
+  }
+
   async generateStructuredOutput({ messages, model = 'llama-3.3-70b-versatile', maxTokens = 1000 }) {
     const augmented = [
       ...messages,

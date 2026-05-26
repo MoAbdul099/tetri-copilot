@@ -4,17 +4,16 @@ import MessageBubble from './MessageBubble';
 import assistantService from '../services/assistantService';
 
 export default function ChatInterface({ session, onSessionUpdate, quickPrompts = [], initialPrompt }) {
-  const [messages,  setMessages]  = useState([]);
-  const [input,     setInput]     = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [loadingMsgs, setLoadingMsgs] = useState(true);
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
-  const sentInitial = useRef(false);
+  const [messages,     setMessages]     = useState([]);
+  const [input,        setInput]        = useState('');
+  const [loading,      setLoading]      = useState(false);
+  const [loadingMsgs,  setLoadingMsgs]  = useState(true);
+  const bottomRef    = useRef(null);
+  const inputRef     = useRef(null);
+  const sentInitial  = useRef(false);
+  const streamingRef = useRef(null); // id of the in-progress streaming bubble
 
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const loadMessages = useCallback(async () => {
     if (!session?.id) return;
@@ -29,11 +28,9 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
     }
   }, [session?.id]);
 
-  useEffect(() => {
-    loadMessages();
-  }, [loadMessages]);
+  useEffect(() => { loadMessages(); }, [loadMessages]);
 
-  // Auto-send the initial prompt once messages have loaded and the prompt hasn't been sent yet
+  // Auto-send initialPrompt once messages are ready
   useEffect(() => {
     if (initialPrompt && !loadingMsgs && !sentInitial.current) {
       sentInitial.current = true;
@@ -42,64 +39,118 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt, loadingMsgs]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
   const sendMessage = async (text) => {
-    const msg = text || input.trim();
+    const msg = (text || input).trim();
     if (!msg || loading) return;
 
     setInput('');
-    const optimisticUser = {
-      id:         `tmp-${Date.now()}`,
-      senderType: 'user',
-      message:    msg,
-      createdAt:  new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticUser]);
     setLoading(true);
 
+    // Optimistic user bubble
+    const userTmpId    = `tmp-user-${Date.now()}`;
+    const streamTmpId  = `tmp-stream-${Date.now()}`;
+    streamingRef.current = streamTmpId;
+
+    setMessages((prev) => [
+      ...prev,
+      { id: userTmpId,   senderType: 'user',      message: msg,  createdAt: new Date().toISOString() },
+      { id: streamTmpId, senderType: 'assistant',  message: '',   streaming: true, createdAt: new Date().toISOString() },
+    ]);
+
+    await assistantService.streamChat(session.id, msg, {
+      onChunk: (text) => {
+        setMessages((prev) =>
+          prev.map((m) => m.id === streamTmpId ? { ...m, message: m.message + text } : m)
+        );
+      },
+      onDone: (event) => {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id === streamTmpId) {
+              return { ...m, id: event.messageId, message: event.message, streaming: false };
+            }
+            if (m.id === userTmpId) {
+              return { ...m, id: `user-confirmed-${Date.now()}` };
+            }
+            return m;
+          })
+        );
+        streamingRef.current = null;
+        setLoading(false);
+        inputRef.current?.focus();
+        if (onSessionUpdate) onSessionUpdate();
+      },
+      onError: (errMsg) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === streamTmpId
+              ? { ...m, message: errMsg || 'Something went wrong. Please try again.', streaming: false, metadata: { blocked: true } }
+              : m
+          )
+        );
+        streamingRef.current = null;
+        setLoading(false);
+        inputRef.current?.focus();
+      },
+    });
+  };
+
+  const handleRegenerate = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    // Remove the last assistant message optimistically
+    let removed = null;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.senderType === 'assistant') { removed = last; return prev.slice(0, -1); }
+      return prev;
+    });
+
+    const streamTmpId = `tmp-regen-${Date.now()}`;
+    streamingRef.current = streamTmpId;
+    setMessages((prev) => [
+      ...prev,
+      { id: streamTmpId, senderType: 'assistant', message: '', streaming: true, createdAt: new Date().toISOString() },
+    ]);
+
     try {
-      const result = await assistantService.chat(session.id, msg);
-      // Replace optimistic with confirmed + add assistant message
-      const assistantMsg = {
-        id:         result.assistantMessage?.id || `tmp-a-${Date.now()}`,
-        senderType: 'assistant',
-        message:    result.response,
-        metadata:   result.assistantMessage?.metadata,
-        createdAt:  result.assistantMessage?.createdAt || new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev.slice(0, -1), { ...optimisticUser, id: `user-${Date.now()}` }, assistantMsg]);
-      if (onSessionUpdate) onSessionUpdate();
+      const result = await assistantService.regenerateResponse(session.id);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === streamTmpId
+            ? { ...m, id: result.assistantMessage.id, message: result.response, streaming: false }
+            : m
+        )
+      );
     } catch (err) {
-      const errMsg = {
-        id:         `err-${Date.now()}`,
-        senderType: 'assistant',
-        message:    err?.response?.data?.error || 'Something went wrong. Please try again.',
-        metadata:   { blocked: true },
-        createdAt:  new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev.slice(0, -1), errMsg]);
+      // Restore removed message on error
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === streamTmpId
+            ? { ...m, message: err?.response?.data?.error || 'Regeneration failed. Please try again.', streaming: false, metadata: { blocked: true } }
+            : m
+        )
+      );
     } finally {
+      streamingRef.current = null;
       setLoading(false);
       inputRef.current?.focus();
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   const isEmpty = messages.length === 0 && !loadingMsgs;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
         {loadingMsgs && (
           <div className="flex justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-tetri-muted" />
@@ -134,33 +185,23 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
           </div>
         )}
 
-        {!loadingMsgs && messages.map((msg, idx) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isLast={idx === messages.length - 1 && msg.senderType === 'assistant'}
-          />
-        ))}
+        {!loadingMsgs && messages.map((msg, idx) => {
+          const isLast = idx === messages.length - 1 && msg.senderType === 'assistant';
+          return (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isLast={isLast}
+              onRegenerate={isLast && !msg.streaming ? handleRegenerate : null}
+            />
+          );
+        })}
 
-        {loading && (
-          <div className="flex gap-2 mb-3">
-            <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
-              <Bot className="w-3.5 h-3.5 text-violet-600" />
-            </div>
-            <div className="bg-tetri-surface border border-tetri-border px-4 py-3 rounded-2xl rounded-tl-sm">
-              <div className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-tetri-muted animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-tetri-muted animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-tetri-muted animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </div>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
-      <div className="border-t border-tetri-border px-4 py-3 bg-tetri-surface">
+      {/* Input */}
+      <div className="border-t border-tetri-border px-4 py-3 bg-tetri-surface flex-shrink-0">
         <div className="flex gap-2 items-end">
           <textarea
             ref={inputRef}
@@ -180,11 +221,12 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
           >
             {loading
               ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Send className="w-4 h-4" />
-            }
+              : <Send    className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-xs text-tetri-muted mt-1.5 text-center">Read-only · Responses may not be 100% accurate</p>
+        <p className="text-xs text-tetri-muted mt-1.5 text-center">
+          Read-only · Responses may not be 100% accurate
+        </p>
       </div>
     </div>
   );

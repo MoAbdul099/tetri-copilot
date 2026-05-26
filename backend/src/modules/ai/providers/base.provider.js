@@ -30,6 +30,13 @@ class BaseProvider {
   isConfigured() {
     throw new Error(`${this.code}.isConfigured() not implemented`);
   }
+
+  /** Fallback: runs generateText and yields the full result as a single chunk */
+  async *generateStream(params) {
+    const result = await this.generateText(params);
+    if (result.text) yield { text: result.text };
+    yield { done: true, tokensInput: result.tokensInput, tokensOutput: result.tokensOutput };
+  }
 }
 
 module.exports = BaseProvider;

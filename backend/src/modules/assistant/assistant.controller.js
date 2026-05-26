@@ -1,7 +1,7 @@
 const { success, error } = require('../../utils/response');
-const svc        = require('./assistant.service');
-const suggSvc    = require('./suggestion.service');
-const repo       = require('./assistant.repository');
+const svc     = require('./assistant.service');
+const suggSvc = require('./suggestion.service');
+const repo    = require('./assistant.repository');
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +39,15 @@ async function getSession(req, res) {
   }
 }
 
+async function renameSession(req, res) {
+  try {
+    const session = await svc.renameSession(req.params.id, req.workspaceId, req.body.title);
+    return success(res, session, 'Session renamed');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
 async function archiveSession(req, res) {
   try {
     const session = await svc.archiveSession(req.params.id, req.workspaceId);
@@ -48,7 +57,39 @@ async function archiveSession(req, res) {
   }
 }
 
-// ── Chat ──────────────────────────────────────────────────────────────────────
+async function restoreSession(req, res) {
+  try {
+    const session = await svc.restoreSession(req.params.id, req.workspaceId);
+    return success(res, session, 'Session restored');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function deleteSession(req, res) {
+  try {
+    await svc.deleteSession(req.params.id, req.workspaceId);
+    return success(res, null, 'Session deleted');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+async function exportSession(req, res) {
+  try {
+    const format   = ['md', 'txt'].includes(req.query.format) ? req.query.format : 'txt';
+    const exported = await svc.exportSession(req.params.id, req.workspaceId, format);
+    res.setHeader('Content-Type',        exported.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${exported.filename}"`);
+    return res.send(exported.content);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+// ── Chat (non-streaming) ──────────────────────────────────────────────────────
 
 async function chat(req, res) {
   try {
@@ -61,6 +102,59 @@ async function chat(req, res) {
       userId:      req.user.id,
       role:        req.role,
       userMessage: message.trim(),
+    });
+    return success(res, result);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+// ── Streaming chat (SSE) ──────────────────────────────────────────────────────
+
+async function streamChat(req, res) {
+  const { message } = req.body;
+  if (!message?.trim()) {
+    return res.status(400).json({ success: false, error: 'Message is required' });
+  }
+
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.flushHeaders();
+
+  const send = (data) => {
+    if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    const stream = svc.chatStream({
+      sessionId:   req.params.id,
+      workspaceId: req.workspaceId,
+      userId:      req.user.id,
+      role:        req.role,
+      userMessage: message.trim(),
+    });
+
+    for await (const event of stream) {
+      send(event);
+      if (event.type === 'done' || event.type === 'error') break;
+    }
+  } catch (err) {
+    send({ type: 'error', message: err.message || 'Stream failed' });
+  } finally {
+    if (!res.writableEnded) res.end();
+  }
+}
+
+// ── Regenerate ────────────────────────────────────────────────────────────────
+
+async function regenerateResponse(req, res) {
+  try {
+    const result = await svc.regenerateResponse({
+      sessionId:   req.params.id,
+      workspaceId: req.workspaceId,
+      userId:      req.user.id,
+      role:        req.role,
     });
     return success(res, result);
   } catch (err) {
@@ -126,9 +220,11 @@ async function listCapabilities(req, res) {
 }
 
 module.exports = {
-  createSession, listSessions, getSession, archiveSession,
-  chat, getMessages,
-  submitFeedback,
+  createSession, listSessions, getSession,
+  renameSession, archiveSession, restoreSession, deleteSession,
+  exportSession,
+  chat, streamChat, regenerateResponse,
+  getMessages, submitFeedback,
   getSuggestions, getQuickPrompts,
   listCapabilities,
 };
