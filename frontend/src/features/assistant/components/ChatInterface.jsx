@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Bot, Sparkles } from 'lucide-react';
+import { Send, Loader2, Bot, Sparkles, Paperclip } from 'lucide-react';
 import MessageBubble from './MessageBubble';
+import FileAttachmentPanel from './FileAttachmentPanel';
 import assistantService from '../services/assistantService';
 
 export default function ChatInterface({ session, onSessionUpdate, quickPrompts = [], initialPrompt }) {
@@ -8,6 +9,8 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
   const [input,        setInput]        = useState('');
   const [loading,      setLoading]      = useState(false);
   const [loadingMsgs,  setLoadingMsgs]  = useState(true);
+  const [sessionFiles, setSessionFiles] = useState([]);
+  const [uploading,    setUploading]    = useState(false);
   const bottomRef    = useRef(null);
   const inputRef     = useRef(null);
   const sentInitial  = useRef(false);
@@ -29,6 +32,12 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
   }, [session?.id]);
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  // Load session files
+  useEffect(() => {
+    if (!session?.id) return;
+    assistantService.listSessionFiles(session.id).then(setSessionFiles).catch(() => {});
+  }, [session?.id]);
 
   // Auto-send initialPrompt once messages are ready
   useEffect(() => {
@@ -69,7 +78,13 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
         setMessages((prev) =>
           prev.map((m) => {
             if (m.id === streamTmpId) {
-              return { ...m, id: event.messageId, message: event.message, streaming: false };
+              return {
+                ...m,
+                id:       event.messageId,
+                message:  event.message,
+                streaming: false,
+                metadata: { ...(m.metadata || {}), sources: event.sources || [], confidence: event.confidence },
+              };
             }
             if (m.id === userTmpId) {
               return { ...m, id: `user-confirmed-${Date.now()}` };
@@ -145,6 +160,26 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
+  const handleFileUpload = async (file) => {
+    if (!session?.id || uploading) return;
+    setUploading(true);
+    try {
+      const ref = await assistantService.uploadFile(session.id, file);
+      setSessionFiles((prev) => [...prev, ref]);
+    } catch (err) {
+      // silently ignore — file will just not appear
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileRemove = async (fileId) => {
+    try {
+      await assistantService.removeFile(session.id, fileId);
+      setSessionFiles((prev) => prev.filter((f) => f.id !== fileId));
+    } catch { /* ignore */ }
+  };
+
   const isEmpty = messages.length === 0 && !loadingMsgs;
 
   return (
@@ -201,32 +236,43 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
       </div>
 
       {/* Input */}
-      <div className="border-t border-tetri-border px-4 py-3 bg-tetri-surface flex-shrink-0">
-        <div className="flex gap-2 items-end">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask Tetri Copilot…"
-            rows={1}
-            disabled={loading}
-            className="flex-1 resize-none rounded-xl border border-tetri-border bg-tetri-bg px-3 py-2 text-sm text-tetri-text placeholder:text-tetri-muted focus:outline-none focus:ring-2 focus:ring-tetri-blue/20 focus:border-tetri-blue transition-colors disabled:opacity-50 max-h-32 overflow-y-auto"
-            style={{ minHeight: '38px' }}
-          />
-          <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading}
-            className="flex-shrink-0 w-9 h-9 rounded-xl bg-tetri-blue text-white flex items-center justify-center hover:bg-tetri-blue-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Send    className="w-4 h-4" />}
-          </button>
+      <div className="border-t border-tetri-border bg-tetri-surface flex-shrink-0">
+        {/* File attachment panel */}
+        <FileAttachmentPanel
+          files={sessionFiles}
+          onUpload={handleFileUpload}
+          onRemove={handleFileRemove}
+          uploading={uploading}
+          disabled={loading}
+        />
+
+        <div className="px-4 py-3">
+          <div className="flex gap-2 items-end">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Tetri Copilot…"
+              rows={1}
+              disabled={loading}
+              className="flex-1 resize-none rounded-xl border border-tetri-border bg-tetri-bg px-3 py-2 text-sm text-tetri-text placeholder:text-tetri-muted focus:outline-none focus:ring-2 focus:ring-tetri-blue/20 focus:border-tetri-blue transition-colors disabled:opacity-50 max-h-32 overflow-y-auto"
+              style={{ minHeight: '38px' }}
+            />
+            <button
+              onClick={() => sendMessage()}
+              disabled={!input.trim() || loading}
+              className="flex-shrink-0 w-9 h-9 rounded-xl bg-tetri-blue text-white flex items-center justify-center hover:bg-tetri-blue-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {loading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Send    className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-tetri-muted mt-1.5 text-center">
+            Read-only · Responses may not be 100% accurate
+          </p>
         </div>
-        <p className="text-xs text-tetri-muted mt-1.5 text-center">
-          Read-only · Responses may not be 100% accurate
-        </p>
       </div>
     </div>
   );

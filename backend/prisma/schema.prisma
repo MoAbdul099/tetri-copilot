@@ -3403,3 +3403,175 @@ model AiCitation {
   @@index([messageId])
   @@map("ai_citations")
 }
+
+// =========================================================
+// SLICE 14.3 — WORKSPACE AI ASSISTANT FOUNDATION
+// =========================================================
+
+model AiAssistantSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.VarChar(100)
+  title       String?  @db.VarChar(255)
+  status      String   @default("active") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  messages AiAssistantMessage[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("ai_assistant_sessions")
+}
+
+model AiAssistantMessage {
+  id         String             @id @default(uuid()) @db.Uuid
+  sessionId  String             @map("session_id") @db.Uuid
+  session    AiAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  senderType String             @map("sender_type") @db.VarChar(20)
+  message    String             @db.Text
+  tokenUsage Int?               @default(0) @map("token_usage")
+  cost       Float?             @default(0)
+  metadata   Json?
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  feedback AiAssistantFeedback[]
+
+  @@index([sessionId])
+  @@map("ai_assistant_messages")
+}
+
+model AiAssistantFeedback {
+  id        String             @id @default(uuid()) @db.Uuid
+  messageId String             @map("message_id") @db.Uuid
+  message   AiAssistantMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String             @map("user_id") @db.VarChar(100)
+  rating    String             @db.VarChar(20)
+  comment   String?            @db.Text
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([messageId])
+  @@map("ai_assistant_feedback")
+}
+
+model AiAssistantSuggestion {
+  id             String    @id @default(uuid()) @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  suggestionType String    @map("suggestion_type") @db.VarChar(50)
+  content        Json
+  status         String    @default("active") @db.VarChar(20)
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("ai_assistant_suggestions")
+}
+
+model AiCapabilityRegistry {
+  id              String   @id @default(uuid()) @db.Uuid
+  capabilityCode  String   @unique @map("capability_code") @db.VarChar(100)
+  capabilityName  String   @map("capability_name") @db.VarChar(200)
+  module          String   @db.VarChar(100)
+  permissionScope String?  @map("permission_scope") @db.VarChar(100)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("ai_capability_registry")
+}
+
+model AiActionRegistry {
+  id                   String   @id @default(uuid()) @db.Uuid
+  actionCode           String   @unique @map("action_code") @db.VarChar(100)
+  actionName           String   @map("action_name") @db.VarChar(200)
+  description          String?  @db.Text
+  riskLevel            String   @map("risk_level") @db.VarChar(20)
+  confirmationRequired Boolean  @default(true) @map("confirmation_required")
+  enabled              Boolean  @default(false)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("ai_action_registry")
+}
+
+model AiGovernanceRule {
+  id            String   @id @default(uuid()) @db.Uuid
+  ruleName      String   @unique @map("rule_name") @db.VarChar(100)
+  ruleType      String   @map("rule_type") @db.VarChar(50)
+  configuration Json
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("ai_governance_rules")
+}
+
+// =========================================================
+// SLICE 15.2 — CONTEXT, FILES & WORKSPACE KNOWLEDGE
+// =========================================================
+
+model AiContextLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  sessionId      String   @map("session_id") @db.Uuid
+  messageId      String?  @map("message_id") @db.Uuid
+  userId         String   @map("user_id") @db.VarChar(100)
+  intents        Json?
+  contextText    String?  @map("context_text") @db.Text
+  confidence     String?  @db.VarChar(20)
+  recordsCount   Int      @default(0) @map("records_count")
+  tokenEstimate  Int      @default(0) @map("token_estimate")
+  durationMs     Int      @default(0) @map("duration_ms")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sources AiContextSource[]
+
+  @@index([workspaceId])
+  @@index([sessionId])
+  @@map("ai_context_logs")
+}
+
+model AiContextSource {
+  id           String       @id @default(uuid()) @db.Uuid
+  contextLogId String       @map("context_log_id") @db.Uuid
+  contextLog   AiContextLog @relation(fields: [contextLogId], references: [id], onDelete: Cascade)
+  sourceType   String       @map("source_type") @db.VarChar(50)
+  sourceName   String       @map("source_name") @db.VarChar(255)
+  entityId     String?      @map("entity_id") @db.VarChar(100)
+  routePath    String?      @map("route_path") @db.VarChar(255)
+  recordCount  Int          @default(0) @map("record_count")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([contextLogId])
+  @@map("ai_context_sources")
+}
+
+model AiContextProfile {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  profileCode   String   @map("profile_code") @db.VarChar(50)
+  configuration Json     @default("{}")
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([workspaceId, profileCode])
+  @@index([workspaceId])
+  @@map("ai_context_profiles")
+}
+
+model AiFileReference {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  sessionId     String   @map("session_id") @db.Uuid
+  userId        String   @map("user_id") @db.VarChar(100)
+  fileName      String   @map("file_name") @db.VarChar(255)
+  mimeType      String   @map("mime_type") @db.VarChar(100)
+  fileSize      Int      @map("file_size")
+  extractedText String?  @map("extracted_text") @db.Text
+  extractStatus String   @default("pending") @map("extract_status") @db.VarChar(20)
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([sessionId])
+  @@map("ai_file_references")
+}

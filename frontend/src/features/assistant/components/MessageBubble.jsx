@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Bot, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Flag } from 'lucide-react';
 import MarkdownContent from './MarkdownContent';
+import ContextPanel from './ContextPanel';
 import assistantService from '../services/assistantService';
 
 export default function MessageBubble({ message, isLast, onRegenerate }) {
   const [copied,   setCopied]   = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const isUser    = message.senderType === 'user';
-  const isBlocked = message.metadata?.blocked;
-  const isStream  = message.streaming;
+  const isUser     = message.senderType === 'user';
+  const isBlocked  = message.metadata?.blocked;
+  const isStream   = message.streaming;
+  const sources    = message.metadata?.sources || [];
+  const confidence = message.metadata?.confidence;
 
   const copyText = () => {
     navigator.clipboard.writeText(message.message).catch(() => {});
@@ -60,6 +63,11 @@ export default function MessageBubble({ message, isLast, onRegenerate }) {
             <MarkdownContent content={message.message} />
           )}
         </div>
+
+        {/* Context sources */}
+        {!isStream && !isBlocked && sources.length > 0 && (
+          <ContextPanel sources={sources} confidence={confidence} />
+        )}
 
         {/* Action bar */}
         {!isStream && isLast && !isBlocked && (

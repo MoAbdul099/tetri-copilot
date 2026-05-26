@@ -208,6 +208,41 @@ async function getQuickPrompts(req, res) {
   }
 }
 
+// ── File attachments ──────────────────────────────────────────────────────────
+
+async function uploadFile(req, res) {
+  try {
+    if (!req.file) return error(res, 'No file provided', 400);
+    const ref = await svc.uploadSessionFile({
+      workspaceId: req.workspaceId,
+      sessionId:   req.params.id,
+      userId:      req.user.id,
+      file:        req.file,
+    });
+    return success(res, ref, 'File uploaded', 201);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function listSessionFiles(req, res) {
+  try {
+    const files = await svc.listSessionFiles(req.workspaceId, req.params.id);
+    return success(res, files);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function removeFile(req, res) {
+  try {
+    await svc.removeSessionFile(req.params.fileId, req.params.id, req.workspaceId);
+    return success(res, null, 'File removed');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
 // ── Capabilities ──────────────────────────────────────────────────────────────
 
 async function listCapabilities(req, res) {
@@ -227,4 +262,5 @@ module.exports = {
   getMessages, submitFeedback,
   getSuggestions, getQuickPrompts,
   listCapabilities,
+  uploadFile, listSessionFiles, removeFile,
 };

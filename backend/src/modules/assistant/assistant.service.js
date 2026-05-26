@@ -1,9 +1,10 @@
-const prisma     = require('../../lib/prisma');
-const repo       = require('./assistant.repository');
-const resolver   = require('./query.resolver');
-const governance = require('./governance.service');
-const aiSvc      = require('../ai/ai.service');
-const processor  = require('../ai/response.processor');
+const prisma      = require('../../lib/prisma');
+const repo        = require('./assistant.repository');
+const contextSvc  = require('./context.service');
+const fileSvc     = require('./file.context.service');
+const governance  = require('./governance.service');
+const aiSvc       = require('../ai/ai.service');
+const processor   = require('../ai/response.processor');
 
 const FEATURE = 'workspace_assistant';
 
@@ -138,12 +139,12 @@ async function chat({ sessionId, workspaceId, userId, role, userMessage }) {
 
   await repo.createMessage({ sessionId, senderType: 'user', message: userMessage });
 
-  const resolvedData  = await resolver.resolve(userMessage, workspaceId);
+  const resolved      = await contextSvc.resolve(userMessage, workspaceId, sessionId);
   const history       = await repo.getMessages(sessionId);
   const historySlice  = history.slice(-20);
   const userMsgCount  = history.filter((m) => m.senderType === 'user').length;
 
-  const messages = await buildContext({ workspaceId, userId, role, resolvedData, history: historySlice });
+  const messages = await buildContext({ workspaceId, userId, role, resolvedData: resolved.contextText, history: historySlice });
   messages.push({ role: 'user', content: userMessage });
 
   const aiResult = await aiSvc.execute({
@@ -158,7 +159,7 @@ async function chat({ sessionId, workspaceId, userId, role, userMessage }) {
     message:    responseText,
     tokenUsage: (aiResult.tokensInput || 0) + (aiResult.tokensOutput || 0),
     cost:       aiResult.cost || 0,
-    metadata:   { provider: aiResult.provider, model: aiResult.model, durationMs: aiResult.durationMs, hadData: !!resolvedData },
+    metadata:   { provider: aiResult.provider, model: aiResult.model, durationMs: aiResult.durationMs, hadData: !!resolved.contextText, sources: resolved.sources, confidence: resolved.confidence },
   });
 
   if (userMsgCount === 1) {
@@ -198,12 +199,12 @@ async function *chatStream({ sessionId, workspaceId, userId, role, userMessage }
   const userMsg      = await repo.createMessage({ sessionId, senderType: 'user', message: userMessage });
   yield { type: 'user_saved', messageId: userMsg.id };
 
-  const resolvedData = await resolver.resolve(userMessage, workspaceId);
+  const resolved     = await contextSvc.resolve(userMessage, workspaceId, sessionId);
   const history      = await repo.getMessages(sessionId);
   const userMsgCount = history.filter((m) => m.senderType === 'user').length;
   const historySlice = history.slice(-20);
 
-  const messages = await buildContext({ workspaceId, userId, role, resolvedData, history: historySlice });
+  const messages = await buildContext({ workspaceId, userId, role, resolvedData: resolved.contextText, history: historySlice });
   messages.push({ role: 'user', content: userMessage });
 
   let fullText = '', provider = null, model = null, durationMs = 0;
@@ -235,15 +236,18 @@ async function *chatStream({ sessionId, workspaceId, userId, role, userMessage }
     message:    responseText,
     tokenUsage: tokensInput + tokensOutput,
     cost:       0,
-    metadata:   { provider, model, durationMs, hadData: !!resolvedData },
+    metadata:   { provider, model, durationMs, hadData: !!resolved.contextText, sources: resolved.sources, confidence: resolved.confidence },
   });
+
+  // Log context usage (non-blocking)
+  contextSvc.logContext({ workspaceId, sessionId, messageId: assistantMsg.id, userId, resolved }).catch(() => {});
 
   if (userMsgCount === 1) {
     const autoTitle = userMessage.length > 55 ? userMessage.substring(0, 55) + '…' : userMessage;
     await repo.updateSession(sessionId, { title: autoTitle });
   }
 
-  yield { type: 'done', messageId: assistantMsg.id, message: responseText, userMessageId: userMsg.id };
+  yield { type: 'done', messageId: assistantMsg.id, message: responseText, userMessageId: userMsg.id, sources: resolved.sources, confidence: resolved.confidence };
 }
 
 // ── Regenerate ────────────────────────────────────────────────────────────────
@@ -264,9 +268,9 @@ async function regenerateResponse({ sessionId, workspaceId, userId, role }) {
 
   const updatedHistory = await repo.getMessages(sessionId);
   const historySlice   = updatedHistory.slice(-20);
-  const resolvedData   = await resolver.resolve(lastUserMsg.message, workspaceId);
+  const resolved       = await contextSvc.resolve(lastUserMsg.message, workspaceId, sessionId);
 
-  const messages = await buildContext({ workspaceId, userId, role, resolvedData, history: historySlice });
+  const messages = await buildContext({ workspaceId, userId, role, resolvedData: resolved.contextText, history: historySlice });
   messages.push({ role: 'user', content: lastUserMsg.message });
 
   const aiResult = await aiSvc.execute({
@@ -281,7 +285,7 @@ async function regenerateResponse({ sessionId, workspaceId, userId, role }) {
     message:    responseText,
     tokenUsage: (aiResult.tokensInput || 0) + (aiResult.tokensOutput || 0),
     cost:       aiResult.cost || 0,
-    metadata:   { provider: aiResult.provider, model: aiResult.model, durationMs: aiResult.durationMs, hadData: !!resolvedData, regenerated: true },
+    metadata:   { provider: aiResult.provider, model: aiResult.model, durationMs: aiResult.durationMs, hadData: !!resolved.contextText, sources: resolved.sources, confidence: resolved.confidence, regenerated: true },
   });
 
   return { assistantMessage: assistantMsg, response: responseText };
@@ -296,9 +300,26 @@ async function submitFeedback({ messageId, userId, rating, comment }) {
   return repo.createFeedback({ messageId, userId, rating, comment });
 }
 
+// ── File context ──────────────────────────────────────────────────────────────
+
+async function uploadSessionFile({ workspaceId, sessionId, userId, file }) {
+  await getSession(sessionId, workspaceId);
+  return fileSvc.uploadFile({ workspaceId, sessionId, userId, file });
+}
+
+async function listSessionFiles(workspaceId, sessionId) {
+  return fileSvc.listSessionFiles(workspaceId, sessionId);
+}
+
+async function removeSessionFile(fileId, sessionId, workspaceId) {
+  await getSession(sessionId, workspaceId);
+  return fileSvc.removeFile(fileId, workspaceId);
+}
+
 module.exports = {
   createSession, listSessions, searchSessions, getSession,
   renameSession, archiveSession, restoreSession, deleteSession,
   chat, chatStream, regenerateResponse,
   exportSession, submitFeedback,
+  uploadSessionFile, listSessionFiles, removeSessionFile,
 };

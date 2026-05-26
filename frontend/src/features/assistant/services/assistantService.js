@@ -87,6 +87,17 @@ const assistantService = {
   // ── Messages ─────────────────────────────────────────────────────────────────
   getMessages:      (sessionId) => api.get(`${base}/sessions/${sessionId}/messages`).then((r) => r.data.data),
 
+  // ── File attachments ─────────────────────────────────────────────────────────
+  uploadFile(sessionId, file) {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post(`${base}/sessions/${sessionId}/files`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data.data);
+  },
+  listSessionFiles: (sessionId) => api.get(`${base}/sessions/${sessionId}/files`).then((r) => r.data.data),
+  removeFile:       (sessionId, fileId) => api.delete(`${base}/sessions/${sessionId}/files/${fileId}`).then((r) => r.data.data),
+
   // ── Feedback ─────────────────────────────────────────────────────────────────
   submitFeedback:   (data)      => api.post(`${base}/feedback`, data).then((r) => r.data.data),
 
