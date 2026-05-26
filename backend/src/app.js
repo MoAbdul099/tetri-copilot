@@ -63,6 +63,8 @@ const systemRoutes               = require('./modules/system/system.routes');
 const deploymentsRoutes          = require('./modules/deployments/deployments.routes');
 const monitoringRoutes           = require('./modules/monitoring/monitoring.routes');
 const monitoringScheduler        = require('./modules/monitoring/monitoring.scheduler');
+const aiScheduler                = require('./modules/ai/ai.scheduler');
+const { seedAiData }             = require('./modules/ai/ai.seeder');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -192,6 +194,8 @@ startAnnouncementEngine();
 startReportScheduler();
 startAnalyticsScheduler();
 monitoringScheduler.start();
+aiScheduler.start();
+seedAiData().catch(() => {});
 
 // Seed notification event registry (non-blocking)
 seedEventRegistry().catch(() => {});

@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, Brain, DollarSign, Zap,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -18,10 +18,11 @@ const GROUP_ICON_STYLES = {
   Compliance: 'bg-emerald-50 text-emerald-600',
   Documents:  'bg-teal-50 text-teal-600',
   Analytics:  'bg-violet-50 text-violet-600',
-  Workspace:  'bg-slate-100 text-slate-600',
-  Security:   'bg-red-50 text-red-600',
-  System:     'bg-sky-50 text-sky-600',
-  Settings:   'bg-slate-100 text-slate-600',
+  Workspace:   'bg-slate-100 text-slate-600',
+  Security:    'bg-red-50 text-red-600',
+  System:      'bg-sky-50 text-sky-600',
+  Settings:    'bg-slate-100 text-slate-600',
+  'AI Platform': 'bg-violet-50 text-violet-600',
 };
 
 const NAV_CONFIG = [
@@ -135,6 +136,18 @@ const NAV_CONFIG = [
       { to: '/system/deployments',  label: 'Deployments', icon: Rocket },
       { to: '/system/reliability',  label: 'Reliability', icon: Activity },
       { to: '/system/incidents',    label: 'Incidents',   icon: AlertTriangle },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'AI Platform',
+    groupIcon: Brain,
+    requiredRoles: ['owner', 'admin'],
+    items: [
+      { to: '/ai',         label: 'AI Settings', icon: Brain },
+      { to: '/ai/usage',   label: 'Usage',        icon: Zap },
+      { to: '/ai/costs',   label: 'Costs',        icon: DollarSign },
+      { to: '/ai/health',  label: 'Health',       icon: Activity },
     ],
   },
   {

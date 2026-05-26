@@ -1,24 +1,26 @@
-/**
- * Platform Administration Module Boundary — Slice 10.5
- *
- * Future home of all /api/admin/* endpoints (Slice 19).
- * Only platform administrators may access routes under this namespace.
- *
- * Security: admin guard middleware must be applied to all routes here.
- * Non-platform users must never access /api/admin/*.
- */
-
-const express = require('express');
+const express  = require('express');
+const { protect } = require('../../middleware/requireAuth');
+const requireWorkspace = require('../../middleware/requireWorkspace');
+const aiAdminRoutes = require('../ai/ai.admin.routes');
 
 const router = express.Router();
 
-// Placeholder — admin guard will be enforced here once Slice 19 is implemented
+// All /api/admin/* routes require authentication + workspace membership
+router.use(protect, requireWorkspace);
+
+// Guard: owner or admin only for the entire admin namespace
 router.use((req, res, next) => {
-  res.status(501).json({
-    success: false,
-    error: 'Platform administration panel not yet implemented.',
-    details: [],
-  });
+  if (!['owner', 'admin'].includes(req.role)) {
+    return res.status(403).json({ success: false, error: 'Admin access required', details: [] });
+  }
+  next();
+});
+
+router.use('/ai', aiAdminRoutes);
+
+// Fallback for unimplemented admin sub-routes
+router.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Admin endpoint not found', details: [] });
 });
 
 module.exports = router;

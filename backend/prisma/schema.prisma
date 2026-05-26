@@ -3110,3 +3110,127 @@ model ServiceMetric {
   @@index([recordedAt(sort: Desc)])
   @@map("service_metrics")
 }
+
+// =========================================================
+// SLICE 14.1 — AI INFRASTRUCTURE & PROVIDER FOUNDATION
+// =========================================================
+
+model AiProvider {
+  id           String         @id @default(uuid()) @db.Uuid
+  name         String         @db.VarChar(100)
+  code         String         @unique @db.VarChar(50)
+  endpoint     String?        @db.VarChar(500)
+  enabled      Boolean        @default(false)
+  status       String         @default("unknown") @db.VarChar(20)
+  models       AiModel[]
+  healthChecks AiHealthCheck[]
+  requestLogs  AiRequestLog[]
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("ai_providers")
+}
+
+model AiModel {
+  id               String     @id @default(uuid()) @db.Uuid
+  providerId       String     @map("provider_id") @db.Uuid
+  provider         AiProvider @relation(fields: [providerId], references: [id])
+  modelName        String     @map("model_name") @db.VarChar(100)
+  description      String?    @db.Text
+  contextWindow    Int?       @map("context_window")
+  maxOutputTokens  Int?       @map("max_output_tokens")
+  inputCostPer1k   Float?     @map("input_cost_per_1k")
+  outputCostPer1k  Float?     @map("output_cost_per_1k")
+  isDefault        Boolean    @default(false) @map("is_default")
+  active           Boolean    @default(true)
+  requestLogs      AiRequestLog[]
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([providerId, modelName])
+  @@index([providerId])
+  @@map("ai_models")
+}
+
+model AiConfiguration {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("ai_configurations")
+}
+
+model AiRequestLog {
+  id            String     @id @default(uuid()) @db.Uuid
+  workspaceId   String     @map("workspace_id") @db.Uuid
+  userId        String?    @map("user_id") @db.VarChar(100)
+  providerId    String     @map("provider_id") @db.Uuid
+  provider      AiProvider @relation(fields: [providerId], references: [id])
+  modelId       String     @map("model_id") @db.Uuid
+  model         AiModel    @relation(fields: [modelId], references: [id])
+  feature       String     @db.VarChar(100)
+  tokensInput   Int        @default(0) @map("tokens_input")
+  tokensOutput  Int        @default(0) @map("tokens_output")
+  estimatedCost Float      @default(0) @map("estimated_cost")
+  durationMs    Int?       @map("duration_ms")
+  success       Boolean    @default(true)
+  errorCode     String?    @map("error_code") @db.VarChar(50)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([providerId])
+  @@index([feature])
+  @@index([createdAt(sort: Desc)])
+  @@map("ai_request_logs")
+}
+
+model AiCostSummary {
+  id            String   @id @default(uuid()) @db.Uuid
+  period        String   @db.VarChar(20)
+  periodKey     String   @map("period_key") @db.VarChar(20)
+  workspaceId   String?  @map("workspace_id") @db.Uuid
+  providerId    String?  @map("provider_id") @db.Uuid
+  totalCost     Float    @default(0) @map("total_cost")
+  totalTokens   Int      @default(0) @map("total_tokens")
+  totalRequests Int      @default(0) @map("total_requests")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([period, periodKey, workspaceId, providerId])
+  @@index([period, periodKey])
+  @@index([workspaceId])
+  @@map("ai_cost_summaries")
+}
+
+model AiQuotaRule {
+  id               String   @id @default(uuid()) @db.Uuid
+  scope            String   @db.VarChar(20)
+  scopeId          String?  @map("scope_id") @db.VarChar(100)
+  dailyRequests    Int?     @map("daily_requests")
+  monthlyRequests  Int?     @map("monthly_requests")
+  dailyCostLimit   Float?   @map("daily_cost_limit")
+  monthlyCostLimit Float?   @map("monthly_cost_limit")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([scope, scopeId])
+  @@map("ai_quota_rules")
+}
+
+model AiHealthCheck {
+  id             String     @id @default(uuid()) @db.Uuid
+  providerId     String     @map("provider_id") @db.Uuid
+  provider       AiProvider @relation(fields: [providerId], references: [id])
+  status         String     @db.VarChar(20)
+  responseTimeMs Int?       @map("response_time_ms")
+  message        String?    @db.Text
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([providerId])
+  @@index([createdAt(sort: Desc)])
+  @@map("ai_health_checks")
+}

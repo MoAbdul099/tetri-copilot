@@ -87,6 +87,10 @@ import SystemStatusPage from './features/system/pages/SystemStatusPage.jsx';
 import DeploymentHistoryPage from './features/system/pages/DeploymentHistoryPage.jsx';
 import ReliabilityDashboardPage from './features/monitoring/pages/ReliabilityDashboardPage.jsx';
 import IncidentManagementPage from './features/monitoring/pages/IncidentManagementPage.jsx';
+import AISettingsPage from './features/ai/pages/AISettingsPage.jsx';
+import AIUsagePage from './features/ai/pages/AIUsagePage.jsx';
+import AICostPage from './features/ai/pages/AICostPage.jsx';
+import AIHealthPage from './features/ai/pages/AIHealthPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -193,6 +197,10 @@ export default function App() {
           <Route path="/system/deployments" element={<DeploymentHistoryPage />} />
           <Route path="/system/reliability" element={<ReliabilityDashboardPage />} />
           <Route path="/system/incidents" element={<IncidentManagementPage />} />
+          <Route path="/ai" element={<AISettingsPage />} />
+          <Route path="/ai/usage" element={<AIUsagePage />} />
+          <Route path="/ai/costs" element={<AICostPage />} />
+          <Route path="/ai/health" element={<AIHealthPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

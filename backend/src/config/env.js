@@ -33,8 +33,9 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
   // AI (optional)
-  OPENAI_API_KEY: z.string().optional(),
-  OPENAI_MODEL:   z.string().default('gpt-4o-mini'),
+  OPENAI_API_KEY:    z.string().optional(),
+  OPENAI_MODEL:      z.string().default('gpt-4o-mini'),
+  ANTHROPIC_API_KEY: z.string().optional(),
 
   // Deployment (optional)
   DEPLOY_SECRET: z.string().optional(),
