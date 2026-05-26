@@ -91,6 +91,10 @@ import AISettingsPage from './features/ai/pages/AISettingsPage.jsx';
 import AIUsagePage from './features/ai/pages/AIUsagePage.jsx';
 import AICostPage from './features/ai/pages/AICostPage.jsx';
 import AIHealthPage from './features/ai/pages/AIHealthPage.jsx';
+import AIPromptsPage from './features/ai/pages/AIPromptsPage.jsx';
+import AIFeaturesPage from './features/ai/pages/AIFeaturesPage.jsx';
+import AIConversationsPage from './features/ai/pages/AIConversationsPage.jsx';
+import AIDiagnosticsPage from './features/ai/pages/AIDiagnosticsPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -201,6 +205,10 @@ export default function App() {
           <Route path="/ai/usage" element={<AIUsagePage />} />
           <Route path="/ai/costs" element={<AICostPage />} />
           <Route path="/ai/health" element={<AIHealthPage />} />
+          <Route path="/ai/prompts" element={<AIPromptsPage />} />
+          <Route path="/ai/features" element={<AIFeaturesPage />} />
+          <Route path="/ai/conversations" element={<AIConversationsPage />} />
+          <Route path="/ai/diagnostics" element={<AIDiagnosticsPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

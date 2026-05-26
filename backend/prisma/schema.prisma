@@ -3234,3 +3234,172 @@ model AiHealthCheck {
   @@index([createdAt(sort: Desc)])
   @@map("ai_health_checks")
 }
+
+// =========================================================
+// SLICE 14.2 — AI COPILOT CORE SERVICES & PROMPT FRAMEWORK
+// =========================================================
+
+model AiPromptGroup {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @unique @db.VarChar(100)
+  description String?    @db.Text
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  prompts AiPrompt[]
+
+  @@map("ai_prompt_groups")
+}
+
+model AiPrompt {
+  id              String         @id @default(uuid()) @db.Uuid
+  groupId         String?        @map("group_id") @db.Uuid
+  group           AiPromptGroup? @relation(fields: [groupId], references: [id])
+  name            String         @unique @db.VarChar(200)
+  description     String?        @db.Text
+  category        String         @default("general") @db.VarChar(50)
+  status          String         @default("draft") @db.VarChar(20)
+  activeVersionId String?        @map("active_version_id") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  versions AiPromptVersion[]
+  tests    AiPromptTest[]
+
+  @@index([groupId])
+  @@index([status])
+  @@map("ai_prompts")
+}
+
+model AiPromptVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  promptId      String   @map("prompt_id") @db.Uuid
+  prompt        AiPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  versionNumber Int      @map("version_number")
+  content       String   @db.Text
+  changeNotes   String?  @map("change_notes") @db.Text
+  status        String   @default("draft") @db.VarChar(20)
+  createdBy     String?  @map("created_by") @db.VarChar(100)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tests AiPromptTest[]
+
+  @@unique([promptId, versionNumber])
+  @@index([promptId])
+  @@map("ai_prompt_versions")
+}
+
+model AiPromptTest {
+  id              String           @id @default(uuid()) @db.Uuid
+  promptId        String           @map("prompt_id") @db.Uuid
+  prompt          AiPrompt         @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptVersionId String?          @map("prompt_version_id") @db.Uuid
+  promptVersion   AiPromptVersion? @relation(fields: [promptVersionId], references: [id])
+  inputPayload    Json             @map("input_payload")
+  outputPayload   String?          @map("output_payload") @db.Text
+  tokens          Int?
+  cost            Float?
+  durationMs      Int?             @map("duration_ms")
+  success         Boolean          @default(true)
+  errorMessage    String?          @map("error_message") @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([promptId])
+  @@map("ai_prompt_tests")
+}
+
+model AiConversationSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.VarChar(100)
+  featureCode String   @map("feature_code") @db.VarChar(100)
+  title       String?  @db.VarChar(255)
+  status      String   @default("active") @db.VarChar(20)
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  messages AiConversationMessage[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([featureCode])
+  @@map("ai_conversation_sessions")
+}
+
+model AiConversationMessage {
+  id         String                @id @default(uuid()) @db.Uuid
+  sessionId  String                @map("session_id") @db.Uuid
+  session    AiConversationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  senderType String                @map("sender_type") @db.VarChar(20)
+  content    String                @db.Text
+  tokenCount Int?                  @default(0) @map("token_count")
+  cost       Float?                @default(0)
+  metadata   Json?
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  citations AiCitation[]
+
+  @@index([sessionId])
+  @@map("ai_conversation_messages")
+}
+
+model AiFeatureRegistry {
+  id              String   @id @default(uuid()) @db.Uuid
+  featureCode     String   @unique @map("feature_code") @db.VarChar(100)
+  featureName     String   @map("feature_name") @db.VarChar(200)
+  description     String?  @db.Text
+  enabled         Boolean  @default(true)
+  permissionScope String?  @map("permission_scope") @db.VarChar(100)
+  promptGroup     String?  @map("prompt_group") @db.VarChar(100)
+  contextStrategy String?  @map("context_strategy") @db.VarChar(100)
+  beta            Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  flags AiFeatureFlag[]
+
+  @@map("ai_feature_registry")
+}
+
+model AiFeatureFlag {
+  id          String            @id @default(uuid()) @db.Uuid
+  featureId   String            @map("feature_id") @db.Uuid
+  feature     AiFeatureRegistry @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  workspaceId String            @map("workspace_id") @db.Uuid
+  enabled     Boolean           @default(true)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([featureId, workspaceId])
+  @@index([workspaceId])
+  @@map("ai_feature_flags")
+}
+
+model AiMemoryRecord {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  userId      String?   @map("user_id") @db.VarChar(100)
+  memoryType  String    @map("memory_type") @db.VarChar(50)
+  featureCode String?   @map("feature_code") @db.VarChar(100)
+  content     String    @db.Text
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([memoryType])
+  @@map("ai_memory_records")
+}
+
+model AiCitation {
+  id         String                @id @default(uuid()) @db.Uuid
+  messageId  String                @map("message_id") @db.Uuid
+  message    AiConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  entityType String                @map("entity_type") @db.VarChar(50)
+  entityId   String                @map("entity_id") @db.VarChar(100)
+  label      String                @db.VarChar(255)
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([messageId])
+  @@map("ai_citations")
+}

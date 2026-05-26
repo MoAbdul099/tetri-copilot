@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap, ToggleRight, MessageSquare,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -144,10 +144,14 @@ const NAV_CONFIG = [
     groupIcon: Brain,
     requiredRoles: ['owner', 'admin'],
     items: [
-      { to: '/ai',         label: 'AI Settings', icon: Brain },
-      { to: '/ai/usage',   label: 'Usage',        icon: Zap },
-      { to: '/ai/costs',   label: 'Costs',        icon: DollarSign },
-      { to: '/ai/health',  label: 'Health',       icon: Activity },
+      { to: '/ai',                label: 'AI Settings',   icon: Brain },
+      { to: '/ai/usage',          label: 'Usage',          icon: Zap },
+      { to: '/ai/costs',          label: 'Costs',          icon: DollarSign },
+      { to: '/ai/health',         label: 'Health',         icon: Activity },
+      { to: '/ai/prompts',        label: 'Prompts',        icon: Sparkles },
+      { to: '/ai/features',       label: 'Features',       icon: ToggleRight },
+      { to: '/ai/conversations',  label: 'Conversations',  icon: MessageSquare },
+      { to: '/ai/diagnostics',    label: 'Diagnostics',    icon: Gauge },
     ],
   },
   {
