@@ -7,18 +7,21 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, Activity, AlertTriangle,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
 // Group icon color classes per group
 const GROUP_ICON_STYLES = {
-  Revenue:         'bg-blue-50 text-blue-600',
-  Expenses:        'bg-orange-50 text-orange-600',
-  Compliance:      'bg-emerald-50 text-emerald-600',
-  Storage:         'bg-teal-50 text-teal-600',
-  Administration:  'bg-slate-100 text-slate-600',
-  Analytics:       'bg-violet-50 text-violet-600',
+  Revenue:    'bg-blue-50 text-blue-600',
+  Expenses:   'bg-orange-50 text-orange-600',
+  Compliance: 'bg-emerald-50 text-emerald-600',
+  Documents:  'bg-teal-50 text-teal-600',
+  Analytics:  'bg-violet-50 text-violet-600',
+  Workspace:  'bg-slate-100 text-slate-600',
+  Security:   'bg-red-50 text-red-600',
+  System:     'bg-sky-50 text-sky-600',
+  Settings:   'bg-slate-100 text-slate-600',
 };
 
 const NAV_CONFIG = [
@@ -94,7 +97,7 @@ const NAV_CONFIG = [
   },
   {
     type: 'group',
-    label: 'Storage',
+    label: 'Documents',
     groupIcon: HardDrive,
     items: [
       { to: '/files', label: 'Files', icon: FolderOpen },
@@ -102,27 +105,51 @@ const NAV_CONFIG = [
   },
   {
     type: 'group',
-    label: 'Administration',
-    groupIcon: ShieldCheck,
+    label: 'Workspace',
+    groupIcon: Users,
     requiredRoles: ['owner', 'admin'],
     items: [
-      { to: '/members',                          label: 'Members',         icon: Users },
-      { to: '/audit',                            label: 'Audit Log',       icon: Shield },
-      { to: '/security',                         label: 'Security',        icon: ShieldAlert },
-      { to: '/security/posture',                 label: 'Sec. Posture',    icon: Gauge },
-      { to: '/security/compliance',              label: 'Compliance',      icon: ClipboardCheck },
-      { to: '/system',                           label: 'System Status',   icon: MonitorDot },
-      { to: '/system/deployments',               label: 'Deployments',     icon: Rocket },
-      { to: '/system/reliability',               label: 'Reliability',     icon: Activity },
-      { to: '/system/incidents',                 label: 'Incidents',       icon: AlertTriangle },
-      { to: '/billing',                          label: 'Billing',         icon: CreditCard,  requiredRoles: ['owner'] },
-      { to: '/settings',                         label: 'Settings',        icon: Settings },
-      { to: '/settings/notification-settings',   label: 'Notifications',   icon: BellRing },
-      { to: '/settings/email-templates',         label: 'Email Templates', icon: Mail },
-      { to: '/settings/email-analytics',         label: 'Email Analytics', icon: LineChart },
-      { to: '/announcements',                    label: 'Announcements',   icon: Megaphone },
-      { to: '/settings/reminder-rules',          label: 'Reminder Rules',  icon: Bell },
-      { to: '/settings/escalation-rules',        label: 'Escalation Rules',icon: Siren },
+      { to: '/members', label: 'Members', icon: Users },
+      { to: '/billing', label: 'Billing', icon: CreditCard, requiredRoles: ['owner'] },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Security',
+    groupIcon: ShieldAlert,
+    requiredRoles: ['owner', 'admin'],
+    items: [
+      { to: '/audit',              label: 'Audit Log',  icon: Shield },
+      { to: '/security',           label: 'Security',   icon: ShieldAlert },
+      { to: '/security/posture',   label: 'Posture',    icon: Gauge },
+      { to: '/security/compliance',label: 'Compliance', icon: ClipboardCheck },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'System',
+    groupIcon: MonitorDot,
+    requiredRoles: ['owner', 'admin'],
+    items: [
+      { to: '/system',              label: 'Status',      icon: MonitorDot },
+      { to: '/system/deployments',  label: 'Deployments', icon: Rocket },
+      { to: '/system/reliability',  label: 'Reliability', icon: Activity },
+      { to: '/system/incidents',    label: 'Incidents',   icon: AlertTriangle },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Settings',
+    groupIcon: Settings,
+    requiredRoles: ['owner', 'admin'],
+    items: [
+      { to: '/settings',                        label: 'General',          icon: Settings },
+      { to: '/settings/notification-settings',  label: 'Notifications',    icon: BellRing },
+      { to: '/settings/email-templates',        label: 'Email Templates',  icon: Mail },
+      { to: '/settings/email-analytics',        label: 'Email Analytics',  icon: LineChart },
+      { to: '/announcements',                   label: 'Announcements',    icon: Megaphone },
+      { to: '/settings/reminder-rules',         label: 'Reminder Rules',   icon: Bell },
+      { to: '/settings/escalation-rules',       label: 'Escalation Rules', icon: Siren },
     ],
   },
 ];
