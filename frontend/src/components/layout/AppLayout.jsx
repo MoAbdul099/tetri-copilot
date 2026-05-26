@@ -98,9 +98,10 @@ const NAV_CONFIG = [
     type: 'group',
     label: 'Administration',
     groupIcon: ShieldCheck,
+    requiredRoles: ['owner', 'admin'],
     items: [
       { to: '/members',                          label: 'Members',         icon: Users },
-      { to: '/billing',                          label: 'Billing',         icon: CreditCard },
+      { to: '/billing',                          label: 'Billing',         icon: CreditCard,  requiredRoles: ['owner'] },
       { to: '/settings',                         label: 'Settings',        icon: Settings },
       { to: '/settings/notification-settings',   label: 'Notifications',   icon: BellRing },
       { to: '/settings/email-templates',         label: 'Email Templates', icon: Mail },
@@ -112,13 +113,17 @@ const NAV_CONFIG = [
   },
 ];
 
+const canAccess = (requiredRoles, role) =>
+  !requiredRoles || requiredRoles.includes(role);
+
 function isGroupActive(group, pathname) {
   return group.items.some((item) => pathname.startsWith(item.to));
 }
 
-function NavGroup({ group, onNavigate }) {
+function NavGroup({ group, onNavigate, role }) {
   const location = useLocation();
-  const active = isGroupActive(group, location.pathname);
+  const visibleItems = group.items.filter((item) => canAccess(item.requiredRoles, role));
+  const active = visibleItems.some((item) => location.pathname.startsWith(item.to));
   const [open, setOpen] = useState(active);
   const GroupIcon = group.groupIcon;
   const iconStyle = GROUP_ICON_STYLES[group.label] || 'bg-blue-50 text-blue-600';
@@ -142,7 +147,7 @@ function NavGroup({ group, onNavigate }) {
       </button>
       {open && (
         <div className="mt-0.5 mb-1 space-y-0.5">
-          {group.items.map(({ to, label, icon: Icon }) => (
+          {visibleItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -174,6 +179,7 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
 
   const handleSignOut = () => signOut({ redirectUrl: '/sign-in' });
   const closeSidebar = () => setSidebarOpen(false);
+  const role = workspace?.role || 'user';
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -189,7 +195,7 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_CONFIG.map((entry) => {
+        {NAV_CONFIG.filter((entry) => canAccess(entry.requiredRoles, role)).map((entry) => {
           if (entry.type === 'item') {
             const Icon = entry.icon;
             return (
@@ -211,7 +217,7 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
             );
           }
           return (
-            <NavGroup key={entry.label} group={entry} onNavigate={closeSidebar} />
+            <NavGroup key={entry.label} group={entry} onNavigate={closeSidebar} role={role} />
           );
         })}
       </nav>
