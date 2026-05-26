@@ -7,6 +7,7 @@ const workspacesController = require('./workspaces.controller');
 const router = Router();
 
 router.post('/bootstrap', protect, workspacesController.bootstrapWorkspace);
+router.get('/mine',    protect, workspacesController.getMyWorkspaces);
 router.get('/current', protect, requireWorkspace, workspacesController.getCurrentWorkspace);
 router.patch('/current', protect, requireWorkspace, requireOwner, workspacesController.updateCurrentWorkspace);
 

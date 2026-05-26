@@ -17,7 +17,14 @@ const getWorkspaceMembership = (userId) =>
     orderBy: { createdAt: 'asc' },
   });
 
+const getWorkspaceMemberships = (userId) =>
+  prisma.workspaceMember.findMany({
+    where: { userId, status: 'active' },
+    include: { workspace: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
 const createActivityLog = (data) =>
   prisma.activityLog.create({ data });
 
-module.exports = { getUserByClerkId, upsertUser, getWorkspaceMembership, createActivityLog };
+module.exports = { getUserByClerkId, upsertUser, getWorkspaceMembership, getWorkspaceMemberships, createActivityLog };

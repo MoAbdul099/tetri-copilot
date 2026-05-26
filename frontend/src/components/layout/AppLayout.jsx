@@ -6,7 +6,7 @@ import {
   LogOut, Menu, X, ChevronDown, ChevronRight,
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
-  HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen,
+  HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
   Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
@@ -165,10 +165,12 @@ function NavGroup({ group, onNavigate }) {
   );
 }
 
-export default function AppLayout({ user, workspace }) {
+export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitchWorkspace }) {
   const { signOut } = useClerk();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarOpen,      setSidebarOpen]      = useState(false);
+  const [userMenuOpen,     setUserMenuOpen]      = useState(false);
+  const [wsSwitcherOpen,   setWsSwitcherOpen]    = useState(false);
+  const hasMultipleWs = allWorkspaces.length > 1;
 
   const handleSignOut = () => signOut({ redirectUrl: '/sign-in' });
   const closeSidebar = () => setSidebarOpen(false);
@@ -219,11 +221,33 @@ export default function AppLayout({ user, workspace }) {
         <div className="flex items-center justify-between px-1 pb-1">
           <NotificationBell />
         </div>
-        <div className="px-3 py-2 rounded-xl bg-tetri-bg">
-          <p className="text-xs text-tetri-neutral font-medium truncate">Workspace</p>
-          <p className="text-sm font-semibold text-tetri-text truncate mt-0.5">
-            {workspace?.name || '—'}
-          </p>
+        <div className="relative">
+          <button
+            onClick={() => hasMultipleWs && setWsSwitcherOpen((v) => !v)}
+            className={`w-full px-3 py-2 rounded-xl bg-tetri-bg text-left transition-colors ${hasMultipleWs ? 'hover:bg-slate-100 cursor-pointer' : 'cursor-default'}`}
+          >
+            <p className="text-xs text-tetri-neutral font-medium truncate">Workspace</p>
+            <div className="flex items-center justify-between mt-0.5">
+              <p className="text-sm font-semibold text-tetri-text truncate">{workspace?.name || '—'}</p>
+              {hasMultipleWs && <ChevronDown className="w-3.5 h-3.5 text-tetri-muted flex-shrink-0 ml-1" />}
+            </div>
+          </button>
+
+          {wsSwitcherOpen && hasMultipleWs && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-tetri-surface border border-tetri-border rounded-xl shadow-lg py-1 z-50 max-h-60 overflow-y-auto">
+              {allWorkspaces.map((ws) => (
+                <button
+                  key={ws.id}
+                  onClick={() => { setWsSwitcherOpen(false); if (onSwitchWorkspace) onSwitchWorkspace(ws); }}
+                  className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-tetri-bg ${ws.id === workspace?.id ? 'text-tetri-blue font-semibold' : 'text-tetri-muted hover:text-tetri-text'}`}
+                >
+                  <Building2 className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{ws.name}</span>
+                  {ws.id === workspace?.id && <CheckCircle className="w-3.5 h-3.5 ml-auto flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="relative">

@@ -2,6 +2,8 @@ const { getAuth } = require('../../middleware/requireAuth');
 const workspacesService = require('./workspaces.service');
 const { bootstrapSchema, patchWorkspaceSchema } = require('./workspaces.validation');
 const { success } = require('../../utils/response');
+const authRepository = require('../auth/auth.repository');
+const prisma = require('../../lib/prisma');
 
 const bootstrapWorkspace = async (req, res, next) => {
   try {
@@ -41,4 +43,31 @@ const updateCurrentWorkspace = async (req, res, next) => {
   }
 };
 
-module.exports = { bootstrapWorkspace, getCurrentWorkspace, updateCurrentWorkspace };
+const getMyWorkspaces = async (req, res, next) => {
+  try {
+    const { userId: clerkUserId } = getAuth(req);
+    const user = await authRepository.getUserByClerkId(clerkUserId);
+    if (!user) return res.status(401).json({ success: false, error: 'User not found', details: [] });
+
+    const memberships = await authRepository.getWorkspaceMemberships(user.id);
+    const workspaces  = await Promise.all(memberships.map(async (m) => {
+      const company = await prisma.company.findUnique({
+        where:  { workspaceId: m.workspace.id },
+        select: { companyName: true },
+      });
+      return {
+        id:           m.workspace.id,
+        name:         m.workspace.name,
+        role:         m.role,
+        setupComplete: !!company,
+        companyName:  company?.companyName || null,
+      };
+    }));
+
+    return success(res, workspaces);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { bootstrapWorkspace, getCurrentWorkspace, updateCurrentWorkspace, getMyWorkspaces };

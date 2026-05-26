@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getActiveWorkspaceId } from './workspace.js';
 
 // Persist the token getter across Vite HMR by storing it on window.
 // When HMR replaces this module, the module-level variable resets to null,
@@ -32,6 +33,8 @@ api.interceptors.request.use(async (config) => {
     const token = await fn();
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  const wsId = getActiveWorkspaceId();
+  if (wsId) config.headers['X-Workspace-Id'] = wsId;
   return config;
 });
 

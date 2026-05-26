@@ -8,48 +8,51 @@ const syncAndGetMe = async ({ clerkUserId, ipAddress, userAgent }) => {
   const primaryEmail = clerkUser.emailAddresses.find(
     (e) => e.id === clerkUser.primaryEmailAddressId
   );
-  const email = primaryEmail?.emailAddress || '';
-  const fullName =
-    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
+  const email    = primaryEmail?.emailAddress || '';
+  const fullName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
 
   const isNewUser = !(await authRepository.getUserByClerkId(clerkUserId));
   const user = await authRepository.upsertUser({ clerkUserId, email, fullName });
 
   await authRepository.createActivityLog({
-    userId: user.id,
-    action: isNewUser ? 'user.signup' : 'user.login',
-    entityType: 'user',
-    entityId: user.id,
+    userId:      user.id,
+    action:      isNewUser ? 'user.signup' : 'user.login',
+    entityType:  'user',
+    entityId:    user.id,
     description: isNewUser ? 'User signed up via Clerk' : 'User logged in via Clerk',
-    ipAddress: ipAddress || null,
-    userAgent: userAgent || null,
+    ipAddress:   ipAddress || null,
+    userAgent:   userAgent || null,
   });
 
-  const membership = await authRepository.getWorkspaceMembership(user.id);
+  const memberships = await authRepository.getWorkspaceMemberships(user.id);
 
-  let workspaceData = null;
-  if (membership) {
+  const workspaces = await Promise.all(memberships.map(async (m) => {
     const company = await prisma.company.findUnique({
-      where: { workspaceId: membership.workspace.id },
-      select: { id: true },
+      where:  { workspaceId: m.workspace.id },
+      select: { id: true, companyName: true },
     });
-    workspaceData = {
-      id: membership.workspace.id,
-      name: membership.workspace.name,
-      role: membership.role,
+    return {
+      id:           m.workspace.id,
+      name:         m.workspace.name,
+      role:         m.role,
       setupComplete: !!company,
+      companyName:  company?.companyName || null,
     };
-  }
+  }));
+
+  // Backward-compat: expose the first workspace as `workspace`
+  const workspace = workspaces[0] || null;
 
   return {
     user: {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      status: user.status,
+      id:              user.id,
+      email:           user.email,
+      fullName:        user.fullName,
+      status:          user.status,
       isPlatformAdmin: user.isPlatformAdmin,
     },
-    workspace: workspaceData,
+    workspaces,
+    workspace,
   };
 };
 
