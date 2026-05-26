@@ -140,10 +140,56 @@ async function updateRule(id, data) {
   return prisma.securityRule.update({ where: { id }, data: update });
 }
 
+// ---------- Security Reviews ----------
+async function listReviews({ status, reviewType, limit = 50, offset = 0 } = {}) {
+  const where = {};
+  if (status)     where.status     = status;
+  if (reviewType) where.reviewType = reviewType;
+  const [rows, total] = await Promise.all([
+    prisma.securityReview.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit),
+      skip: parseInt(offset),
+    }),
+    prisma.securityReview.count({ where }),
+  ]);
+  return { rows, total };
+}
+
+async function createReview(data) {
+  return prisma.securityReview.create({ data });
+}
+
+async function updateReview(id, data) {
+  return prisma.securityReview.update({ where: { id }, data });
+}
+
+async function getReviewSummary() {
+  const [byStatus, byType, recent] = await Promise.all([
+    prisma.securityReview.groupBy({ by: ['status'], _count: true }),
+    prisma.securityReview.groupBy({ by: ['reviewType'], _count: true }),
+    prisma.securityReview.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+  ]);
+
+  const totalOpen = await prisma.securityReview.count({
+    where: { status: { in: ['pending', 'in_progress'] } },
+  });
+  const totalCompleted = await prisma.securityReview.count({
+    where: { status: 'completed' },
+  });
+
+  return { byStatus, byType, recent, totalOpen, totalCompleted };
+}
+
 module.exports = {
   seedDefaultRules,
   getDashboard,
   listAlerts, getAlert, updateAlertStatus, getAlertContext,
   listEvents,
   listRules, toggleRule, updateRule,
+  listReviews, createReview, updateReview, getReviewSummary,
 };

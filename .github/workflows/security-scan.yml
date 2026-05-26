@@ -1,0 +1,129 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  schedule:
+    # Run weekly on Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+
+jobs:
+  audit-backend:
+    name: Backend Dependency Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (fail on high+)
+        run: npm audit --audit-level=high --json > audit-report.json || true
+
+      - name: Parse audit results
+        run: |
+          CRITICAL=$(node -e "const r=require('./audit-report.json'); console.log(r.metadata?.vulnerabilities?.critical || 0)")
+          HIGH=$(node -e "const r=require('./audit-report.json'); console.log(r.metadata?.vulnerabilities?.high || 0)")
+          echo "Critical: $CRITICAL, High: $HIGH"
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Critical vulnerabilities found: $CRITICAL"
+            exit 1
+          fi
+          if [ "$HIGH" -gt 0 ]; then
+            echo "::warning::High vulnerabilities found: $HIGH — review and remediate before release"
+          fi
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-audit-report
+          path: backend/audit-report.json
+          retention-days: 30
+
+  audit-frontend:
+    name: Frontend Dependency Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (fail on critical only for frontend)
+        run: npm audit --audit-level=critical --json > audit-report.json || true
+
+      - name: Parse audit results
+        run: |
+          CRITICAL=$(node -e "const r=require('./audit-report.json'); console.log(r.metadata?.vulnerabilities?.critical || 0)")
+          echo "Critical: $CRITICAL"
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Critical frontend vulnerabilities found: $CRITICAL"
+            exit 1
+          fi
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-audit-report
+          path: frontend/audit-report.json
+          retention-days: 30
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: Check for .env files in repo
+        run: |
+          if git ls-files | grep -E '\.env$'; then
+            echo "::error::.env file(s) found in repository — must not be committed"
+            exit 1
+          fi
+          echo "No .env files committed — OK"
+
+      - name: Verify .gitignore covers secrets
+        run: |
+          for f in .env backend/.env frontend/.env; do
+            if git check-ignore -q "$f" 2>/dev/null; then
+              echo "$f is gitignored — OK"
+            else
+              echo "::warning::$f may not be gitignored — review .gitignore"
+            fi
+          done

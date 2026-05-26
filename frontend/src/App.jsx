@@ -81,6 +81,8 @@ import InsightsCenterPage from './features/analytics/pages/InsightsCenterPage.js
 import ActivityCenterPage from './features/activity/pages/ActivityCenterPage.jsx';
 import AuditCenterPage from './features/audit/pages/AuditCenterPage.jsx';
 import SecurityCenterPage from './features/security/pages/SecurityCenterPage.jsx';
+import SecurityPosturePage from './features/security/pages/SecurityPosturePage.jsx';
+import ComplianceReadinessPage from './features/security/pages/ComplianceReadinessPage.jsx';
 import SystemStatusPage from './features/system/pages/SystemStatusPage.jsx';
 import DeploymentHistoryPage from './features/system/pages/DeploymentHistoryPage.jsx';
 
@@ -183,6 +185,8 @@ export default function App() {
           <Route path="/activity" element={<ActivityCenterPage />} />
           <Route path="/audit" element={<AuditCenterPage />} />
           <Route path="/security" element={<SecurityCenterPage />} />
+          <Route path="/security/posture" element={<SecurityPosturePage />} />
+          <Route path="/security/compliance" element={<ComplianceReadinessPage />} />
           <Route path="/system" element={<SystemStatusPage />} />
           <Route path="/system/deployments" element={<DeploymentHistoryPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

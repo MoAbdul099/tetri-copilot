@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const env = require('./config/env');
 const { requestLogger } = require('./middleware/requestLogger');
+const sanitize = require('./middleware/sanitize');
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
 const healthRoutes    = require('./modules/health/health.routes');
@@ -71,24 +72,57 @@ app.set('json replacer', (_, value) =>
   typeof value === 'bigint' ? Number(value) : value
 );
 
-app.use(helmet());
+// ── Security headers ──────────────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'none'"],
+      scriptSrc:      ["'none'"],
+      styleSrc:       ["'none'"],
+      imgSrc:         ["'none'"],
+      connectSrc:     ["'self'"],
+      objectSrc:      ["'none'"],
+      frameSrc:       ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: env.NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+    : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+}));
+
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 500,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, error: 'Too many requests', details: [] },
-  })
-);
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests', details: [] },
+});
+
+// Stricter limit for auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts', details: [] },
+});
+
+app.use(apiLimiter);
+app.use('/api/v1/auth', authLimiter);
 
 // Raw body for Stripe webhook signature verification — must come before express.json()
 app.use('/api/v1/billing/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(sanitize);
 app.use(requestLogger);
 
 // Routes

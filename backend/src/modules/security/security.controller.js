@@ -91,10 +91,57 @@ async function updateRule(req, res) {
   } catch (err) { return error(res, err.message, err.status || 500); }
 }
 
+// ── Slice 13.2 endpoints ─────────────────────────────────────────────────────
+
+async function getStatus(req, res) {
+  if (!guard(req, res)) return;
+  try {
+    return success(res, await service.getSecurityStatus(req.workspaceMember.workspaceId));
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function getComplianceChecks(req, res) {
+  if (!guard(req, res)) return;
+  try {
+    return success(res, await service.runComplianceChecks());
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function getReviewSummary(req, res) {
+  if (!guard(req, res)) return;
+  try {
+    return success(res, await service.getReviewSummary());
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function listReviews(req, res) {
+  if (!guard(req, res)) return;
+  try {
+    return success(res, await service.listReviews(req.query));
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function createReview(req, res) {
+  if (!['owner'].includes(req.role)) return error(res, 'Access denied — owner only', 403);
+  try {
+    const review = await service.createReview(req.body);
+    return success(res, review, 'Review created', 201);
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function updateReview(req, res) {
+  if (!['owner'].includes(req.role)) return error(res, 'Access denied — owner only', 403);
+  try {
+    return success(res, await service.updateReview(req.params.id, req.body), 'Review updated');
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
 module.exports = {
   getDashboard,
   listAlerts, getAlert,
   acknowledgeAlert, investigateAlert, resolveAlert, dismissAlert, markFalsePositive,
   listEvents,
   listRules, updateRule,
+  getStatus, getComplianceChecks, getReviewSummary,
+  listReviews, createReview, updateReview,
 };

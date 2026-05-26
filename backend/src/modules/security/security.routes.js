@@ -6,6 +6,7 @@ const ctrl = require('./security.controller');
 
 router.use(protect, requireWorkspace);
 
+// Existing endpoints
 router.get('/dashboard',                    ctrl.getDashboard);
 router.get('/alerts',                       ctrl.listAlerts);
 router.get('/alerts/:id',                   ctrl.getAlert);
@@ -17,5 +18,13 @@ router.post('/alerts/:id/false-positive',   ctrl.markFalsePositive);
 router.get('/events',                       ctrl.listEvents);
 router.get('/rules',                        ctrl.listRules);
 router.patch('/rules/:id',                  ctrl.updateRule);
+
+// Slice 13.2 — Hardening & Compliance
+router.get('/status',              ctrl.getStatus);
+router.get('/compliance-checks',   ctrl.getComplianceChecks);
+router.get('/review-summary',      ctrl.getReviewSummary);
+router.get('/reviews',             ctrl.listReviews);
+router.post('/reviews',            ctrl.createReview);
+router.patch('/reviews/:id',       ctrl.updateReview);
 
 module.exports = router;

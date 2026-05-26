@@ -3031,3 +3031,26 @@ model SystemVersion {
   @@index([isActive])
   @@map("system_versions")
 }
+
+// =========================================================
+// SLICE 13.2 — SECURITY HARDENING & COMPLIANCE
+// =========================================================
+
+model SecurityReview {
+  id                String    @id @default(uuid()) @db.Uuid
+  reviewType        String    @map("review_type") @db.VarChar(60)
+  reviewer          String    @db.VarChar(100)
+  status            String    @default("pending") @db.VarChar(20)
+  findings          Json?
+  remediationStatus String?   @map("remediation_status") @db.VarChar(30)
+  notes             String?   @db.Text
+  riskLevel         String?   @map("risk_level") @db.VarChar(20)
+  reviewedAt        DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([reviewType])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("security_reviews")
+}
