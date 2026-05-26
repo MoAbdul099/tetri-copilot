@@ -2978,3 +2978,56 @@ model RiskAlert {
   @@index([status])
   @@map("risk_alerts")
 }
+
+// =========================================================
+// SLICE 13.1 — DEPLOYMENT & INFRASTRUCTURE
+// =========================================================
+
+model DeploymentLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  environment String    @db.VarChar(20)
+  version     String    @db.VarChar(30)
+  status      String    @default("pending") @db.VarChar(20)
+  startedAt   DateTime  @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  triggeredBy String    @map("triggered_by") @db.VarChar(100)
+  notes       String?   @db.Text
+  durationMs  Int?      @map("duration_ms")
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  auditEntries DeploymentAuditLog[]
+
+  @@index([environment])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("deployment_logs")
+}
+
+model DeploymentAuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  deploymentId String   @map("deployment_id") @db.Uuid
+  action       String   @db.VarChar(100)
+  actor        String   @db.VarChar(100)
+  timestamp    DateTime @default(now()) @db.Timestamptz(6)
+  details      Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  deployment DeploymentLog @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+
+  @@index([deploymentId])
+  @@index([timestamp(sort: Desc)])
+  @@map("deployment_audit_logs")
+}
+
+model SystemVersion {
+  id           String   @id @default(uuid()) @db.Uuid
+  version      String   @unique @db.VarChar(30)
+  releaseDate  DateTime @map("release_date") @db.Timestamptz(6)
+  releaseNotes String?  @map("release_notes") @db.Text
+  isActive     Boolean  @default(false) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([isActive])
+  @@map("system_versions")
+}

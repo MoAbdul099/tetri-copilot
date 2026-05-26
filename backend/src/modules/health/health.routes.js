@@ -1,8 +1,11 @@
 const { Router } = require('express');
-const { getHealth } = require('./health.controller');
+const ctrl = require('./health.controller');
 
 const router = Router();
 
-router.get('/', getHealth);
+router.get('/',        ctrl.getHealth);
+router.get('/db',      ctrl.getDbHealth);
+router.get('/storage', ctrl.getStorageHealth);
+router.get('/version', ctrl.getVersion);
 
 module.exports = router;

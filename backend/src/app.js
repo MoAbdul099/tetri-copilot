@@ -58,6 +58,8 @@ const auditConsumer              = require('./lib/auditConsumer');
 const securityRoutes             = require('./modules/security/security.routes');
 const securityConsumer           = require('./lib/securityConsumer');
 const { seedDefaultRules }       = require('./modules/security/security.repository');
+const systemRoutes               = require('./modules/system/system.routes');
+const deploymentsRoutes          = require('./modules/deployments/deployments.routes');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -132,7 +134,9 @@ app.use('/api/v1/reports',    reportsRoutes);
 app.use('/api/v1/analytics',  analyticsRoutes);
 app.use('/api/v1/activity',   activityRoutes);
 app.use('/api/v1/audit',      auditRoutes);
-app.use('/api/v1/security',   securityRoutes);
+app.use('/api/v1/security',     securityRoutes);
+app.use('/api/v1/system',       systemRoutes);
+app.use('/api/v1/deployments',  deploymentsRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
