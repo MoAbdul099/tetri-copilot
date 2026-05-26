@@ -55,6 +55,9 @@ const activityConsumer           = require('./lib/activityConsumer');
 const { startRetentionJob }      = require('./modules/activity/activity.retention');
 const auditRoutes                = require('./modules/audit/audit.routes');
 const auditConsumer              = require('./lib/auditConsumer');
+const securityRoutes             = require('./modules/security/security.routes');
+const securityConsumer           = require('./lib/securityConsumer');
+const { seedDefaultRules }       = require('./modules/security/security.repository');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -129,6 +132,7 @@ app.use('/api/v1/reports',    reportsRoutes);
 app.use('/api/v1/analytics',  analyticsRoutes);
 app.use('/api/v1/activity',   activityRoutes);
 app.use('/api/v1/audit',      auditRoutes);
+app.use('/api/v1/security',   securityRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
@@ -137,6 +141,8 @@ app.use('/api/admin',  adminRoutes);
 // Start background engines
 activityConsumer.start();
 auditConsumer.start();
+securityConsumer.start();
+seedDefaultRules().catch(() => {});
 startRetentionJob();
 startReminderEngine();
 startEmailWorker();

@@ -80,6 +80,7 @@ import AnalyticsDashboardPage from './features/analytics/pages/AnalyticsDashboar
 import InsightsCenterPage from './features/analytics/pages/InsightsCenterPage.jsx';
 import ActivityCenterPage from './features/activity/pages/ActivityCenterPage.jsx';
 import AuditCenterPage from './features/audit/pages/AuditCenterPage.jsx';
+import SecurityCenterPage from './features/security/pages/SecurityCenterPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -179,6 +180,7 @@ export default function App() {
           <Route path="/analytics/insights" element={<InsightsCenterPage />} />
           <Route path="/activity" element={<ActivityCenterPage />} />
           <Route path="/audit" element={<AuditCenterPage />} />
+          <Route path="/security" element={<SecurityCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
