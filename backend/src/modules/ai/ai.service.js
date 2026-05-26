@@ -77,8 +77,8 @@ async function checkQuota(workspaceId, config) {
 async function execute({ workspaceId, userId, feature, messages, options = {} }) {
   const config = await getConfig();
 
-  const providerCode = options.provider || config.default_provider || 'openai';
-  const modelName    = options.model    || config.default_model    || 'gpt-4o-mini';
+  const providerCode = options.provider || config.default_provider || 'gemini';
+  const modelName    = options.model    || config.default_model    || 'gemini-2.0-flash';
   const temperature  = parseFloat(options.temperature ?? config.temperature ?? 0.7);
   const maxTokens    = parseInt(options.maxTokens    ?? config.max_tokens    ?? 1000);
   const maxRetries   = parseInt(config.max_retries   ?? 3);
@@ -102,19 +102,54 @@ async function execute({ workspaceId, userId, feature, messages, options = {} })
   // Execute with retry + exponential backoff
   const start = Date.now();
   let result;
-  let lastError;
+  let usedProviderCode   = providerCode;
+  let usedProviderRecord = providerRecord;
+  let usedModelRecord    = modelRecord;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      result = await withTimeout(
-        provider.generateText({ messages, model: modelRecord.modelName, temperature, maxTokens }),
-        timeoutMs,
-      );
-      break;
-    } catch (err) {
-      lastError = err;
-      if (!isRetryable(err) || attempt === maxRetries) throw err;
-      await sleep(Math.pow(2, attempt) * 500);
+  async function tryProvider(pCode, pRecord, mRecord, retries) {
+    const adapter = registry.get(pCode);
+    if (!adapter.isConfigured()) throw Object.assign(new Error(`Provider "${pCode}" API key not configured`), { status: 503 });
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await withTimeout(
+          adapter.generateText({ messages, model: mRecord.modelName, temperature, maxTokens }),
+          timeoutMs,
+        );
+      } catch (err) {
+        lastErr = err;
+        if (!isRetryable(err) || attempt === retries) throw err;
+        await sleep(Math.pow(2, attempt) * 500);
+      }
+    }
+    throw lastErr;
+  }
+
+  try {
+    result = await tryProvider(providerCode, providerRecord, modelRecord, maxRetries);
+  } catch (primaryErr) {
+    // Quota errors should not fall back — propagate immediately
+    if (primaryErr.code === 'QUOTA_EXCEEDED') throw primaryErr;
+
+    const backupCode = config.backup_provider;
+    if (backupCode && backupCode !== providerCode) {
+      try {
+        const backupRecord = await repo.getProviderByCode(backupCode);
+        if (backupRecord?.enabled) {
+          const backupModel = await repo.getDefaultModel(backupRecord.id);
+          if (backupModel) {
+            result             = await tryProvider(backupCode, backupRecord, backupModel, 1);
+            usedProviderCode   = backupCode;
+            usedProviderRecord = backupRecord;
+            usedModelRecord    = backupModel;
+          }
+        }
+      } catch {
+        // backup also failed — throw the original primary error
+        throw primaryErr;
+      }
+    } else {
+      throw primaryErr;
     }
   }
 
@@ -122,16 +157,16 @@ async function execute({ workspaceId, userId, feature, messages, options = {} })
 
   // Cost calculation
   const cost = (
-    ((result.tokensInput  || 0) / 1000) * (modelRecord.inputCostPer1k  || 0) +
-    ((result.tokensOutput || 0) / 1000) * (modelRecord.outputCostPer1k || 0)
+    ((result.tokensInput  || 0) / 1000) * (usedModelRecord.inputCostPer1k  || 0) +
+    ((result.tokensOutput || 0) / 1000) * (usedModelRecord.outputCostPer1k || 0)
   );
 
   // Log usage (non-blocking)
   repo.logUsage({
     workspaceId,
     userId: userId || null,
-    providerId:    providerRecord.id,
-    modelId:       modelRecord.id,
+    providerId:    usedProviderRecord.id,
+    modelId:       usedModelRecord.id,
     feature,
     tokensInput:   result.tokensInput  || 0,
     tokensOutput:  result.tokensOutput || 0,
@@ -142,8 +177,8 @@ async function execute({ workspaceId, userId, feature, messages, options = {} })
 
   return {
     success:      true,
-    provider:     providerCode,
-    model:        modelRecord.modelName,
+    provider:     usedProviderCode,
+    model:        usedModelRecord.modelName,
     response:     result.text,
     tokensInput:  result.tokensInput  || 0,
     tokensOutput: result.tokensOutput || 0,
@@ -196,7 +231,7 @@ async function getUsageDashboard({ workspaceId, since } = {}) {
   const stats = await repo.getUsageStats({ workspaceId, since: sinceDate });
 
   // Feature breakdown from last 30 days
-  const breakdown = await require('../../lib/prisma').aiUsageLog.groupBy({
+  const breakdown = await require('../../lib/prisma').aiRequestLog.groupBy({
     by: ['feature'],
     where: { ...(workspaceId ? { workspaceId } : {}), createdAt: { gte: new Date(sinceDate) } },
     _count: { id: true },

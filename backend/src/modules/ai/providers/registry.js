@@ -1,7 +1,9 @@
 const openai    = require('./openai.provider');
 const anthropic = require('./anthropic.provider');
+const gemini    = require('./gemini.provider');
+const groq      = require('./groq.provider');
 
-const PROVIDERS = { openai, anthropic };
+const PROVIDERS = { openai, anthropic, gemini, groq };
 
 function get(code) {
   const provider = PROVIDERS[code];
