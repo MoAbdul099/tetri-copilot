@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const env = require('./config/env');
-const { requestLogger } = require('./middleware/requestLogger');
+const { requestLogger, requestId } = require('./middleware/requestLogger');
 const sanitize = require('./middleware/sanitize');
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
@@ -61,6 +61,8 @@ const securityConsumer           = require('./lib/securityConsumer');
 const { seedDefaultRules }       = require('./modules/security/security.repository');
 const systemRoutes               = require('./modules/system/system.routes');
 const deploymentsRoutes          = require('./modules/deployments/deployments.routes');
+const monitoringRoutes           = require('./modules/monitoring/monitoring.routes');
+const monitoringScheduler        = require('./modules/monitoring/monitoring.scheduler');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -123,6 +125,7 @@ app.use('/api/v1/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitize);
+app.use(requestId);
 app.use(requestLogger);
 
 // Routes
@@ -171,6 +174,7 @@ app.use('/api/v1/audit',      auditRoutes);
 app.use('/api/v1/security',     securityRoutes);
 app.use('/api/v1/system',       systemRoutes);
 app.use('/api/v1/deployments',  deploymentsRoutes);
+app.use('/api/v1/monitoring',   monitoringRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
@@ -187,6 +191,7 @@ startEmailWorker();
 startAnnouncementEngine();
 startReportScheduler();
 startAnalyticsScheduler();
+monitoringScheduler.start();
 
 // Seed notification event registry (non-blocking)
 seedEventRegistry().catch(() => {});

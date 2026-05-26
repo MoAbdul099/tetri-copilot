@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, Activity, AlertTriangle,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 
@@ -113,6 +113,8 @@ const NAV_CONFIG = [
       { to: '/security/compliance',              label: 'Compliance',      icon: ClipboardCheck },
       { to: '/system',                           label: 'System Status',   icon: MonitorDot },
       { to: '/system/deployments',               label: 'Deployments',     icon: Rocket },
+      { to: '/system/reliability',               label: 'Reliability',     icon: Activity },
+      { to: '/system/incidents',                 label: 'Incidents',       icon: AlertTriangle },
       { to: '/billing',                          label: 'Billing',         icon: CreditCard,  requiredRoles: ['owner'] },
       { to: '/settings',                         label: 'Settings',        icon: Settings },
       { to: '/settings/notification-settings',   label: 'Notifications',   icon: BellRing },

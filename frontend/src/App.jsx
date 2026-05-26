@@ -85,6 +85,8 @@ import SecurityPosturePage from './features/security/pages/SecurityPosturePage.j
 import ComplianceReadinessPage from './features/security/pages/ComplianceReadinessPage.jsx';
 import SystemStatusPage from './features/system/pages/SystemStatusPage.jsx';
 import DeploymentHistoryPage from './features/system/pages/DeploymentHistoryPage.jsx';
+import ReliabilityDashboardPage from './features/monitoring/pages/ReliabilityDashboardPage.jsx';
+import IncidentManagementPage from './features/monitoring/pages/IncidentManagementPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -189,6 +191,8 @@ export default function App() {
           <Route path="/security/compliance" element={<ComplianceReadinessPage />} />
           <Route path="/system" element={<SystemStatusPage />} />
           <Route path="/system/deployments" element={<DeploymentHistoryPage />} />
+          <Route path="/system/reliability" element={<ReliabilityDashboardPage />} />
+          <Route path="/system/incidents" element={<IncidentManagementPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

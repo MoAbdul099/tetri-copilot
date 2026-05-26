@@ -3054,3 +3054,59 @@ model SecurityReview {
   @@index([createdAt(sort: Desc)])
   @@map("security_reviews")
 }
+
+// =========================================================
+// SLICE 13.3 — RELIABILITY, MONITORING & OPERATIONS
+// =========================================================
+
+model MonitoringEvent {
+  id         String    @id @default(uuid()) @db.Uuid
+  category   String    @db.VarChar(50)
+  severity   String    @db.VarChar(20)
+  message    String    @db.Text
+  source     String    @db.VarChar(50)
+  metadata   Json?
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([category])
+  @@index([severity])
+  @@index([resolved])
+  @@index([createdAt(sort: Desc)])
+  @@map("monitoring_events")
+}
+
+model Incident {
+  id               String    @id @default(uuid()) @db.Uuid
+  title            String    @db.VarChar(200)
+  description      String?   @db.Text
+  severity         String    @db.VarChar(10)
+  status           String    @default("open") @db.VarChar(20)
+  affectedServices Json?     @map("affected_services")
+  timeline         Json?
+  reportedBy       String    @map("reported_by") @db.VarChar(100)
+  startedAt        DateTime  @map("started_at") @db.Timestamptz(6)
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([severity])
+  @@index([startedAt(sort: Desc)])
+  @@map("incidents")
+}
+
+model ServiceMetric {
+  id          String   @id @default(uuid()) @db.Uuid
+  metricName  String   @map("metric_name") @db.VarChar(100)
+  metricValue Float    @map("metric_value")
+  unit        String?  @db.VarChar(20)
+  source      String   @db.VarChar(50)
+  recordedAt  DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  @@index([metricName])
+  @@index([source])
+  @@index([recordedAt(sort: Desc)])
+  @@map("service_metrics")
+}
