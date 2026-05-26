@@ -95,6 +95,7 @@ import AIPromptsPage from './features/ai/pages/AIPromptsPage.jsx';
 import AIFeaturesPage from './features/ai/pages/AIFeaturesPage.jsx';
 import AIConversationsPage from './features/ai/pages/AIConversationsPage.jsx';
 import AIDiagnosticsPage from './features/ai/pages/AIDiagnosticsPage.jsx';
+import AssistantPage from './features/assistant/pages/AssistantPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -209,6 +210,7 @@ export default function App() {
           <Route path="/ai/features" element={<AIFeaturesPage />} />
           <Route path="/ai/conversations" element={<AIConversationsPage />} />
           <Route path="/ai/diagnostics" element={<AIDiagnosticsPage />} />
+          <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

@@ -67,6 +67,8 @@ const aiScheduler                = require('./modules/ai/ai.scheduler');
 const { seedAiData }             = require('./modules/ai/ai.seeder');
 const { seedFeatures }           = require('./modules/ai/feature.service');
 const aiCopilotRoutes            = require('./modules/ai/ai.copilot.routes');
+const assistantRoutes            = require('./modules/assistant/assistant.routes');
+const { seedAssistantData }      = require('./modules/assistant/assistant.seeder');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -180,6 +182,7 @@ app.use('/api/v1/system',       systemRoutes);
 app.use('/api/v1/deployments',  deploymentsRoutes);
 app.use('/api/v1/monitoring',   monitoringRoutes);
 app.use('/api/v1/ai',           aiCopilotRoutes);
+app.use('/api/v1/assistant',    assistantRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
@@ -200,6 +203,7 @@ monitoringScheduler.start();
 aiScheduler.start();
 seedAiData().catch(() => {});
 seedFeatures().catch(() => {});
+seedAssistantData().catch(() => {});
 
 // Seed notification event registry (non-blocking)
 seedEventRegistry().catch(() => {});

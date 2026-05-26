@@ -7,9 +7,10 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap, ToggleRight, MessageSquare,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap, ToggleRight, MessageSquare, Bot,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
+import AssistantWidget from '../../features/assistant/components/AssistantWidget.jsx';
 
 // Group icon color classes per group
 const GROUP_ICON_STYLES = {
@@ -31,6 +32,12 @@ const NAV_CONFIG = [
     to: '/dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    type: 'item',
+    to: '/assistant',
+    label: 'AI Assistant',
+    icon: Bot,
   },
   {
     type: 'item',
@@ -358,6 +365,7 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
 
   return (
     <div className="flex h-screen bg-tetri-bg overflow-hidden">
+      <AssistantWidget />
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col bg-tetri-surface border-r border-tetri-border flex-shrink-0">
         <SidebarContent />
