@@ -78,6 +78,7 @@ import ReportsPage from './features/reports/pages/ReportsPage.jsx';
 import ReportViewerPage from './features/reports/pages/ReportViewerPage.jsx';
 import AnalyticsDashboardPage from './features/analytics/pages/AnalyticsDashboardPage.jsx';
 import InsightsCenterPage from './features/analytics/pages/InsightsCenterPage.jsx';
+import ActivityCenterPage from './features/activity/pages/ActivityCenterPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -175,6 +176,7 @@ export default function App() {
           <Route path="/reports/:reportCode" element={<ReportViewerPage />} />
           <Route path="/analytics" element={<AnalyticsDashboardPage />} />
           <Route path="/analytics/insights" element={<InsightsCenterPage />} />
+          <Route path="/activity" element={<ActivityCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

@@ -8,7 +8,7 @@ import LoadingSpinner from '../ui/LoadingSpinner.jsx';
 import AppLayout from './AppLayout.jsx';
 import WorkspacePickerPage from '../../features/workspaces/pages/WorkspacePickerPage.jsx';
 
-const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments', '/receivables', '/collections', '/statements', '/expenses', '/approvals', '/reimbursements', '/expense-insights', '/budgets', '/recurring-expenses', '/files', '/compliance', '/notifications', '/announcements', '/reports', '/analytics'];
+const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments', '/receivables', '/collections', '/statements', '/expenses', '/approvals', '/reimbursements', '/expense-insights', '/budgets', '/recurring-expenses', '/files', '/compliance', '/notifications', '/announcements', '/reports', '/analytics', '/activity'];
 
 export default function ProtectedLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();

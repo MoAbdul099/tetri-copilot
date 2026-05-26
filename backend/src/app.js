@@ -50,6 +50,9 @@ const reportsRoutes              = require('./modules/reports/reports.routes');
 const { startReportScheduler }   = require('./modules/reports/reports.scheduler');
 const analyticsRoutes            = require('./modules/analytics/analytics.routes');
 const { startAnalyticsScheduler } = require('./modules/analytics/analytics.scheduler');
+const activityRoutes             = require('./modules/activity/activity.routes');
+const activityConsumer           = require('./lib/activityConsumer');
+const { startRetentionJob }      = require('./modules/activity/activity.retention');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -122,12 +125,15 @@ app.use('/api/v1/escalation-rules', escalationRulesRoutes);
 app.use('/api/v1/notification-events', notificationEventsRoutes);
 app.use('/api/v1/reports',    reportsRoutes);
 app.use('/api/v1/analytics',  analyticsRoutes);
+app.use('/api/v1/activity',   activityRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);
 app.use('/api/admin',  adminRoutes);
 
 // Start background engines
+activityConsumer.start();
+startRetentionJob();
 startReminderEngine();
 startEmailWorker();
 startAnnouncementEngine();
