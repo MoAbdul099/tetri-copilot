@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import {
@@ -108,8 +108,9 @@ const NAV_CONFIG = [
     label: 'Documents',
     groupIcon: HardDrive,
     items: [
-      { to: '/files',        label: 'Files',        icon: FolderOpen },
-      { to: '/ai-documents', label: 'AI Documents', icon: Sparkles },
+      { to: '/files',              label: 'Files',        icon: FolderOpen },
+      { to: '/ai-documents',       label: 'AI Documents', icon: Sparkles },
+      { to: '/document-templates', label: 'Templates',    icon: FileText },
     ],
   },
   {
@@ -192,6 +193,9 @@ function NavGroup({ group, onNavigate, role }) {
   const active = visibleItems.some((item) => location.pathname.startsWith(item.to));
   const [open, setOpen] = useState(active);
   const GroupIcon = group.groupIcon;
+
+  // Auto-open group when navigating to one of its routes
+  useEffect(() => { if (active) setOpen(true); }, [active]);
   const iconStyle = GROUP_ICON_STYLES[group.label] || 'bg-blue-50 text-blue-600';
 
   return (

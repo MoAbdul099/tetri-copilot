@@ -48,6 +48,10 @@ import FilesRepositoryPage from './features/files/pages/FilesRepositoryPage.jsx'
 import AiDocumentsPage from './features/ai-documents/pages/AiDocumentsPage.jsx';
 import AiDocumentGeneratePage from './features/ai-documents/pages/AiDocumentGeneratePage.jsx';
 import AiDocumentDetailPage from './features/ai-documents/pages/AiDocumentDetailPage.jsx';
+import DocumentTemplatesPage from './features/document-templates/pages/DocumentTemplatesPage.jsx';
+import DocumentTemplateFormPage from './features/document-templates/pages/DocumentTemplateFormPage.jsx';
+import DocumentTemplateDetailPage from './features/document-templates/pages/DocumentTemplateDetailPage.jsx';
+import BrandingProfilePage from './features/document-templates/pages/BrandingProfilePage.jsx';
 import CompliancePage from './features/compliance/pages/CompliancePage.jsx';
 import TemplatesPage from './features/compliance/pages/TemplatesPage.jsx';
 import TemplateFormPage from './features/compliance/pages/TemplateFormPage.jsx';
@@ -163,6 +167,11 @@ export default function App() {
           <Route path="/ai-documents" element={<AiDocumentsPage />} />
           <Route path="/ai-documents/generate" element={<AiDocumentGeneratePage />} />
           <Route path="/ai-documents/:id" element={<AiDocumentDetailPage />} />
+          <Route path="/document-templates" element={<DocumentTemplatesPage />} />
+          <Route path="/document-templates/new" element={<DocumentTemplateFormPage />} />
+          <Route path="/document-templates/branding" element={<BrandingProfilePage />} />
+          <Route path="/document-templates/:id" element={<DocumentTemplateDetailPage />} />
+          <Route path="/document-templates/:id/edit" element={<DocumentTemplateFormPage />} />
           <Route path="/compliance" element={<CompliancePage />} />
           <Route path="/compliance/templates" element={<TemplatesPage />} />
           <Route path="/compliance/templates/new" element={<TemplateFormPage />} />

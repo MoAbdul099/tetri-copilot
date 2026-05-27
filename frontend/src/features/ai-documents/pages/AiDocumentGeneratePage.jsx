@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Sparkles, Save, Loader2,
   CheckCircle, FileText, Settings, Wand2,
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import PageHeader from '../../../components/shared/PageHeader.jsx';
 import { useToast } from '../../../components/shared/Toast.jsx';
 import { getCategories, generateDoc, saveDocument } from '../services/aiDocumentsService.js';
+import { generateFromTpl } from '../../document-templates/services/documentTemplatesService.js';
 import api from '../../../lib/api.js';
 
 const STEPS = [
@@ -54,6 +55,8 @@ function StepIndicator({ current }) {
 
 export default function AiDocumentGeneratePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get('templateId');
   const { showToast, ToastContainer } = useToast();
 
   const [step, setStep]       = useState(0);
@@ -62,6 +65,7 @@ export default function AiDocumentGeneratePage() {
   const [generating, setGen]  = useState(false);
   const [saving, setSaving]   = useState(false);
   const [generated, setGenerated] = useState(null);
+  const [usingTemplate, setUsingTemplate] = useState(!!templateId);
 
   // Step 1 fields
   const [form, setForm] = useState({
@@ -122,11 +126,14 @@ export default function AiDocumentGeneratePage() {
     setGen(true);
     try {
       const validSources = contextSources.filter(s => s.sourceType === 'company' || s.sourceRecordId);
-      const result = await generateDoc({
-        ...form,
-        instructions: instructions || undefined,
-        contextSources: validSources,
-      });
+      let result;
+      if (templateId) {
+        result = await generateFromTpl(templateId, { contextSources: validSources, instructions: instructions || undefined });
+        // Map template result to expected shape
+        if (result.template && !form.category) setForm(p => ({ ...p, category: result.template.category || p.category }));
+      } else {
+        result = await generateDoc({ ...form, instructions: instructions || undefined, contextSources: validSources });
+      }
       setGenerated(result);
       setStep(2);
     } catch {
@@ -186,6 +193,13 @@ export default function AiDocumentGeneratePage() {
         {/* Step 1 — Document Info */}
         {step === 0 && (
           <div className="space-y-4">
+            {usingTemplate && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Generating from template — context and AI instructions from the template will be applied automatically.</span>
+                <button className="ml-auto text-blue-500 hover:text-blue-700 underline" onClick={() => setUsingTemplate(false)}>Use scratch instead</button>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-tetri-text mb-1.5">Document Title <span className="text-tetri-error">*</span></label>
               <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Payment Reminder to Acme Corp" />

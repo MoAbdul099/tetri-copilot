@@ -373,6 +373,8 @@ model User {
   reportExportJobs              ReportExportJob[]
   reportExecutionLogs           ReportExecutionLog[]
   createdAiDocuments            AiDocument[]         @relation("AiDocumentCreatedBy")
+  documentTemplatesCreated      DocumentTemplate[]   @relation("DocumentTemplateCreatedBy")
+  documentTemplatesModified     DocumentTemplate[]   @relation("DocumentTemplateModifiedBy")
 
   @@index([clerkUserId])
   @@index([email])
@@ -474,6 +476,7 @@ model Workspace {
   aiDocumentContextSources     AiDocumentContextSource[]
   aiDocumentRelations          AiDocumentRelation[]
   aiDocumentGenerationLogs     AiDocumentGenerationLog[]
+  brandingProfiles             WorkspaceBrandingProfile[]
 
   @@map("workspaces")
 }
@@ -1324,26 +1327,89 @@ model AiUsageLog {
 // =========================================================
 
 model DocumentTemplate {
-  id              String       @id @default(uuid()) @db.Uuid
-  workspaceId     String?      @map("workspace_id") @db.Uuid
-  countryProfileId String?     @map("country_profile_id") @db.Uuid
-  documentType    DocumentType @map("document_type")
-  name            String       @db.VarChar(255)
-  description     String?      @db.Text
-  templateContent String?      @map("template_content") @db.Text
-  languageId      String?      @map("language_id") @db.Uuid
-  isSystemDefault Boolean      @default(false) @map("is_system_default")
-  isActive        Boolean      @default(true) @map("is_active")
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String        @id @default(uuid()) @db.Uuid
+  workspaceId      String?       @map("workspace_id") @db.Uuid
+  countryProfileId String?       @map("country_profile_id") @db.Uuid
+  documentType     DocumentType? @map("document_type")
+  category         String?       @db.VarChar(150)
+  name             String        @db.VarChar(255)
+  description      String?       @db.Text
+  templateContent  String?       @map("template_content") @db.Text
+  contentSections  Json?         @map("content_sections")
+  aiInstructions   String?       @map("ai_instructions") @db.Text
+  tone             String?       @db.VarChar(100)
+  languageName     String?       @map("language_name") @db.VarChar(100)
+  languageId       String?       @map("language_id") @db.Uuid
+  status           String        @default("draft") @db.VarChar(20)
+  brandingEnabled  Boolean       @default(false) @map("branding_enabled")
+  isSystemDefault  Boolean       @default(false) @map("is_system_default")
+  isActive         Boolean       @default(true) @map("is_active")
+  usageCount       Int           @default(0) @map("usage_count")
+  lastUsedAt       DateTime?     @map("last_used_at") @db.Timestamptz(6)
+  createdByUserId  String?       @map("created_by_user_id") @db.Uuid
+  modifiedByUserId String?       @map("modified_by_user_id") @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  workspace      Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  countryProfile CountryProfile? @relation(fields: [countryProfileId], references: [id], onDelete: SetNull)
-  language       Language?       @relation(fields: [languageId], references: [id])
+  workspace        Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  countryProfile   CountryProfile? @relation(fields: [countryProfileId], references: [id], onDelete: SetNull)
+  language         Language?       @relation(fields: [languageId], references: [id])
+  createdByUser    User?           @relation("DocumentTemplateCreatedBy", fields: [createdByUserId], references: [id])
+  modifiedByUser   User?           @relation("DocumentTemplateModifiedBy", fields: [modifiedByUserId], references: [id])
 
-  generatedDocuments GeneratedDocument[]
+  generatedDocuments  GeneratedDocument[]
+  placeholders        AiTemplatePlaceholder[]
+  contextRequirements AiTemplateContextRequirement[]
 
+  @@index([workspaceId])
+  @@index([status])
+  @@index([category])
   @@map("document_templates")
+}
+
+model AiTemplatePlaceholder {
+  id              String   @id @default(uuid()) @db.Uuid
+  templateId      String   @map("template_id") @db.Uuid
+  placeholderName String   @map("placeholder_name") @db.VarChar(100)
+  sourceType      String   @map("source_type") @db.VarChar(50)
+  required        Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  template DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@map("ai_template_placeholders")
+}
+
+model AiTemplateContextRequirement {
+  id         String   @id @default(uuid()) @db.Uuid
+  templateId String   @map("template_id") @db.Uuid
+  sourceType String   @map("source_type") @db.VarChar(50)
+  required   Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  template DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@map("ai_template_context_requirements")
+}
+
+model WorkspaceBrandingProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @unique @map("workspace_id") @db.Uuid
+  profileName    String   @default("Default") @map("profile_name") @db.VarChar(100)
+  logoUrl        String?  @map("logo_url") @db.Text
+  primaryColor   String?  @map("primary_color") @db.VarChar(20)
+  secondaryColor String?  @map("secondary_color") @db.VarChar(20)
+  fontName       String?  @map("font_name") @db.VarChar(100)
+  companyFooter  String?  @map("company_footer") @db.Text
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_branding_profiles")
 }
 
 model GeneratedDocument {
