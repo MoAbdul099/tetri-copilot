@@ -372,6 +372,7 @@ model User {
   scheduledReports              ScheduledReport[]
   reportExportJobs              ReportExportJob[]
   reportExecutionLogs           ReportExecutionLog[]
+  createdAiDocuments            AiDocument[]         @relation("AiDocumentCreatedBy")
 
   @@index([clerkUserId])
   @@index([email])
@@ -469,6 +470,10 @@ model Workspace {
   securityEvents               SecurityEvent[]
   securityAlerts               SecurityAlert[]
   securityRules                SecurityRule[]
+  aiDocuments                  AiDocument[]
+  aiDocumentContextSources     AiDocumentContextSource[]
+  aiDocumentRelations          AiDocumentRelation[]
+  aiDocumentGenerationLogs     AiDocumentGenerationLog[]
 
   @@map("workspaces")
 }
@@ -3661,6 +3666,99 @@ model ExpenseAiHistory {
   @@index([expenseId])
   @@index([workspaceId])
   @@map("expense_ai_history")
+}
+
+// =========================================================
+// SLICE 17.1 — AI DOCUMENT GENERATION FOUNDATION
+// =========================================================
+
+model AiDocument {
+  id               String    @id @default(uuid()) @db.Uuid
+  workspaceId      String    @map("workspace_id") @db.Uuid
+  title            String    @db.VarChar(500)
+  category         String    @db.VarChar(100)
+  status           String    @default("draft") @db.VarChar(20)
+  language         String    @default("English") @db.VarChar(100)
+  tone             String?   @db.VarChar(100)
+  purpose          String?   @db.Text
+  promptText       String?   @map("prompt_text") @db.Text
+  generatedContent String?   @map("generated_content") @db.Text
+  finalContent     String?   @map("final_content") @db.Text
+  provider         String?   @db.VarChar(100)
+  model            String?   @db.VarChar(100)
+  createdByUserId  String?   @map("created_by_user_id") @db.Uuid
+  isDeleted        Boolean   @default(false) @map("is_deleted")
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdByUser User?     @relation("AiDocumentCreatedBy", fields: [createdByUserId], references: [id])
+
+  contextSources AiDocumentContextSource[]
+  relations      AiDocumentRelation[]
+  generationLogs AiDocumentGenerationLog[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([category])
+  @@index([createdByUserId])
+  @@map("ai_documents")
+}
+
+model AiDocumentContextSource {
+  id             String   @id @default(uuid()) @db.Uuid
+  documentId     String   @map("document_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  sourceType     String   @map("source_type") @db.VarChar(100)
+  sourceRecordId String?  @map("source_record_id") @db.Uuid
+  sourceName     String?  @map("source_name") @db.VarChar(500)
+  selectedById   String?  @map("selected_by_id") @db.Uuid
+  selectedAt     DateTime @default(now()) @map("selected_at") @db.Timestamptz(6)
+
+  document  AiDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([workspaceId])
+  @@map("ai_document_context_sources")
+}
+
+model AiDocumentRelation {
+  id           String  @id @default(uuid()) @db.Uuid
+  documentId   String  @unique @map("document_id") @db.Uuid
+  workspaceId  String  @map("workspace_id") @db.Uuid
+  customerId   String? @map("customer_id") @db.Uuid
+  supplierId   String? @map("supplier_id") @db.Uuid
+  invoiceId    String? @map("invoice_id") @db.Uuid
+  expenseId    String? @map("expense_id") @db.Uuid
+  complianceId String? @map("compliance_id") @db.Uuid
+
+  document  AiDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("ai_document_relations")
+}
+
+model AiDocumentGenerationLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  documentId    String   @map("document_id") @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  provider      String?  @db.VarChar(100)
+  model         String?  @db.VarChar(100)
+  inputTokens   Int?     @map("input_tokens")
+  outputTokens  Int?     @map("output_tokens")
+  durationMs    Int?     @map("duration_ms")
+  generatedById String?  @map("generated_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  document  AiDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([workspaceId])
+  @@map("ai_document_generation_logs")
 }
 
 model WorkspaceAiExpenseSettings {

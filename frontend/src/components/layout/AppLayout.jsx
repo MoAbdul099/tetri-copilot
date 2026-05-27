@@ -108,7 +108,8 @@ const NAV_CONFIG = [
     label: 'Documents',
     groupIcon: HardDrive,
     items: [
-      { to: '/files', label: 'Files', icon: FolderOpen },
+      { to: '/files',        label: 'Files',        icon: FolderOpen },
+      { to: '/ai-documents', label: 'AI Documents', icon: Sparkles },
     ],
   },
   {

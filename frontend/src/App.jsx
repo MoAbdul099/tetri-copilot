@@ -45,6 +45,9 @@ import ExpenseInsightsDashboardPage from './features/expense-insights/pages/Expe
 import BudgetsPage from './features/budgets/pages/BudgetsPage.jsx';
 import RecurringExpensesPage from './features/recurring-expenses/pages/RecurringExpensesPage.jsx';
 import FilesRepositoryPage from './features/files/pages/FilesRepositoryPage.jsx';
+import AiDocumentsPage from './features/ai-documents/pages/AiDocumentsPage.jsx';
+import AiDocumentGeneratePage from './features/ai-documents/pages/AiDocumentGeneratePage.jsx';
+import AiDocumentDetailPage from './features/ai-documents/pages/AiDocumentDetailPage.jsx';
 import CompliancePage from './features/compliance/pages/CompliancePage.jsx';
 import TemplatesPage from './features/compliance/pages/TemplatesPage.jsx';
 import TemplateFormPage from './features/compliance/pages/TemplateFormPage.jsx';
@@ -157,6 +160,9 @@ export default function App() {
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />
           <Route path="/files" element={<FilesRepositoryPage />} />
+          <Route path="/ai-documents" element={<AiDocumentsPage />} />
+          <Route path="/ai-documents/generate" element={<AiDocumentGeneratePage />} />
+          <Route path="/ai-documents/:id" element={<AiDocumentDetailPage />} />
           <Route path="/compliance" element={<CompliancePage />} />
           <Route path="/compliance/templates" element={<TemplatesPage />} />
           <Route path="/compliance/templates/new" element={<TemplateFormPage />} />
