@@ -92,6 +92,7 @@ const NAV_CONFIG = [
     groupIcon: Scale,
     items: [
       { to: '/compliance',             label: 'Overview',    icon: ShieldCheck },
+      { to: '/compliance/assistant',   label: 'AI Assistant', icon: Bot },
       { to: '/compliance/templates',   label: 'Templates',   icon: ClipboardList },
       { to: '/compliance/occurrences', label: 'Occurrences', icon: CheckSquare },
       { to: '/compliance/calendar',    label: 'Calendar',    icon: Calendar },

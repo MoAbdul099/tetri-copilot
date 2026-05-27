@@ -478,6 +478,7 @@ model Workspace {
   aiDocumentRelations          AiDocumentRelation[]
   aiDocumentGenerationLogs     AiDocumentGenerationLog[]
   brandingProfiles             WorkspaceBrandingProfile[]
+  aiComplianceConversations    AiComplianceConversation[]
 
   @@map("workspaces")
 }
@@ -3938,4 +3939,55 @@ model WorkspaceAiExpenseSettings {
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("workspace_ai_expense_settings")
+}
+
+// =========================================================
+// SLICE 18.1 — AI COMPLIANCE ASSISTANT FOUNDATION
+// =========================================================
+
+model AiComplianceConversation {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  userId      String   @map("user_id") @db.VarChar(200)
+  title       String   @default("New Conversation") @db.VarChar(300)
+  status      String   @default("active") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages  AiComplianceMessage[]
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("ai_compliance_conversations")
+}
+
+model AiComplianceMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  role           String   @db.VarChar(20)
+  content        String   @db.Text
+  sources        Json?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation AiComplianceConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  feedback     AiComplianceFeedback[]
+
+  @@index([conversationId])
+  @@map("ai_compliance_messages")
+}
+
+model AiComplianceFeedback {
+  id           String   @id @default(uuid()) @db.Uuid
+  messageId    String   @map("message_id") @db.Uuid
+  userId       String   @map("user_id") @db.VarChar(200)
+  feedbackType String   @map("feedback_type") @db.VarChar(20)
+  comment      String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  message AiComplianceMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("ai_compliance_feedback")
 }
