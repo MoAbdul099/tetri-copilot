@@ -18,5 +18,7 @@ router.post('/check-duplicates',     ctrl.checkDuplicates);
 router.post('/categorize',           ctrl.suggestCategory);
 router.post('/search',               ctrl.nlSearch);
 router.get('/recommendations',       ctrl.getRecommendations);
+router.get('/vendors',               ctrl.getVendors);
+router.post('/summary',              ctrl.generateSummary);
 
 module.exports = router;

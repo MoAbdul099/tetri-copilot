@@ -7,11 +7,14 @@ import {
 import {
   Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle,
   RefreshCw, Search, Lightbulb, Target, ArrowRight, Zap,
+  Sparkles, Store, BookOpen,
 } from 'lucide-react';
 import {
   getDashboard, getAnalytics, getInsights, generateInsights,
   getForecast, getAnomalies, detectAnomalies, getRecommendations, naturalLanguageSearch,
+  getVendors, generateSummary,
 } from '../services/expenseInsightsService.js';
+import { aiGetLearningMetrics } from '../../expenses/services/expensesService.js';
 
 const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -44,16 +47,23 @@ export default function ExpenseInsightsDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [searching, setSearching] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [learningMetrics, setLearningMetrics] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, a, i, f, an, r] = await Promise.all([
+      const [s, a, i, f, an, r, v, lm] = await Promise.all([
         getDashboard(), getAnalytics({ months: 3 }), getInsights(),
         getForecast(), getAnomalies(), getRecommendations(),
+        getVendors().catch(() => []),
+        aiGetLearningMetrics().catch(() => null),
       ]);
       setStats(s); setAnalytics(a); setInsights(i);
       setForecast(f); setAnomalies(an); setRecs(r);
+      setVendors(v); setLearningMetrics(lm);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
 
@@ -67,6 +77,11 @@ export default function ExpenseInsightsDashboardPage() {
   const handleDetectAnomalies = async () => {
     setDetecting(true);
     try { const a = await detectAnomalies(); setAnomalies(a); } catch { /* ignore */ } finally { setDetecting(false); }
+  };
+
+  const handleGenerateSummary = async () => {
+    setSummaryLoading(true);
+    try { const s = await generateSummary(); setAiSummary(s); } catch { /* ignore */ } finally { setSummaryLoading(false); }
   };
 
   const handleSearch = async (e) => {
@@ -356,6 +371,157 @@ export default function ExpenseInsightsDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* AI Executive Summary */}
+      <div className="bg-tetri-surface border border-tetri-border rounded-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-violet-500" />
+            <h2 className="font-semibold text-tetri-text">AI Executive Summary</h2>
+          </div>
+          <button
+            onClick={handleGenerateSummary}
+            disabled={summaryLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50"
+          >
+            <Sparkles className="w-3 h-3" />
+            {summaryLoading ? 'Generating…' : 'Generate Summary'}
+          </button>
+        </div>
+        {aiSummary ? (
+          <div className="space-y-4">
+            <p className="text-sm text-tetri-text leading-relaxed">{aiSummary.summary}</p>
+            {aiSummary.keyMetrics?.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {aiSummary.keyMetrics.map((m, i) => (
+                  <div key={i} className="bg-tetri-bg rounded-lg p-3 text-center">
+                    <p className="text-xs text-tetri-muted mb-1">{m.label}</p>
+                    <p className="text-sm font-bold text-tetri-text">{m.value}</p>
+                    {m.trend && (
+                      <span className={`text-[10px] font-medium ${m.trend === 'up' ? 'text-red-500' : m.trend === 'down' ? 'text-green-600' : 'text-tetri-muted'}`}>
+                        {m.trend === 'up' ? '↑ Rising' : m.trend === 'down' ? '↓ Falling' : '→ Stable'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {aiSummary.risks?.length > 0 && (
+              <div className="space-y-1.5">
+                {aiSummary.risks.map((r, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                    {r}
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-tetri-neutral">Generated {new Date(aiSummary.generatedAt).toLocaleString()}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-tetri-muted">
+            Click <strong>Generate Summary</strong> to get an AI-written executive overview of this month's expenses.
+          </p>
+        )}
+      </div>
+
+      {/* Vendor Intelligence + Learning Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Vendor Intelligence */}
+        <div className="bg-tetri-surface border border-tetri-border rounded-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Store className="w-4 h-4 text-cyan-500" />
+            <h2 className="font-semibold text-tetri-text">Vendor Intelligence</h2>
+            <span className="text-xs text-tetri-muted ml-auto">Month-over-month</span>
+          </div>
+          {vendors.length ? (
+            <div className="space-y-2">
+              {vendors.slice(0, 8).map((v) => (
+                <div key={v.supplierId} className="flex items-center justify-between py-2 border-b border-tetri-border last:border-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-tetri-text truncate">{v.name}</p>
+                    <p className="text-xs text-tetri-muted">{v.count} expense{v.count !== 1 ? 's' : ''} · this month</p>
+                  </div>
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <p className="text-sm font-semibold text-tetri-text">{fmt(v.currentMonth)}</p>
+                    {v.momChange !== null ? (
+                      <p className={`text-xs font-medium ${v.momChange > 0 ? 'text-red-500' : v.momChange < 0 ? 'text-green-600' : 'text-tetri-muted'}`}>
+                        {v.momChange > 0 ? '+' : ''}{v.momChange}% MoM
+                      </p>
+                    ) : (
+                      <p className="text-xs text-tetri-neutral">New vendor</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-tetri-muted text-sm text-center py-8">No vendor data for this month.</p>
+          )}
+        </div>
+
+        {/* AI Learning Metrics */}
+        <div className="bg-tetri-surface border border-tetri-border rounded-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-4 h-4 text-violet-500" />
+            <h2 className="font-semibold text-tetri-text">AI Learning Metrics</h2>
+          </div>
+          {learningMetrics && learningMetrics.total > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Total Decisions',  value: learningMetrics.total,          color: 'text-tetri-text' },
+                  { label: 'Acceptance Rate',  value: `${learningMetrics.acceptanceRate}%`,  color: learningMetrics.acceptanceRate >= 70 ? 'text-green-600' : 'text-amber-600' },
+                  { label: 'Avg Confidence',   value: `${learningMetrics.avgConfidence}%`,   color: learningMetrics.avgConfidence >= 80 ? 'text-green-600' : 'text-tetri-text' },
+                  { label: 'Correction Rate',  value: `${learningMetrics.correctionRate}%`,  color: learningMetrics.correctionRate < 20 ? 'text-green-600' : 'text-amber-600' },
+                ].map((m) => (
+                  <div key={m.label} className="bg-tetri-bg rounded-lg p-3 text-center">
+                    <p className="text-xs text-tetri-muted mb-1">{m.label}</p>
+                    <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-xs text-tetri-muted font-medium mb-2">Confidence Distribution</p>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'High (≥90%)',   value: learningMetrics.confidenceDistribution?.high || 0, color: 'bg-green-500' },
+                    { label: 'Good (75–89%)', value: learningMetrics.confidenceDistribution?.good || 0, color: 'bg-blue-500'  },
+                    { label: 'Low (<75%)',    value: learningMetrics.confidenceDistribution?.low  || 0, color: 'bg-amber-400' },
+                  ].map((row) => {
+                    const total = (learningMetrics.confidenceDistribution?.high || 0) +
+                                  (learningMetrics.confidenceDistribution?.good || 0) +
+                                  (learningMetrics.confidenceDistribution?.low  || 0);
+                    const pct = total > 0 ? Math.round((row.value / total) * 100) : 0;
+                    return (
+                      <div key={row.label} className="flex items-center gap-2 text-xs">
+                        <span className="w-20 text-tetri-muted flex-shrink-0">{row.label}</span>
+                        <div className="flex-1 bg-tetri-bg rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${row.color}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="w-6 text-right text-tetri-muted">{row.value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full">{learningMetrics.accepted} accepted</span>
+                <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full">{learningMetrics.rejected} rejected</span>
+                {learningMetrics.corrected > 0 && (
+                  <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full">{learningMetrics.corrected} corrected</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 space-y-2">
+              <Brain className="w-8 h-8 text-violet-300 mx-auto" />
+              <p className="text-tetri-muted text-sm">No AI categorization data yet.</p>
+              <p className="text-tetri-neutral text-xs">Use the AI Category Suggestion in the expense form to start building learning data.</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Quick nav */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

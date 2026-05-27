@@ -229,10 +229,62 @@ const searchExpenses = (workspaceId, where, { limit = 50 } = {}) =>
     take: limit,
   });
 
+const getVendorIntelligence = async (workspaceId, { limit = 10 } = {}) => {
+  const now            = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const baseWhere = { workspaceId, isDeleted: false, status: { notIn: ['cancelled', 'rejected'] }, supplierId: { not: null } };
+
+  const [thisMonth, lastMonth] = await Promise.all([
+    prisma.expense.groupBy({
+      by: ['supplierId'],
+      where: { ...baseWhere, expenseDate: { gte: thisMonthStart } },
+      _sum:   { amount: true },
+      _count: { id: true },
+      orderBy: { _sum: { amount: 'desc' } },
+      take: limit,
+    }),
+    prisma.expense.groupBy({
+      by: ['supplierId'],
+      where: { ...baseWhere, expenseDate: { gte: lastMonthStart, lte: lastMonthEnd } },
+      _sum:   { amount: true },
+      _count: { id: true },
+    }),
+  ]);
+
+  const supplierIds = [...new Set([...thisMonth, ...lastMonth].map(r => r.supplierId).filter(Boolean))];
+  const suppliers   = await prisma.supplier.findMany({
+    where:  { id: { in: supplierIds } },
+    select: { id: true, name: true, category: true },
+  });
+  const sMap = Object.fromEntries(suppliers.map(s => [s.id, s]));
+
+  const lastMonthMap = Object.fromEntries(lastMonth.map(r => [r.supplierId, Number(r._sum.amount || 0)]));
+
+  return thisMonth.map(r => {
+    const sup       = sMap[r.supplierId] || {};
+    const current   = Number(r._sum.amount || 0);
+    const previous  = lastMonthMap[r.supplierId] || 0;
+    const momChange = previous > 0 ? ((current - previous) / previous) * 100 : null;
+    return {
+      supplierId:   r.supplierId,
+      name:         sup.name || 'Unknown',
+      category:     sup.category || null,
+      currentMonth: current,
+      lastMonth:    previous,
+      count:        r._count.id,
+      momChange:    momChange !== null ? parseFloat(momChange.toFixed(1)) : null,
+    };
+  });
+};
+
 module.exports = {
   getDashboardStats, getByCategory, getByMonth, getByDepartment, getBySupplier, getByEmployee,
   findPotentialDuplicates, getCategoryAverage, getPastExpensesBySupplier,
   getInsights, saveInsights, clearInsights,
   getAnomalies, markAnomalyReviewed, saveAnomalies, clearAnomalies,
   getRecentExpenses, getCategories, searchExpenses,
+  getVendorIntelligence,
 };

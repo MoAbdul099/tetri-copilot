@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PageHeader from '../../../components/shared/PageHeader.jsx';
@@ -11,6 +11,7 @@ import {
   listCategories, listSuppliers, createSupplier,
   aiCategorize,
 } from '../services/expensesService.js';
+import { checkDuplicates } from '../../expense-insights/services/expenseInsightsService.js';
 
 const EXPENSE_TYPES = [
   { value: 'company',    label: 'Company Expense' },
@@ -117,6 +118,8 @@ export default function ExpenseFormPage() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [showQuickSupplier, setShowQuickSupplier] = useState(false);
+  const [duplicateAlert, setDuplicateAlert] = useState(null);
+  const dupeTimerRef = useRef(null);
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -151,6 +154,29 @@ export default function ExpenseFormPage() {
       .catch(() => showToast('error', 'Failed to load expense'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
+
+  // Debounced duplicate detection
+  useEffect(() => {
+    if (!form.amount || !form.expenseDate) {
+      setDuplicateAlert(null);
+      return;
+    }
+    if (dupeTimerRef.current) clearTimeout(dupeTimerRef.current);
+    dupeTimerRef.current = setTimeout(async () => {
+      try {
+        const supplierName = suppliers.find((s) => s.id === form.supplierId)?.name || '';
+        const result = await checkDuplicates({
+          supplierId:  form.supplierId || null,
+          vendorName:  supplierName || form.description || '',
+          amount:      parseFloat(form.amount),
+          expenseDate: form.expenseDate,
+          expenseId:   id || null,
+        });
+        setDuplicateAlert(result?.isDuplicate ? result : null);
+      } catch { setDuplicateAlert(null); }
+    }, 900);
+    return () => { if (dupeTimerRef.current) clearTimeout(dupeTimerRef.current); };
+  }, [form.amount, form.supplierId, form.expenseDate, id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -275,6 +301,32 @@ export default function ExpenseFormPage() {
               <Input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Brief description of the expense" required />
             </Field>
           </div>
+          {duplicateAlert && (
+            <div className="md:col-span-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-800">Potential Duplicate Detected</p>
+                <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                  {duplicateAlert.duplicates.length} similar expense{duplicateAlert.duplicates.length !== 1 ? 's' : ''} found with the same amount and vendor.
+                  Review before saving.
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {duplicateAlert.duplicates.slice(0, 3).map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => window.open(`/expenses/${d.id}`, '_blank')}
+                      className="text-xs px-2 py-0.5 bg-amber-100 border border-amber-300 text-amber-800 rounded-full hover:bg-amber-200 flex items-center gap-1 transition-colors"
+                    >
+                      {d.expenseNumber || d.id.slice(0, 8)}
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="md:col-span-2">
             <AiCategorizationPanel
               description={form.description}

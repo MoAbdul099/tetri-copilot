@@ -175,5 +175,10 @@ export const aiUpdateSettings = async (payload) => {
   return data.data;
 };
 
+export const aiGetLearningMetrics = async () => {
+  const { data } = await api.get('/api/v1/expenses/ai/learning');
+  return data.data;
+};
+
 // Namespace object for dynamic import in AiCategorizationPanel
 export const expensesService = { aiAccept, aiReject };

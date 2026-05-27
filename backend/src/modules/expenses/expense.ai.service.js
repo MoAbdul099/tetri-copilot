@@ -39,13 +39,27 @@ function parseAiResponse(raw) {
 }
 
 // ── Prompt builder ──────────────────────────────────────────────────────────
-function buildCategorizationPrompt(categories, { description, vendorName, amount, currency, notes }) {
-  // Names only — descriptions add tokens without improving accuracy
+function buildCategorizationPrompt(categories, { description, vendorName, amount, currency, notes }, learningPatterns = []) {
   const catList = categories.map((c) => c.name).join(', ');
+
+  // Inject workspace-specific learning patterns for this vendor
+  let patternSection = '';
+  if (learningPatterns.length) {
+    const vendor = (vendorName || description || '').toLowerCase();
+    const relevant = learningPatterns
+      .filter((p) => {
+        const pv = p.vendor.toLowerCase();
+        return pv.includes(vendor.slice(0, 6)) || vendor.includes(pv.slice(0, 6));
+      })
+      .slice(0, 5);
+    if (relevant.length) {
+      patternSection = `\n\nWorkspace history: ${relevant.map((p) => `"${p.vendor}" → ${p.categoryName}${p.wasCorrected ? ' (user corrected AI)' : ''}`).join('; ')}`;
+    }
+  }
 
   return `Categorize this business expense. Reply with JSON only.
 
-Categories: ${catList}
+Categories: ${catList}${patternSection}
 
 Expense: ${[description, vendorName, amount ? `${currency || 'USD'} ${amount}` : ''].filter(Boolean).join(' | ')}
 
@@ -57,7 +71,10 @@ Rules: categoryName must exactly match a category above. Up to 3 alternatives, d
 
 // ── Main categorization logic ───────────────────────────────────────────────
 async function categorize({ workspaceId, userId, description, vendorName, amount, currency, notes, expenseId }) {
-  const categories = await aiRepo.getCategories(workspaceId);
+  const [categories, settings] = await Promise.all([
+    aiRepo.getCategories(workspaceId),
+    aiRepo.getSettings(workspaceId),
+  ]);
 
   if (!categories.length) {
     return {
@@ -68,7 +85,13 @@ async function categorize({ workspaceId, userId, description, vendorName, amount
     };
   }
 
-  const prompt = buildCategorizationPrompt(categories, { description, vendorName, amount, currency, notes });
+  // Inject workspace learning patterns when learning is enabled (default: on)
+  const learningEnabled = settings?.learningEnabled !== false;
+  const learningPatterns = learningEnabled
+    ? await aiRepo.getLearningPatterns(workspaceId, { limit: 30 }).catch(() => [])
+    : [];
+
+  const prompt = buildCategorizationPrompt(categories, { description, vendorName, amount, currency, notes }, learningPatterns);
 
   const result = await aiSvc.execute({
     workspaceId,
@@ -180,9 +203,10 @@ module.exports = {
   categorize,
   acceptRecommendation,
   rejectRecommendation,
-  getHistory:          (expenseId, opts)  => aiRepo.getHistory(expenseId, opts),
-  getWorkspaceHistory: (workspaceId, opts) => aiRepo.getWorkspaceHistory(workspaceId, opts),
-  getSettings:         (workspaceId)       => aiRepo.getSettings(workspaceId),
-  upsertSettings:      (workspaceId, data) => aiRepo.upsertSettings(workspaceId, data),
-  getLatestRecommendation: (expenseId)     => aiRepo.getLatestRecommendation(expenseId),
+  getHistory:           (expenseId, opts)   => aiRepo.getHistory(expenseId, opts),
+  getWorkspaceHistory:  (workspaceId, opts)  => aiRepo.getWorkspaceHistory(workspaceId, opts),
+  getSettings:          (workspaceId)        => aiRepo.getSettings(workspaceId),
+  upsertSettings:       (workspaceId, data)  => aiRepo.upsertSettings(workspaceId, data),
+  getLatestRecommendation: (expenseId)       => aiRepo.getLatestRecommendation(expenseId),
+  getLearningMetrics:   (workspaceId)        => aiRepo.getLearningMetrics(workspaceId),
 };

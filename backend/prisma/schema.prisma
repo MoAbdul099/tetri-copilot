@@ -3670,6 +3670,10 @@ model WorkspaceAiExpenseSettings {
   confidenceThreshold Int      @default(60) @map("confidence_threshold")
   autoSuggest         Boolean  @default(true) @map("auto_suggest")
   alternativeCount    Int      @default(3) @map("alternative_count")
+  duplicateDetection  Boolean  @default(true) @map("duplicate_detection")
+  anomalyDetection    Boolean  @default(true) @map("anomaly_detection")
+  insightGeneration   Boolean  @default(true) @map("insight_generation")
+  summaryEnabled      Boolean  @default(true) @map("summary_enabled")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

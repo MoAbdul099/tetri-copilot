@@ -21,6 +21,9 @@ router.get('/:expenseId/history', ctrl.getExpenseHistory);
 // GET /api/v1/expenses/ai/:expenseId/recommendation
 router.get('/:expenseId/recommendation', ctrl.getLatestRecommendation);
 
+// GET /api/v1/expenses/ai/learning
+router.get('/learning', ctrl.getLearningMetrics);
+
 // GET /api/v1/expenses/ai/settings
 router.get('/settings', ctrl.getSettings);
 

@@ -132,6 +132,16 @@ const expenseAiController = {
       return error(res, 'Failed to fetch recommendation', 500);
     }
   },
+
+  async getLearningMetrics(req, res) {
+    try {
+      const metrics = await aiService.getLearningMetrics(req.workspaceId);
+      return success(res, metrics);
+    } catch (err) {
+      console.error('[expense.ai] learning metrics error:', err);
+      return error(res, 'Failed to fetch learning metrics', 500);
+    }
+  },
 };
 
 module.exports = expenseAiController;

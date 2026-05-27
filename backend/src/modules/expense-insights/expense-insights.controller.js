@@ -13,10 +13,13 @@ const getAnomalies       = async (req, res, next) => { try { success(res, await 
 const reviewAnomaly      = async (req, res, next) => { try { success(res, await svc.reviewAnomaly(req.workspaceId, req.params.id)); } catch (e) { next(e); } };
 const nlSearch           = async (req, res, next) => { try { success(res, await svc.naturalLanguageSearch(req.workspaceId, req.body)); } catch (e) { next(e); } };
 const getRecommendations = async (req, res, next) => { try { success(res, await svc.getRecommendations(req.workspaceId)); } catch (e) { next(e); } };
+const getVendors         = async (req, res, next) => { try { success(res, await svc.getVendors(req.workspaceId)); } catch (e) { next(e); } };
+const generateSummary    = async (req, res, next) => { try { success(res, await svc.generateSummary(req.workspaceId)); } catch (e) { next(e); } };
 
 module.exports = {
   getDashboard, getAnalytics, checkDuplicates, suggestCategory,
   getInsights, generateInsights, getForecast,
   detectAnomalies, getAnomalies, reviewAnomaly,
   nlSearch, getRecommendations,
+  getVendors, generateSummary,
 };

@@ -1,5 +1,6 @@
-const repo = require('./expense-insights.repository');
-const ai   = require('../../lib/ai');
+const repo   = require('./expense-insights.repository');
+const ai     = require('../../lib/ai');
+const aiSvc  = require('../ai/ai.service');
 
 const getDashboard = (workspaceId) => repo.getDashboardStats(workspaceId);
 
@@ -360,9 +361,74 @@ const getRecommendations = async (workspaceId) => {
   return recommendations;
 };
 
+const getVendors = (workspaceId) => repo.getVendorIntelligence(workspaceId);
+
+const generateSummary = async (workspaceId) => {
+  const [stats, byCategory, byMonth, anomalies] = await Promise.all([
+    repo.getDashboardStats(workspaceId),
+    repo.getByCategory(workspaceId, { months: 1 }),
+    repo.getByMonth(workspaceId, { months: 2 }),
+    repo.getAnomalies(workspaceId),
+  ]);
+
+  if (!stats.monthSpend) {
+    return { summary: 'No expense data recorded this month.', keyMetrics: [], risks: [], generatedAt: new Date() };
+  }
+
+  const topCats  = byCategory.slice(0, 3).map(c => `${c.name} (${Number(c.amount).toFixed(0)})`).join(', ');
+  const prev     = byMonth[byMonth.length - 2];
+  const curr     = byMonth[byMonth.length - 1];
+  const momChange = prev && prev.amount > 0
+    ? parseFloat(((curr?.amount - prev.amount) / prev.amount * 100).toFixed(1))
+    : null;
+  const unreviewedAnomalies = anomalies.filter(a => !a.isReviewed).length;
+
+  const context = [
+    `Total spend this month: ${Number(stats.monthSpend).toFixed(2)}`,
+    `Top categories: ${topCats || 'N/A'}`,
+    `Month-over-month change: ${momChange !== null ? `${momChange > 0 ? '+' : ''}${momChange}%` : 'N/A'}`,
+    `Pending approval: ${stats.pendingApproval}`,
+    `Unreviewed anomalies: ${unreviewedAnomalies}`,
+    `Outstanding reimbursements: ${Number(stats.outstandingReimbursements).toFixed(2)}`,
+  ].join('\n');
+
+  const prompt = `You are a financial analyst AI. Write a concise 3-sentence executive expense summary. Be professional and specific. Highlight key trends and any risks.\n\n${context}\n\nReturn JSON only:\n{"summary":"<3 sentences>","keyMetrics":[{"label":"<label>","value":"<value>","trend":"up|down|stable"}],"risks":["<risk or empty array>"]}`;
+
+  let parsed = null;
+  try {
+    const result = await aiSvc.execute({
+      workspaceId,
+      userId:   null,
+      feature:  'expense_summary',
+      messages: [{ role: 'user', content: prompt }],
+      options:  { maxTokens: 500, temperature: 0.2, structured: true },
+    });
+    parsed = (() => {
+      try {
+        const text = (result.response || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+        return JSON.parse(text);
+      } catch { return null; }
+    })();
+  } catch { /* fallback to rule-based summary */ }
+
+  return {
+    summary:    parsed?.summary    || `This month's total expenses are ${Number(stats.monthSpend).toFixed(2)}. Top spending areas include ${topCats || 'various categories'}.${momChange !== null ? ` Spending has ${momChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(momChange)}% vs last month.` : ''}`,
+    keyMetrics: parsed?.keyMetrics || [
+      { label: 'Month Spend',      value: Number(stats.monthSpend).toFixed(2),            trend: momChange > 0 ? 'up' : momChange < 0 ? 'down' : 'stable' },
+      { label: 'Pending Approval', value: String(stats.pendingApproval),                  trend: stats.pendingApproval > 5 ? 'up' : 'stable' },
+      { label: 'Anomalies',        value: String(unreviewedAnomalies),                    trend: unreviewedAnomalies > 0 ? 'up' : 'stable' },
+    ],
+    risks:      parsed?.risks      || (unreviewedAnomalies > 0 ? [`${unreviewedAnomalies} unreviewed spending anomalies detected`] : []),
+    generatedAt: new Date(),
+    monthSpend:  stats.monthSpend,
+    momChange,
+  };
+};
+
 module.exports = {
   getDashboard, getAnalytics, checkDuplicates, suggestCategory,
   getInsights, generateInsights, getForecast,
   detectAnomalies, getAnomalies, reviewAnomaly,
   naturalLanguageSearch, getRecommendations,
+  getVendors, generateSummary,
 };

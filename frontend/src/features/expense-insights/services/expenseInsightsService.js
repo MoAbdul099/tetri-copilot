@@ -14,3 +14,5 @@ export const checkDuplicates      = (d)     => api.post(`${BASE}/check-duplicate
 export const suggestCategory      = (d)     => api.post(`${BASE}/categorize`, d).then(r => r.data.data);
 export const naturalLanguageSearch= (d)     => api.post(`${BASE}/search`, d).then(r => r.data.data);
 export const getRecommendations   = ()      => api.get(`${BASE}/recommendations`).then(r => r.data.data);
+export const getVendors           = ()      => api.get(`${BASE}/vendors`).then(r => r.data.data);
+export const generateSummary      = ()      => api.post(`${BASE}/summary`).then(r => r.data.data);
