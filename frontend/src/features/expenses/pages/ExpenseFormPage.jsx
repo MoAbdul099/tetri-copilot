@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PageHeader from '../../../components/shared/PageHeader.jsx';
 import { useToast } from '../../../components/shared/Toast.jsx';
+import AiCategorizationPanel from '../components/AiCategorizationPanel.jsx';
 import {
   getExpense, createExpense, updateExpense,
   listCategories, listSuppliers, createSupplier,
+  aiCategorize,
 } from '../services/expensesService.js';
 
 const EXPENSE_TYPES = [
@@ -272,6 +274,20 @@ export default function ExpenseFormPage() {
             <Field label="Description" required>
               <Input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Brief description of the expense" required />
             </Field>
+          </div>
+          <div className="md:col-span-2">
+            <AiCategorizationPanel
+              description={form.description}
+              vendorName={suppliers.find((s) => s.id === form.supplierId)?.name || ''}
+              amount={form.amount}
+              currency={form.currencyCode}
+              notes={form.notes}
+              expenseId={id || null}
+              onCategorize={aiCategorize}
+              onAccept={({ categoryId }) => {
+                if (categoryId) set('categoryId', categoryId);
+              }}
+            />
           </div>
         </Section>
 

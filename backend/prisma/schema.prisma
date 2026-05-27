@@ -1125,6 +1125,7 @@ model Expense {
   approvalWorkflow      ApprovalWorkflow?
   reimbursementRequests ReimbursementRequest[]
   anomalies             ExpenseAnomaly[]       @relation("ExpenseAnomalyExpense")
+  aiRecommendations     ExpenseAiRecommendation[]
 
   @@unique([workspaceId, expenseNumber])
   @@index([workspaceId])
@@ -3618,4 +3619,59 @@ model AiFileReference {
   @@index([workspaceId])
   @@index([sessionId])
   @@map("ai_file_references")
+}
+
+// =========================================================
+// SLICE 16.1 — AI EXPENSE CATEGORIZATION FOUNDATION
+// =========================================================
+
+model ExpenseAiRecommendation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  expenseId             String   @map("expense_id") @db.Uuid
+  workspaceId           String   @map("workspace_id") @db.Uuid
+  suggestedCategoryId   String?  @map("suggested_category_id") @db.Uuid
+  suggestedCategoryName String   @map("suggested_category_name") @db.VarChar(150)
+  confidence            Decimal  @db.Decimal(5, 2)
+  alternatives          Json?
+  reasoning             String?  @db.Text
+  provider              String?  @db.VarChar(50)
+  model                 String?  @db.VarChar(100)
+  status                String   @default("pending") @db.VarChar(20)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+  @@index([workspaceId])
+  @@map("expense_ai_recommendations")
+}
+
+model ExpenseAiHistory {
+  id                  String   @id @default(uuid()) @db.Uuid
+  expenseId           String   @map("expense_id") @db.Uuid
+  workspaceId         String   @map("workspace_id") @db.Uuid
+  userId              String   @map("user_id") @db.VarChar(100)
+  recommendationId    String?  @map("recommendation_id") @db.Uuid
+  action              String   @db.VarChar(30)
+  suggestedCategoryId String?  @map("suggested_category_id") @db.Uuid
+  finalCategoryId     String?  @map("final_category_id") @db.Uuid
+  confidence          Decimal? @db.Decimal(5, 2)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([expenseId])
+  @@index([workspaceId])
+  @@map("expense_ai_history")
+}
+
+model WorkspaceAiExpenseSettings {
+  id                  String   @id @default(uuid()) @db.Uuid
+  workspaceId         String   @unique @map("workspace_id") @db.Uuid
+  enabled             Boolean  @default(true)
+  confidenceThreshold Int      @default(60) @map("confidence_threshold")
+  autoSuggest         Boolean  @default(true) @map("auto_suggest")
+  alternativeCount    Int      @default(3) @map("alternative_count")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("workspace_ai_expense_settings")
 }

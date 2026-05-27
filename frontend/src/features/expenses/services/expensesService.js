@@ -138,3 +138,42 @@ export const restoreSupplier = async (id) => {
   const { data } = await api.post(`/api/v1/suppliers/${id}/restore`);
   return data.data;
 };
+
+// ── AI Categorization ──────────────────────────────────────
+export const aiCategorize = async (payload) => {
+  const { data } = await api.post('/api/v1/expenses/ai/categorize', payload);
+  return data.data;
+};
+
+export const aiAccept = async (payload) => {
+  const { data } = await api.post('/api/v1/expenses/ai/accept', payload);
+  return data.data;
+};
+
+export const aiReject = async (payload) => {
+  const { data } = await api.post('/api/v1/expenses/ai/reject', payload);
+  return data.data;
+};
+
+export const aiGetHistory = async (params = {}) => {
+  const { data } = await api.get('/api/v1/expenses/ai/history', { params });
+  return data.data;
+};
+
+export const aiGetExpenseHistory = async (expenseId) => {
+  const { data } = await api.get(`/api/v1/expenses/ai/${expenseId}/history`);
+  return data.data;
+};
+
+export const aiGetSettings = async () => {
+  const { data } = await api.get('/api/v1/expenses/ai/settings');
+  return data.data;
+};
+
+export const aiUpdateSettings = async (payload) => {
+  const { data } = await api.patch('/api/v1/expenses/ai/settings', payload);
+  return data.data;
+};
+
+// Namespace object for dynamic import in AiCategorizationPanel
+export const expensesService = { aiAccept, aiReject };

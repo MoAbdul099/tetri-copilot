@@ -1,9 +1,13 @@
 const router = require('express').Router();
 const { protect } = require('../../middleware/requireAuth');
 const requireWorkspace = require('../../middleware/requireWorkspace');
-const ctrl = require('./expenses.controller');
+const ctrl    = require('./expenses.controller');
+const aiRoutes = require('./expense.ai.routes');
 
 router.use(protect, requireWorkspace);
+
+// AI routes MUST come before /:id to avoid path collision
+router.use('/ai', aiRoutes);
 
 router.get('/',          ctrl.list);
 router.post('/',         ctrl.create);
