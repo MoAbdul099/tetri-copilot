@@ -8,11 +8,13 @@ export default function MessageBubble({ message, isLast, onRegenerate }) {
   const [copied,   setCopied]   = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const isUser     = message.senderType === 'user';
-  const isBlocked  = message.metadata?.blocked;
-  const isStream   = message.streaming;
-  const sources    = message.metadata?.sources || [];
-  const confidence = message.metadata?.confidence;
+  const isUser        = message.senderType === 'user';
+  const isBlocked     = message.metadata?.blocked;
+  const isStream      = message.streaming;
+  const sources       = message.metadata?.sources || [];
+  const confidence    = message.metadata?.confidence;
+  const actionName    = message.metadata?.actionName;
+  const actionCategory = message.metadata?.actionCategory;
 
   const copyText = () => {
     navigator.clipboard.writeText(message.message).catch(() => {});
@@ -63,6 +65,16 @@ export default function MessageBubble({ message, isLast, onRegenerate }) {
             <MarkdownContent content={message.message} />
           )}
         </div>
+
+        {/* Action badge */}
+        {!isStream && !isBlocked && actionName && actionCategory !== 'general' && (
+          <div className="mt-1.5 flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-xs text-violet-700 font-medium">
+              <Bot className="w-3 h-3" />
+              {actionName}
+            </span>
+          </div>
+        )}
 
         {/* Context sources */}
         {!isStream && !isBlocked && sources.length > 0 && (

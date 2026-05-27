@@ -3505,6 +3505,50 @@ model AiGovernanceRule {
 }
 
 // =========================================================
+// SLICE 15.3 — AI ACTIONS & OPERATIONAL ASSISTANT
+// =========================================================
+
+model AiActionLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  sessionId        String?  @map("session_id") @db.Uuid
+  messageId        String?  @map("message_id") @db.Uuid
+  userId           String   @map("user_id") @db.VarChar(100)
+  actionCode       String   @map("action_code") @db.VarChar(100)
+  actionName       String   @map("action_name") @db.VarChar(200)
+  actionCategory   String   @map("action_category") @db.VarChar(50)
+  status           String   @default("success") @db.VarChar(20)
+  executionMs      Int      @default(0) @map("execution_ms")
+  recordsRetrieved Int      @default(0) @map("records_retrieved")
+  metadata         Json?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([sessionId])
+  @@index([actionCode])
+  @@map("ai_action_logs")
+}
+
+model AiRecommendation {
+  id             String    @id @default(uuid()) @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  category       String    @db.VarChar(50)
+  priority       String    @db.VarChar(20)
+  title          String    @db.VarChar(255)
+  body           String    @db.Text
+  actionHint     String?   @map("action_hint") @db.VarChar(255)
+  routePath      String?   @map("route_path") @db.VarChar(255)
+  supportingData Json?     @map("supporting_data")
+  status         String    @default("active") @db.VarChar(20)
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("ai_recommendations")
+}
+
+// =========================================================
 // SLICE 15.2 — CONTEXT, FILES & WORKSPACE KNOWLEDGE
 // =========================================================
 

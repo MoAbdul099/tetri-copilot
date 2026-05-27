@@ -40,6 +40,15 @@ router.delete('/sessions/:id/files/:fileId',        ctrl.removeFile);
 // Feedback
 router.post('/feedback',                            ctrl.submitFeedback);
 
+// Recommendations (15.3)
+router.get('/recommendations',                      ctrl.getRecommendations);
+router.post('/recommendations/refresh',             ctrl.refreshRecommendations);
+router.delete('/recommendations/:id',               ctrl.dismissRecommendation);
+
+// Action history & metrics (15.3)
+router.get('/actions/history',                      ctrl.getActionHistory);
+router.get('/actions/metrics',                      ctrl.getActionMetrics);
+
 // Suggestions & quick prompts
 router.get('/suggestions',                          ctrl.getSuggestions);
 router.get('/quick-prompts',                        ctrl.getQuickPrompts);

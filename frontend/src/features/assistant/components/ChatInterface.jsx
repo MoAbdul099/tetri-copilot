@@ -80,10 +80,17 @@ export default function ChatInterface({ session, onSessionUpdate, quickPrompts =
             if (m.id === streamTmpId) {
               return {
                 ...m,
-                id:       event.messageId,
-                message:  event.message,
+                id:        event.messageId,
+                message:   event.message,
                 streaming: false,
-                metadata: { ...(m.metadata || {}), sources: event.sources || [], confidence: event.confidence },
+                metadata:  {
+                  ...(m.metadata || {}),
+                  sources:        event.sources         || [],
+                  confidence:     event.confidence,
+                  actionCode:     event.actionCode,
+                  actionName:     event.actionName,
+                  actionCategory: event.actionCategory,
+                },
               };
             }
             if (m.id === userTmpId) {

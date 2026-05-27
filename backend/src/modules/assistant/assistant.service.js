@@ -1,6 +1,8 @@
 const prisma      = require('../../lib/prisma');
 const repo        = require('./assistant.repository');
 const contextSvc  = require('./context.service');
+const actionSvc   = require('./action.service');
+const recSvc      = require('./recommendation.service');
 const fileSvc     = require('./file.context.service');
 const governance  = require('./governance.service');
 const aiSvc       = require('../ai/ai.service');
@@ -199,12 +201,29 @@ async function *chatStream({ sessionId, workspaceId, userId, role, userMessage }
   const userMsg      = await repo.createMessage({ sessionId, senderType: 'user', message: userMessage });
   yield { type: 'user_saved', messageId: userMsg.id };
 
+  // 15.2: RAG context
   const resolved     = await contextSvc.resolve(userMessage, workspaceId, sessionId);
   const history      = await repo.getMessages(sessionId);
   const userMsgCount = history.filter((m) => m.senderType === 'user').length;
   const historySlice = history.slice(-20);
 
-  const messages = await buildContext({ workspaceId, userId, role, resolvedData: resolved.contextText, history: historySlice });
+  // 15.3: Action detection + enrichment
+  const actionResult = await actionSvc.detectAndEnrich({
+    userMessage, workspaceId, existingIntents: resolved.intents, existingContextText: resolved.contextText,
+  });
+
+  // If this is a recommendations intent, fetch recommendation context
+  let recContext = null;
+  if (actionResult.actionCode === 'recommendations') {
+    recContext = await recSvc.getAsContext(workspaceId);
+  }
+
+  // Merge contexts
+  const contextParts = [resolved.contextText, actionResult.additionalContext, recContext].filter(Boolean);
+  const finalContext = contextParts.length ? contextParts.join('\n\n') : null;
+  const finalSources = [...resolved.sources, ...actionResult.additionalSources];
+
+  const messages = await buildContext({ workspaceId, userId, role, resolvedData: finalContext, history: historySlice });
   messages.push({ role: 'user', content: userMessage });
 
   let fullText = '', provider = null, model = null, durationMs = 0;
@@ -236,18 +255,44 @@ async function *chatStream({ sessionId, workspaceId, userId, role, userMessage }
     message:    responseText,
     tokenUsage: tokensInput + tokensOutput,
     cost:       0,
-    metadata:   { provider, model, durationMs, hadData: !!resolved.contextText, sources: resolved.sources, confidence: resolved.confidence },
+    metadata:   {
+      provider, model, durationMs, hadData: !!finalContext,
+      sources:         finalSources,
+      confidence:      resolved.confidence,
+      actionCode:      actionResult.actionCode,
+      actionName:      actionResult.actionName,
+      actionCategory:  actionResult.actionCategory,
+    },
   });
 
-  // Log context usage (non-blocking)
+  // Non-blocking logging
   contextSvc.logContext({ workspaceId, sessionId, messageId: assistantMsg.id, userId, resolved }).catch(() => {});
+  actionSvc.logAction({
+    workspaceId, sessionId, messageId: assistantMsg.id, userId,
+    actionCode:       actionResult.actionCode,
+    actionName:       actionResult.actionName,
+    actionCategory:   actionResult.actionCategory,
+    status:           'success',
+    executionMs:      actionResult.executionMs,
+    recordsRetrieved: actionResult.recordsRetrieved,
+  }).catch(() => {});
 
   if (userMsgCount === 1) {
     const autoTitle = userMessage.length > 55 ? userMessage.substring(0, 55) + '…' : userMessage;
     await repo.updateSession(sessionId, { title: autoTitle });
   }
 
-  yield { type: 'done', messageId: assistantMsg.id, message: responseText, userMessageId: userMsg.id, sources: resolved.sources, confidence: resolved.confidence };
+  yield {
+    type:           'done',
+    messageId:       assistantMsg.id,
+    message:         responseText,
+    userMessageId:   userMsg.id,
+    sources:         finalSources,
+    confidence:      resolved.confidence,
+    actionCode:      actionResult.actionCode,
+    actionName:      actionResult.actionName,
+    actionCategory:  actionResult.actionCategory,
+  };
 }
 
 // ── Regenerate ────────────────────────────────────────────────────────────────
@@ -300,6 +345,20 @@ async function submitFeedback({ messageId, userId, rating, comment }) {
   return repo.createFeedback({ messageId, userId, rating, comment });
 }
 
+// ── Recommendations ───────────────────────────────────────────────────────────
+
+async function getRecommendations(workspaceId) {
+  return recSvc.getRecommendations(workspaceId);
+}
+
+async function dismissRecommendation(id, workspaceId) {
+  return recSvc.dismissRecommendation(id, workspaceId);
+}
+
+async function refreshRecommendations(workspaceId) {
+  return recSvc.refreshRecommendations(workspaceId);
+}
+
 // ── File context ──────────────────────────────────────────────────────────────
 
 async function uploadSessionFile({ workspaceId, sessionId, userId, file }) {
@@ -321,5 +380,6 @@ module.exports = {
   renameSession, archiveSession, restoreSession, deleteSession,
   chat, chatStream, regenerateResponse,
   exportSession, submitFeedback,
+  getRecommendations, dismissRecommendation, refreshRecommendations,
   uploadSessionFile, listSessionFiles, removeSessionFile,
 };

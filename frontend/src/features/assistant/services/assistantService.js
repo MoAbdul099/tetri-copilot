@@ -101,6 +101,15 @@ const assistantService = {
   // ── Feedback ─────────────────────────────────────────────────────────────────
   submitFeedback:   (data)      => api.post(`${base}/feedback`, data).then((r) => r.data.data),
 
+  // ── Recommendations (15.3) ──────────────────────────────────────────────────
+  getRecommendations:      ()   => api.get(`${base}/recommendations`).then((r) => r.data.data),
+  refreshRecommendations:  ()   => api.post(`${base}/recommendations/refresh`).then((r) => r.data.data),
+  dismissRecommendation:   (id) => api.delete(`${base}/recommendations/${id}`).then((r) => r.data.data),
+
+  // ── Action history & metrics (15.3) ─────────────────────────────────────────
+  getActionHistory:  (limit) => api.get(`${base}/actions/history`, { params: { limit } }).then((r) => r.data.data),
+  getActionMetrics:  ()      => api.get(`${base}/actions/metrics`).then((r) => r.data.data),
+
   // ── Suggestions & prompts ───────────────────────────────────────────────────
   getSuggestions:   ()          => api.get(`${base}/suggestions`).then((r) => r.data.data),
   getQuickPrompts:  ()          => api.get(`${base}/quick-prompts`).then((r) => r.data.data),

@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import ChatInterface from '../components/ChatInterface';
+import RecommendationsPanel from '../components/RecommendationsPanel';
 import assistantService from '../services/assistantService';
 import api from '../../../lib/api';
 import PageHeader from '../../../components/shared/PageHeader';
@@ -349,7 +350,7 @@ export default function AssistantPage() {
         </div>
 
         {/* Session list */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-0.5">
           {loading && (
             <div className="flex justify-center py-6">
               <div className="w-4 h-4 border-2 border-tetri-blue/30 border-t-tetri-blue rounded-full animate-spin" />
@@ -378,6 +379,11 @@ export default function AssistantPage() {
             />
           ))}
         </div>
+
+        {/* Recommendations panel */}
+        <RecommendationsPanel
+          onAskCopilot={(prompt) => { setTab('active'); startWithPrompt(prompt); }}
+        />
       </div>
 
       {/* ── Main area ───────────────────────────────────────────────────────── */}

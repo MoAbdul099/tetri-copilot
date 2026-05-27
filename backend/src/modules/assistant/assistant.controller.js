@@ -1,7 +1,8 @@
 const { success, error } = require('../../utils/response');
-const svc     = require('./assistant.service');
-const suggSvc = require('./suggestion.service');
-const repo    = require('./assistant.repository');
+const svc        = require('./assistant.service');
+const suggSvc    = require('./suggestion.service');
+const repo       = require('./assistant.repository');
+const actionRepo = require('./action.repository');
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
@@ -208,6 +209,56 @@ async function getQuickPrompts(req, res) {
   }
 }
 
+// ── Recommendations ───────────────────────────────────────────────────────────
+
+async function getRecommendations(req, res) {
+  try {
+    const recs = await svc.getRecommendations(req.workspaceId);
+    return success(res, recs);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function dismissRecommendation(req, res) {
+  try {
+    await svc.dismissRecommendation(req.params.id, req.workspaceId);
+    return success(res, null, 'Recommendation dismissed');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function refreshRecommendations(req, res) {
+  try {
+    const recs = await svc.refreshRecommendations(req.workspaceId);
+    return success(res, recs, 'Recommendations refreshed');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+// ── Action history & metrics ──────────────────────────────────────────────────
+
+async function getActionHistory(req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const history = await actionRepo.getActionHistory(req.workspaceId, limit);
+    return success(res, history);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+async function getActionMetrics(req, res) {
+  try {
+    const metrics = await actionRepo.getActionMetrics(req.workspaceId);
+    return success(res, metrics);
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+}
+
 // ── File attachments ──────────────────────────────────────────────────────────
 
 async function uploadFile(req, res) {
@@ -262,5 +313,7 @@ module.exports = {
   getMessages, submitFeedback,
   getSuggestions, getQuickPrompts,
   listCapabilities,
+  getRecommendations, dismissRecommendation, refreshRecommendations,
+  getActionHistory, getActionMetrics,
   uploadFile, listSessionFiles, removeFile,
 };
