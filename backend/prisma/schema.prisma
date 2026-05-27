@@ -478,7 +478,11 @@ model Workspace {
   aiDocumentRelations          AiDocumentRelation[]
   aiDocumentGenerationLogs     AiDocumentGenerationLog[]
   brandingProfiles             WorkspaceBrandingProfile[]
-  aiComplianceConversations    AiComplianceConversation[]
+  aiComplianceConversations       AiComplianceConversation[]
+  complianceHealthScores          ComplianceHealthScore[]
+  complianceRisks                 ComplianceRisk[]
+  complianceRecommendations       ComplianceRecommendation[]
+  complianceIntelligenceSnapshots ComplianceIntelligenceSnapshot[]
 
   @@map("workspaces")
 }
@@ -3990,4 +3994,80 @@ model AiComplianceFeedback {
 
   @@index([messageId])
   @@map("ai_compliance_feedback")
+}
+
+// =========================================================
+// SLICE 18.2 — COMPLIANCE INTELLIGENCE & RISK DETECTION
+// =========================================================
+
+model ComplianceHealthScore {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  score        Int
+  status       String   @db.VarChar(50)
+  factors      Json?
+  calculatedAt DateTime @default(now()) @map("calculated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("compliance_health_scores")
+}
+
+model ComplianceRisk {
+  id                    String    @id @default(uuid()) @db.Uuid
+  workspaceId           String    @map("workspace_id") @db.Uuid
+  severity              String    @db.VarChar(20)
+  category              String    @db.VarChar(100)
+  description           String    @db.Text
+  source                String    @db.VarChar(100)
+  status                String    @default("open") @db.VarChar(20)
+  relatedEntityId       String?   @map("related_entity_id") @db.VarChar(200)
+  relatedEntityType     String?   @map("related_entity_type") @db.VarChar(50)
+  actionabilityStatus   String?   @default("pending") @map("actionability_status") @db.VarChar(30)
+  actionabilityScore    Int?      @map("actionability_score")
+  recommendedActionType String?   @map("recommended_action_type") @db.VarChar(50)
+  detectedAt            DateTime  @default(now()) @map("detected_at") @db.Timestamptz(6)
+  resolvedAt            DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([severity])
+  @@map("compliance_risks")
+}
+
+model ComplianceRecommendation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  workspaceId           String   @map("workspace_id") @db.Uuid
+  recommendation        String   @db.Text
+  reason                String   @db.Text
+  confidenceLevel       String   @default("medium") @map("confidence_level") @db.VarChar(20)
+  priority              String   @default("medium") @db.VarChar(20)
+  category              String?  @db.VarChar(100)
+  relatedRiskId         String?  @map("related_risk_id") @db.VarChar(200)
+  actionabilityStatus   String?  @default("pending") @map("actionability_status") @db.VarChar(30)
+  actionabilityScore    Int?     @map("actionability_score")
+  recommendedActionType String?  @map("recommended_action_type") @db.VarChar(50)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("compliance_recommendations")
+}
+
+model ComplianceIntelligenceSnapshot {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  summary     String   @db.Text
+  score       Int
+  riskCount   Int      @default(0) @map("risk_count")
+  insights    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("compliance_intelligence_snapshots")
 }

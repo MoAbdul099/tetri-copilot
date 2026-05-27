@@ -72,6 +72,7 @@ const { seedAssistantData }      = require('./modules/assistant/assistant.seeder
 const aiDocumentsRoutes          = require('./modules/ai-documents/ai-documents.routes');
 const documentTemplatesRoutes    = require('./modules/document-templates/document-templates.routes');
 const aiComplianceRoutes         = require('./modules/ai-compliance/ai-compliance.routes');
+const complianceIntelligenceRoutes = require('./modules/compliance-intelligence/compliance-intelligence.routes');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -188,7 +189,8 @@ app.use('/api/v1/ai',           aiCopilotRoutes);
 app.use('/api/v1/assistant',    assistantRoutes);
 app.use('/api/v1/ai-documents',       aiDocumentsRoutes);
 app.use('/api/v1/document-templates', documentTemplatesRoutes);
-app.use('/api/v1/ai-compliance',      aiComplianceRoutes);
+app.use('/api/v1/ai-compliance',           aiComplianceRoutes);
+app.use('/api/v1/compliance-intelligence', complianceIntelligenceRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);

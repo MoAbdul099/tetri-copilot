@@ -54,6 +54,7 @@ import DocumentTemplateDetailPage from './features/document-templates/pages/Docu
 import BrandingProfilePage from './features/document-templates/pages/BrandingProfilePage.jsx';
 import CompliancePage from './features/compliance/pages/CompliancePage.jsx';
 import ComplianceAssistantPage from './features/compliance/pages/ComplianceAssistantPage.jsx';
+import ComplianceIntelligencePage from './features/compliance/pages/ComplianceIntelligencePage.jsx';
 import TemplatesPage from './features/compliance/pages/TemplatesPage.jsx';
 import TemplateFormPage from './features/compliance/pages/TemplateFormPage.jsx';
 import TemplateDetailPage from './features/compliance/pages/TemplateDetailPage.jsx';
@@ -174,7 +175,8 @@ export default function App() {
           <Route path="/document-templates/:id" element={<DocumentTemplateDetailPage />} />
           <Route path="/document-templates/:id/edit" element={<DocumentTemplateFormPage />} />
           <Route path="/compliance" element={<CompliancePage />} />
-          <Route path="/compliance/assistant" element={<ComplianceAssistantPage />} />
+          <Route path="/compliance/assistant"     element={<ComplianceAssistantPage />} />
+          <Route path="/compliance/intelligence" element={<ComplianceIntelligencePage />} />
           <Route path="/compliance/templates" element={<TemplatesPage />} />
           <Route path="/compliance/templates/new" element={<TemplateFormPage />} />
           <Route path="/compliance/templates/:id" element={<TemplateDetailPage />} />
