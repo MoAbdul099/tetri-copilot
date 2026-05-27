@@ -73,6 +73,7 @@ const aiDocumentsRoutes          = require('./modules/ai-documents/ai-documents.
 const documentTemplatesRoutes    = require('./modules/document-templates/document-templates.routes');
 const aiComplianceRoutes         = require('./modules/ai-compliance/ai-compliance.routes');
 const complianceIntelligenceRoutes = require('./modules/compliance-intelligence/compliance-intelligence.routes');
+const aiActionFrameworkRoutes    = require('./modules/ai-action-framework/ai-action-framework.routes');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
 
@@ -191,6 +192,7 @@ app.use('/api/v1/ai-documents',       aiDocumentsRoutes);
 app.use('/api/v1/document-templates', documentTemplatesRoutes);
 app.use('/api/v1/ai-compliance',           aiComplianceRoutes);
 app.use('/api/v1/compliance-intelligence', complianceIntelligenceRoutes);
+app.use('/api/v1/ai-actions',             aiActionFrameworkRoutes);
 
 // Slice 10.5 — App boundary namespaces
 app.use('/api/public', publicRoutes);

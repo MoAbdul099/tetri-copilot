@@ -105,6 +105,10 @@ import AIFeaturesPage from './features/ai/pages/AIFeaturesPage.jsx';
 import AIConversationsPage from './features/ai/pages/AIConversationsPage.jsx';
 import AIDiagnosticsPage from './features/ai/pages/AIDiagnosticsPage.jsx';
 import AssistantPage from './features/assistant/pages/AssistantPage.jsx';
+import AiActionCenterPage from './features/ai-actions/pages/AiActionCenterPage.jsx';
+import AiActionDetailPage from './features/ai-actions/pages/AiActionDetailPage.jsx';
+import AiGovernancePage from './features/ai-actions/pages/AiGovernancePage.jsx';
+import AiApprovalCenterPage from './features/ai-actions/pages/AiApprovalCenterPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -230,6 +234,10 @@ export default function App() {
           <Route path="/ai/conversations" element={<AIConversationsPage />} />
           <Route path="/ai/diagnostics" element={<AIDiagnosticsPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
+          <Route path="/ai/actions" element={<AiActionCenterPage />} />
+          <Route path="/ai/actions/:id" element={<AiActionDetailPage />} />
+          <Route path="/ai/governance" element={<AiGovernancePage />} />
+          <Route path="/ai/approvals" element={<AiApprovalCenterPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
