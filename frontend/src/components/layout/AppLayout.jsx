@@ -195,21 +195,15 @@ function isGroupActive(group, pathname) {
   return group.items.some((item) => pathname.startsWith(item.to));
 }
 
-function NavGroup({ group, onNavigate, role }) {
-  const location = useLocation();
+function NavGroup({ group, onNavigate, role, isOpen, onToggle }) {
   const visibleItems = group.items.filter((item) => canAccess(item.requiredRoles, role));
-  const active = visibleItems.some((item) => location.pathname.startsWith(item.to));
-  const [open, setOpen] = useState(active);
   const GroupIcon = group.groupIcon;
-
-  // Auto-open group when navigating to one of its routes
-  useEffect(() => { if (active) setOpen(true); }, [active]);
   const iconStyle = GROUP_ICON_STYLES[group.label] || 'bg-blue-50 text-blue-600';
 
   return (
     <div>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-tetri-bg transition-colors group"
       >
         <span className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${iconStyle}`}>
@@ -218,12 +212,12 @@ function NavGroup({ group, onNavigate, role }) {
         <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider text-tetri-neutral group-hover:text-tetri-text transition-colors">
           {group.label}
         </span>
-        {open
+        {isOpen
           ? <ChevronDown className="w-3 h-3 text-tetri-neutral" />
           : <ChevronRight className="w-3 h-3 text-tetri-neutral" />
         }
       </button>
-      {open && (
+      {isOpen && (
         <div className="mt-0.5 mb-1 space-y-0.5">
           {visibleItems.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -250,10 +244,23 @@ function NavGroup({ group, onNavigate, role }) {
 
 export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitchWorkspace }) {
   const { signOut } = useClerk();
+  const location = useLocation();
   const [sidebarOpen,      setSidebarOpen]      = useState(false);
   const [userMenuOpen,     setUserMenuOpen]      = useState(false);
   const [wsSwitcherOpen,   setWsSwitcherOpen]    = useState(false);
   const hasMultipleWs = allWorkspaces.length > 1;
+
+  const groups = NAV_CONFIG.filter(e => e.type === 'group');
+  const activeGroup = groups.find(g => g.items.some(item => location.pathname.startsWith(item.to)));
+  const [openGroup, setOpenGroup] = useState(activeGroup?.label || null);
+
+  // Auto-open the group containing the current route; collapse others
+  useEffect(() => {
+    if (activeGroup) setOpenGroup(activeGroup.label);
+  }, [location.pathname]);
+
+  const handleGroupToggle = (label) =>
+    setOpenGroup(v => v === label ? null : label);
 
   const handleSignOut = () => signOut({ redirectUrl: '/sign-in' });
   const closeSidebar = () => setSidebarOpen(false);
@@ -295,7 +302,14 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
             );
           }
           return (
-            <NavGroup key={entry.label} group={entry} onNavigate={closeSidebar} role={role} />
+            <NavGroup
+              key={entry.label}
+              group={entry}
+              onNavigate={closeSidebar}
+              role={role}
+              isOpen={openGroup === entry.label}
+              onToggle={() => handleGroupToggle(entry.label)}
+            />
           );
         })}
       </nav>
