@@ -191,7 +191,7 @@ function ConvItem({ conv, active, onClick, onDelete, onArchive, onExport }) {
 
 function EmptyState({ onNew, suggestedQuestions, onQuestion }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full py-12 px-6 space-y-6">
+    <div className="flex flex-col items-center justify-center flex-1 py-12 px-6 space-y-6">
       <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center">
         <Shield className="w-8 h-8 text-emerald-600" />
       </div>
@@ -459,9 +459,9 @@ export default function ComplianceAssistantPage() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
             {loading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-tetri-neutral" /></div>
+              <div className="flex-1 flex justify-center items-center"><Loader2 className="w-5 h-5 animate-spin text-tetri-neutral" /></div>
             ) : messages.length === 0 ? (
               <EmptyState
                 onNew={handleNew}
@@ -469,7 +469,8 @@ export default function ComplianceAssistantPage() {
                 onQuestion={(q) => handleSend(q)}
               />
             ) : (
-              messages.map((msg) => (
+              <div className="flex flex-col gap-5">
+              {messages.map((msg) => (
                 msg.thinking ? (
                   <div key={msg.id} className="flex gap-3">
                     <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -486,9 +487,10 @@ export default function ComplianceAssistantPage() {
                 ) : (
                   <Message key={msg.id} msg={msg} onFeedback={handleFeedback} />
                 )
-              ))
+              ))}
+              <div ref={messagesEndRef} />
+              </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Suggested questions chips (when chat is active but no messages) */}
