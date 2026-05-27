@@ -29,6 +29,7 @@ const list = async (workspaceId, { page = 1, limit = 20, search, category, statu
         language: true, tone: true, provider: true, model: true,
         createdAt: true, updatedAt: true,
         createdByUser: { select: { id: true, fullName: true, email: true } },
+        _count: { select: { versions: true } },
       },
     }),
   ]);
@@ -44,6 +45,7 @@ const findById = async (workspaceId, id) => {
       relations: true,
       generationLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
       createdByUser: { select: { id: true, fullName: true, email: true } },
+      _count: { select: { versions: true, exports: true, enhancements: true } },
     },
   });
 };
@@ -94,4 +96,126 @@ const addGenerationLog = async (workspaceId, documentId, userId, logData) => {
   });
 };
 
-module.exports = { list, findById, create, update, softDelete, addGenerationLog };
+// ---- Versioning ----
+
+const getNextVersionNumber = async (documentId) => {
+  const last = await prisma.aiDocumentVersion.findFirst({
+    where: { documentId },
+    orderBy: { versionNumber: 'desc' },
+    select: { versionNumber: true },
+  });
+  return (last?.versionNumber || 0) + 1;
+};
+
+const createVersion = async (documentId, userId, content, changeSummary) => {
+  const versionNumber = await getNextVersionNumber(documentId);
+  return prisma.aiDocumentVersion.create({
+    data: { documentId, versionNumber, content, changeSummary, createdById: userId },
+    include: { createdBy: { select: { id: true, fullName: true, email: true } } },
+  });
+};
+
+const listVersions = async (workspaceId, documentId) => {
+  const doc = await prisma.aiDocument.findFirst({ where: { id: documentId, workspaceId, isDeleted: false }, select: { id: true } });
+  if (!doc) return null;
+
+  return prisma.aiDocumentVersion.findMany({
+    where: { documentId },
+    orderBy: { versionNumber: 'desc' },
+    include: { createdBy: { select: { id: true, fullName: true, email: true } } },
+  });
+};
+
+const getVersion = async (workspaceId, documentId, versionId) => {
+  const doc = await prisma.aiDocument.findFirst({ where: { id: documentId, workspaceId, isDeleted: false }, select: { id: true } });
+  if (!doc) return null;
+
+  return prisma.aiDocumentVersion.findFirst({
+    where: { id: versionId, documentId },
+    include: { createdBy: { select: { id: true, fullName: true, email: true } } },
+  });
+};
+
+// ---- Export Tracking ----
+
+const trackExport = async (documentId, versionId, userId, exportType) => {
+  return prisma.aiDocumentExport.create({
+    data: { documentId, versionId, exportType, exportedBy: userId },
+  });
+};
+
+const listExports = async (workspaceId, documentId) => {
+  const doc = await prisma.aiDocument.findFirst({ where: { id: documentId, workspaceId, isDeleted: false }, select: { id: true } });
+  if (!doc) return null;
+  return prisma.aiDocumentExport.findMany({
+    where: { documentId },
+    orderBy: { exportedAt: 'desc' },
+    take: 50,
+  });
+};
+
+// ---- Enhancement Tracking ----
+
+const trackEnhancement = async (documentId, versionId, userId, data) => {
+  return prisma.aiDocumentEnhancement.create({
+    data: { documentId, versionId, createdBy: userId, ...data },
+  });
+};
+
+// ---- Quality Review ----
+
+const saveQualityReview = async (documentId, versionId, reviewResult, recommendations) => {
+  return prisma.aiDocumentQualityReview.create({
+    data: { documentId, versionId, reviewResult, recommendations },
+  });
+};
+
+// ---- Comparison ----
+
+const saveComparison = async (documentId, sourceVersionId, targetVersionId, userId) => {
+  return prisma.aiDocumentComparison.create({
+    data: { documentId, sourceVersionId, targetVersionId, createdById: userId },
+  });
+};
+
+// ---- Duplicate ----
+
+const duplicate = async (workspaceId, id, userId) => {
+  const src = await prisma.aiDocument.findFirst({
+    where: { id, workspaceId, isDeleted: false },
+    include: { contextSources: true, relations: true },
+  });
+  if (!src) return null;
+
+  const { id: _id, createdAt, updatedAt, deletedAt, isDeleted, createdByUserId, ...fields } = src;
+
+  return prisma.aiDocument.create({
+    data: {
+      ...fields,
+      title: `${src.title} (Copy)`,
+      status: 'draft',
+      workspaceId,
+      createdByUserId: userId,
+      contextSources: src.contextSources.length ? {
+        create: src.contextSources.map(({ id: _sid, documentId: _did, selectedAt, ...s }) => ({ ...s, workspaceId })),
+      } : undefined,
+      relations: src.relations ? {
+        create: (() => {
+          const { id: _rid, documentId: _rdid, ...r } = src.relations;
+          return { ...r, workspaceId };
+        })(),
+      } : undefined,
+    },
+    include: { contextSources: true, relations: true },
+  });
+};
+
+module.exports = {
+  list, findById, create, update, softDelete, addGenerationLog,
+  createVersion, listVersions, getVersion,
+  trackExport, listExports,
+  trackEnhancement,
+  saveQualityReview,
+  saveComparison,
+  duplicate,
+};

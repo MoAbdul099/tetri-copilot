@@ -373,6 +373,7 @@ model User {
   reportExportJobs              ReportExportJob[]
   reportExecutionLogs           ReportExecutionLog[]
   createdAiDocuments            AiDocument[]         @relation("AiDocumentCreatedBy")
+  aiDocumentVersions            AiDocumentVersion[]  @relation("AiDocumentVersionCreatedBy")
   documentTemplatesCreated      DocumentTemplate[]   @relation("DocumentTemplateCreatedBy")
   documentTemplatesModified     DocumentTemplate[]   @relation("DocumentTemplateModifiedBy")
 
@@ -3764,6 +3765,11 @@ model AiDocument {
   contextSources AiDocumentContextSource[]
   relations      AiDocumentRelation[]
   generationLogs AiDocumentGenerationLog[]
+  versions       AiDocumentVersion[]
+  exports        AiDocumentExport[]
+  enhancements   AiDocumentEnhancement[]
+  qualityReviews AiDocumentQualityReview[]
+  comparisons    AiDocumentComparison[]
 
   @@index([workspaceId])
   @@index([status])
@@ -3825,6 +3831,96 @@ model AiDocumentGenerationLog {
   @@index([documentId])
   @@index([workspaceId])
   @@map("ai_document_generation_logs")
+}
+
+// =========================================================
+// SLICE 17.3 — DOCUMENT EXPORT, HISTORY & AI ENHANCEMENT
+// =========================================================
+
+model AiDocumentVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  documentId    String   @map("document_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  content       String   @db.Text
+  changeSummary String?  @map("change_summary") @db.VarChar(500)
+  createdById   String?  @map("created_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  document  AiDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy User?      @relation("AiDocumentVersionCreatedBy", fields: [createdById], references: [id])
+
+  exports           AiDocumentExport[]
+  enhancements      AiDocumentEnhancement[]
+  qualityReviews    AiDocumentQualityReview[]
+  sourceComparisons AiDocumentComparison[]    @relation("ComparisonSource")
+  targetComparisons AiDocumentComparison[]    @relation("ComparisonTarget")
+
+  @@index([documentId])
+  @@map("ai_document_versions")
+}
+
+model AiDocumentExport {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  versionId  String?  @map("version_id") @db.Uuid
+  exportType String   @map("export_type") @db.VarChar(20)
+  exportedBy String?  @map("exported_by") @db.Uuid
+  exportedAt DateTime @default(now()) @map("exported_at") @db.Timestamptz(6)
+
+  document AiDocument         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version  AiDocumentVersion? @relation(fields: [versionId], references: [id])
+
+  @@index([documentId])
+  @@map("ai_document_exports")
+}
+
+model AiDocumentEnhancement {
+  id              String   @id @default(uuid()) @db.Uuid
+  documentId      String   @map("document_id") @db.Uuid
+  versionId       String?  @map("version_id") @db.Uuid
+  enhancementType String   @map("enhancement_type") @db.VarChar(100)
+  provider        String?  @db.VarChar(100)
+  model           String?  @db.VarChar(100)
+  tokensUsed      Int?     @map("tokens_used")
+  createdBy       String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  document AiDocument         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version  AiDocumentVersion? @relation(fields: [versionId], references: [id])
+
+  @@index([documentId])
+  @@map("ai_document_enhancements")
+}
+
+model AiDocumentQualityReview {
+  id              String   @id @default(uuid()) @db.Uuid
+  documentId      String   @map("document_id") @db.Uuid
+  versionId       String?  @map("version_id") @db.Uuid
+  reviewResult    Json     @map("review_result")
+  recommendations Json?
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  document AiDocument         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version  AiDocumentVersion? @relation(fields: [versionId], references: [id])
+
+  @@index([documentId])
+  @@map("ai_document_quality_reviews")
+}
+
+model AiDocumentComparison {
+  id              String   @id @default(uuid()) @db.Uuid
+  documentId      String   @map("document_id") @db.Uuid
+  sourceVersionId String   @map("source_version_id") @db.Uuid
+  targetVersionId String   @map("target_version_id") @db.Uuid
+  createdById     String?  @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  document      AiDocument        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  sourceVersion AiDocumentVersion @relation("ComparisonSource", fields: [sourceVersionId], references: [id])
+  targetVersion AiDocumentVersion @relation("ComparisonTarget", fields: [targetVersionId], references: [id])
+
+  @@index([documentId])
+  @@map("ai_document_comparisons")
 }
 
 model WorkspaceAiExpenseSettings {
