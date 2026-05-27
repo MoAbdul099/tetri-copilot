@@ -1,6 +1,6 @@
 import api from '../../../lib/api.js';
 
-const BASE = '/compliance-ai-actions';
+const BASE = '/api/v1/compliance-ai-actions';
 
 export const getDashboard      = ()          => api.get(`${BASE}/dashboard`).then(r => r.data.data);
 export const listActions       = (params)    => api.get(`${BASE}/actions`, { params }).then(r => r.data.data);
