@@ -40,41 +40,19 @@ function parseAiResponse(raw) {
 
 // ── Prompt builder ──────────────────────────────────────────────────────────
 function buildCategorizationPrompt(categories, { description, vendorName, amount, currency, notes }) {
-  const catList = categories.map((c) => `- ${c.name}${c.description ? ` (${c.description})` : ''}`).join('\n');
+  // Names only — descriptions add tokens without improving accuracy
+  const catList = categories.map((c) => c.name).join(', ');
 
-  return `You are an expert expense categorization assistant for a business finance platform.
+  return `Categorize this business expense. Reply with JSON only.
 
-Analyze the following expense and suggest the most appropriate category.
+Categories: ${catList}
 
-## Available Categories
-${catList}
+Expense: ${[description, vendorName, amount ? `${currency || 'USD'} ${amount}` : ''].filter(Boolean).join(' | ')}
 
-## Expense Details
-- Description: ${description || 'Not provided'}
-- Vendor/Supplier: ${vendorName || 'Not provided'}
-- Amount: ${amount ? `${currency || 'USD'} ${amount}` : 'Not provided'}
-- Notes: ${notes || 'None'}
+JSON format:
+{"primary":{"categoryName":"<exact name>","confidence":<0-100>,"reasoning":"<brief>"},"alternatives":[{"categoryName":"<name>","confidence":<0-100>}],"reasoning":"<brief>"}
 
-## Instructions
-Return ONLY a JSON object in this exact format (no markdown, no explanation):
-{
-  "primary": {
-    "categoryName": "exact category name from the list",
-    "confidence": 85,
-    "reasoning": "brief explanation"
-  },
-  "alternatives": [
-    { "categoryName": "another category", "confidence": 60 },
-    { "categoryName": "yet another", "confidence": 45 }
-  ],
-  "reasoning": "overall reasoning for your primary choice"
-}
-
-Rules:
-- confidence is 0-100 (integer)
-- categoryName must EXACTLY match one of the available categories
-- provide up to 3 alternatives sorted by confidence descending
-- if no category fits well, use the closest one with lower confidence`;
+Rules: categoryName must exactly match a category above. Up to 3 alternatives, descending confidence.`;
 }
 
 // ── Main categorization logic ───────────────────────────────────────────────
@@ -97,7 +75,7 @@ async function categorize({ workspaceId, userId, description, vendorName, amount
     userId,
     feature:  'expense_categorization',
     messages: [{ role: 'user', content: prompt }],
-    options:  { maxTokens: 800, temperature: 0.1 },
+    options:  { maxTokens: 800, temperature: 0.1, structured: true },
   });
 
   const parsed = parseAiResponse(result.response || '');

@@ -106,12 +106,22 @@ async function execute({ workspaceId, userId, feature, messages, options = {} })
   let usedProviderRecord = providerRecord;
   let usedModelRecord    = modelRecord;
 
+  const structured = options.structured === true;
+
   async function tryProvider(pCode, pRecord, mRecord, retries) {
     const adapter = registry.get(pCode);
     if (!adapter.isConfigured()) throw Object.assign(new Error(`Provider "${pCode}" API key not configured`), { status: 503 });
     let lastErr;
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
+        if (structured && typeof adapter.generateStructuredOutput === 'function') {
+          const out = await withTimeout(
+            adapter.generateStructuredOutput({ messages, model: mRecord.modelName, maxTokens }),
+            timeoutMs,
+          );
+          // Normalise to the same shape as generateText so callers don't need to branch
+          return { text: JSON.stringify(out.data), tokensInput: out.tokensInput, tokensOutput: out.tokensOutput };
+        }
         return await withTimeout(
           adapter.generateText({ messages, model: mRecord.modelName, temperature, maxTokens }),
           timeoutMs,

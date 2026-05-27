@@ -50,7 +50,8 @@ export default function AiCategorizationPanel({
       }
       setResult(data);
     } catch (err) {
-      setError('AI categorization failed. Please try again.');
+      const msg = err?.response?.data?.error || err?.message || '';
+      setError(msg || 'AI categorization failed. Please try again.');
     } finally {
       setLoading(false);
     }

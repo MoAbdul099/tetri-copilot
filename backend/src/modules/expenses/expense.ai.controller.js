@@ -23,7 +23,13 @@ const expenseAiController = {
 
       return success(res, result);
     } catch (err) {
-      console.error('[expense.ai] categorize error:', err);
+      console.error('[expense.ai] categorize error:', err.message || err);
+      if (err.status === 429) {
+        return error(res, 'AI service is temporarily rate-limited. Please try again in a minute.', 429);
+      }
+      if (err.status === 503 || err.message?.includes('not enabled') || err.message?.includes('not configured')) {
+        return error(res, 'AI categorization is not available — check AI provider settings.', 503);
+      }
       return error(res, 'AI categorization failed. Please try again.', 500);
     }
   },

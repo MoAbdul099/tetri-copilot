@@ -1,4 +1,4 @@
-const { prisma } = require('../../lib/prisma');
+const prisma = require('../../lib/prisma');
 
 const expenseAiRepository = {
   async saveRecommendation({ expenseId, workspaceId, suggestedCategoryId, suggestedCategoryName, confidence, alternatives, reasoning, provider, model }) {
