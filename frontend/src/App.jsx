@@ -109,6 +109,9 @@ import AiActionCenterPage from './features/ai-actions/pages/AiActionCenterPage.j
 import AiActionDetailPage from './features/ai-actions/pages/AiActionDetailPage.jsx';
 import AiGovernancePage from './features/ai-actions/pages/AiGovernancePage.jsx';
 import AiApprovalCenterPage from './features/ai-actions/pages/AiApprovalCenterPage.jsx';
+import ComplianceAiActionCenterPage from './features/compliance/pages/ComplianceAiActionCenterPage.jsx';
+import CompliancePreparationCenterPage from './features/compliance/pages/CompliancePreparationCenterPage.jsx';
+import ComplianceGovernanceDashboardPage from './features/compliance/pages/ComplianceGovernanceDashboardPage.jsx';
 
 function ClerkApiSync() {
   const { getToken } = useAuth();
@@ -200,6 +203,9 @@ export default function App() {
           <Route path="/compliance/reports/overdue" element={<OverdueReportPage />} />
           <Route path="/compliance/reports/escalations" element={<EscalationAnalyticsPage />} />
           <Route path="/compliance/reports/reminders" element={<ReminderAnalyticsPage />} />
+          <Route path="/compliance/ai-actions" element={<ComplianceAiActionCenterPage />} />
+          <Route path="/compliance/preparation" element={<CompliancePreparationCenterPage />} />
+          <Route path="/compliance/ai-governance" element={<ComplianceGovernanceDashboardPage />} />
           <Route path="/notifications" element={<NotificationCenterPage />} />
           <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
           <Route path="/settings/notification-settings" element={<WorkspaceNotificationSettingsPage />} />

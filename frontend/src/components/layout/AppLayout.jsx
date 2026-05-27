@@ -102,7 +102,10 @@ const NAV_CONFIG = [
       { to: '/compliance/reminders/profiles',  label: 'Reminders',       icon: Bell },
       { to: '/compliance/escalations/profiles',label: 'Esc. Profiles',   icon: Siren },
       { to: '/compliance/escalations',         label: 'Escalations',     icon: Siren },
-      { to: '/compliance/reports',             label: 'Reports',         icon: BarChart2 },
+      { to: '/compliance/reports',       label: 'Reports',      icon: BarChart2 },
+      { to: '/compliance/ai-actions',    label: 'AI Actions',   icon: Zap },
+      { to: '/compliance/preparation',   label: 'Preparation',  icon: ClipboardList },
+      { to: '/compliance/ai-governance', label: 'AI Governance',icon: ShieldAlert },
     ],
   },
   {

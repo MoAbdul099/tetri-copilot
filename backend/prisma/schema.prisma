@@ -485,6 +485,8 @@ model Workspace {
   complianceRisks                 ComplianceRisk[]
   complianceRecommendations       ComplianceRecommendation[]
   complianceIntelligenceSnapshots ComplianceIntelligenceSnapshot[]
+  complianceAiPackages            ComplianceAiPackage[]
+  complianceAiChecklists          ComplianceAiChecklist[]
 
   @@map("workspaces")
 }
@@ -4187,4 +4189,51 @@ model AiActionAuditLog {
   @@index([actionId])
   @@index([workspaceId])
   @@map("ai_action_audit_logs")
+}
+
+// =========================================================
+// SLICE 18.4 — COMPLIANCE AI ACTIONS
+// =========================================================
+
+model ComplianceAiPackage {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  obligationId String?  @map("obligation_id") @db.VarChar(200)
+  actionId     String?  @map("action_id") @db.Uuid
+  packageType  String   @map("package_type") @db.VarChar(100)
+  packageData  Json     @map("package_data")
+  createdBy    String   @map("created_by") @db.VarChar(200)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("compliance_ai_packages")
+}
+
+model ComplianceAiChecklist {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  obligationId  String?  @map("obligation_id") @db.VarChar(200)
+  actionId      String?  @map("action_id") @db.Uuid
+  checklistData Json     @map("checklist_data")
+  createdBy     String   @map("created_by") @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("compliance_ai_checklists")
+}
+
+model ComplianceAiActionContext {
+  id                 String   @id @default(uuid()) @db.Uuid
+  actionId           String   @map("action_id") @db.Uuid
+  complianceRecordId String?  @map("compliance_record_id") @db.VarChar(200)
+  obligationId       String?  @map("obligation_id") @db.VarChar(200)
+  sourceType         String   @map("source_type") @db.VarChar(50)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([actionId])
+  @@map("compliance_ai_action_context")
 }
