@@ -31,7 +31,7 @@ export default function ReportViewerPage() {
 
   useEffect(() => {
     reportsService.getDefinition(reportCode)
-      .then((d) => { setDefinition(d.data || d); })
+      .then(setDefinition)
       .catch(() => setDefinition(null))
       .finally(() => setDefLoading(false));
   }, [reportCode]);
@@ -43,7 +43,7 @@ export default function ReportViewerPage() {
     setPage(pg);
     try {
       const res = await reportsService.runReport(reportCode, filters, { page: pg, limit: 50 });
-      setResult(res.data || res);
+      setResult(res);
     } catch (e) {
       setRunError(e.message || 'Report could not be generated. Please adjust filters and try again.');
     } finally {
@@ -57,7 +57,7 @@ export default function ReportViewerPage() {
     setExportDownloadUrl('');
     try {
       const res  = await reportsService.createExport(reportCode, format, lastFilters, savedId || null);
-      const jobId = res.data?.id || res.id;
+      const jobId = res?.id;
       setExportJobId(jobId);
 
       // Poll for completion
@@ -67,7 +67,7 @@ export default function ReportViewerPage() {
         if (attempts > 30) { clearInterval(poll); setExportStatus('Export timed out.'); setExportLoading(false); return; }
         try {
           const job = await reportsService.getExportJob(jobId);
-          const status = job.data?.status || job.status;
+          const status = job?.status;
           if (status === 'completed') {
             clearInterval(poll);
             setExportStatus('Export ready!');
@@ -103,7 +103,7 @@ export default function ReportViewerPage() {
     );
   }
 
-  const def = definition.data || definition;
+  const def = definition;
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-5">
