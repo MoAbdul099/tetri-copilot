@@ -28,7 +28,7 @@ const list = async (workspaceId, { page = 1, limit = 20, search, category, statu
         id: true, title: true, category: true, status: true,
         language: true, tone: true, provider: true, model: true,
         createdAt: true, updatedAt: true,
-        createdByUser: { select: { id: true, firstName: true, lastName: true } },
+        createdByUser: { select: { id: true, fullName: true, email: true } },
       },
     }),
   ]);
@@ -43,7 +43,7 @@ const findById = async (workspaceId, id) => {
       contextSources: true,
       relations: true,
       generationLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
-      createdByUser: { select: { id: true, firstName: true, lastName: true } },
+      createdByUser: { select: { id: true, fullName: true, email: true } },
     },
   });
 };

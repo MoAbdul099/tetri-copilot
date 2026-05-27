@@ -173,7 +173,7 @@ export default function AiDocumentDetailPage() {
               <MetaChip
                 icon={FileText}
                 label="Author"
-                value={`${doc.createdByUser.firstName || ''} ${doc.createdByUser.lastName || ''}`.trim()}
+                value={doc.createdByUser.fullName || doc.createdByUser.email || ''}
               />
             )}
           </div>

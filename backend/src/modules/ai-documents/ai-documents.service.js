@@ -101,7 +101,13 @@ const generate = async (workspaceId, userId, params) => {
   const prompt = buildPrompt({ category, title, purpose, tone, language, instructions, contextString });
 
   const startTime = Date.now();
-  const result = await aiSvc.execute({ prompt, workspaceId });
+  const result = await aiSvc.execute({
+    workspaceId,
+    userId:   null,
+    feature:  'document_generation',
+    messages: [{ role: 'user', content: prompt }],
+    options:  { maxTokens: 2000, temperature: 0.7 },
+  });
   const durationMs = Date.now() - startTime;
 
   const generatedContent = result.response || '';
@@ -162,7 +168,13 @@ const regenerate = async (workspaceId, userId, id) => {
   });
 
   const startTime = Date.now();
-  const result = await aiSvc.execute({ prompt, workspaceId });
+  const result = await aiSvc.execute({
+    workspaceId,
+    userId:   null,
+    feature:  'document_generation',
+    messages: [{ role: 'user', content: prompt }],
+    options:  { maxTokens: 2000, temperature: 0.7 },
+  });
   const durationMs = Date.now() - startTime;
 
   const updated = await repo.update(workspaceId, id, {
