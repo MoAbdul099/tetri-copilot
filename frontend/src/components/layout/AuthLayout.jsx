@@ -5,7 +5,7 @@ export default function AuthLayout({ children }) {
         <img
           src="/logo.svg"
           alt="Tetri Copilot"
-          className="h-10 w-auto"
+          className="max-w-[140px] w-full h-auto object-contain"
           draggable={false}
         />
       </div>
