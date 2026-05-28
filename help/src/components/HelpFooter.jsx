@@ -7,7 +7,7 @@ export default function HelpFooter() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <img src="/logo.svg" alt="Tetri Copilot" className="h-7 w-auto mb-3" />
+            <img src="/logo.svg" alt="Tetri Copilot" className="h-10 w-auto mb-3" />
             <p className="text-sm text-tetri-neutral leading-relaxed">
               AI-powered finance and operations for growing businesses.
             </p>
@@ -40,7 +40,7 @@ export default function HelpFooter() {
               <li><Link to="/troubleshooting/login-issues" className="text-sm text-tetri-muted hover:text-tetri-blue transition-colors">Troubleshooting</Link></li>
               <li><Link to="/support/contact" className="text-sm text-tetri-muted hover:text-tetri-blue transition-colors">Contact Support</Link></li>
               <li>
-                <a href="https://app.tetrisuite.com" target="_blank" rel="noopener noreferrer" className="text-sm text-tetri-muted hover:text-tetri-blue transition-colors">
+                <a href="https://staging-app.tetrisuite.com" target="_blank" rel="noopener noreferrer" className="text-sm text-tetri-muted hover:text-tetri-blue transition-colors">
                   Open App ↗
                 </a>
               </li>
@@ -51,7 +51,7 @@ export default function HelpFooter() {
         <div className="border-t border-tetri-border mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-tetri-neutral">© {year} Tetri Copilot. All rights reserved.</p>
           <p className="text-xs text-tetri-neutral">
-            Help Center · <a href="https://app.tetrisuite.com" className="hover:text-tetri-blue transition-colors">App</a>
+            Help Center · <a href="https://staging-app.tetrisuite.com" className="hover:text-tetri-blue transition-colors">App</a>
           </p>
         </div>
       </div>

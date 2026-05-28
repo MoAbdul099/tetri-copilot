@@ -19,7 +19,7 @@ export default function HelpHeader({ onMenuToggle }) {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/logo.svg" alt="Tetri Copilot" className="h-7 w-auto" />
+          <img src="/logo.svg" alt="Tetri Copilot" className="h-10 w-auto" />
           <span className="text-sm font-semibold text-tetri-muted hidden sm:block">Help Center</span>
         </Link>
 
@@ -49,7 +49,7 @@ export default function HelpHeader({ onMenuToggle }) {
 
         {/* Open App button */}
         <a
-          href="https://app.tetrisuite.com"
+          href="https://staging-app.tetrisuite.com"
           target="_blank"
           rel="noopener noreferrer"
           className="flex-shrink-0 px-4 py-1.5 bg-tetri-blue text-white text-sm font-semibold rounded-xl hover:bg-tetri-blue-hover transition-colors"
