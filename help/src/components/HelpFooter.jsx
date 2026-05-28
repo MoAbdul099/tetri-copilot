@@ -7,7 +7,7 @@ export default function HelpFooter() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <img src="/logo.svg" alt="Tetri Copilot" className="h-10 w-auto mb-3" />
+            <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain mb-3" />
             <p className="text-sm text-tetri-neutral leading-relaxed">
               AI-powered finance and operations for growing businesses.
             </p>

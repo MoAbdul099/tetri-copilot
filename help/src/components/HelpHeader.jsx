@@ -19,7 +19,7 @@ export default function HelpHeader({ onMenuToggle }) {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/logo.svg" alt="Tetri Copilot" className="h-10 w-auto" />
+          <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain" />
           <span className="text-sm font-semibold text-tetri-muted hidden sm:block">Help Center</span>
         </Link>
 
