@@ -81,6 +81,10 @@ const publicRoutes               = require('./modules/public/index');
 
 const app = express();
 
+// Trust one level of reverse proxy (Nginx/Cloudflare) so req.ip and
+// rate-limiter keyGenerator see the real client IP from X-Forwarded-For.
+app.set('trust proxy', 1);
+
 // BigInt values (e.g. fileSizeBytes) cannot be serialized by JSON.stringify.
 // Convert them to numbers so res.json() never crashes on file-size fields.
 app.set('json replacer', (_, value) =>
@@ -112,11 +116,15 @@ app.use(helmet({
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
+const clientIp = (req) =>
+  req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip;
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIp,
   message: { success: false, error: 'Too many requests', details: [] },
 });
 
@@ -126,6 +134,7 @@ const authLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIp,
   message: { success: false, error: 'Too many authentication attempts', details: [] },
 });
 

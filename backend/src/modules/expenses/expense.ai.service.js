@@ -207,6 +207,6 @@ module.exports = {
   getWorkspaceHistory:  (workspaceId, opts)  => aiRepo.getWorkspaceHistory(workspaceId, opts),
   getSettings:          (workspaceId)        => aiRepo.getSettings(workspaceId),
   upsertSettings:       (workspaceId, data)  => aiRepo.upsertSettings(workspaceId, data),
-  getLatestRecommendation: (expenseId)       => aiRepo.getLatestRecommendation(expenseId),
+  getLatestRecommendation: (expenseId, workspaceId) => aiRepo.getLatestRecommendation(expenseId, workspaceId),
   getLearningMetrics:   (workspaceId)        => aiRepo.getLearningMetrics(workspaceId),
 };

@@ -4,18 +4,21 @@ const { protect } = require('../../middleware/requireAuth');
 const requireWorkspace = require('../../middleware/requireWorkspace');
 const ctrl = require('./deployments.controller');
 
+// Allows CI/CD via DEPLOY_SECRET, otherwise requires Clerk auth + workspace
+const deploySecretOrProtect = (req, res, next) => {
+  const secret = process.env.DEPLOY_SECRET;
+  if (secret && req.headers.authorization === `Bearer ${secret}`) return next();
+  return protect(req, res, () => requireWorkspace(req, res, next));
+};
+
 // Public: latest deployment by environment (used by status page)
 router.get('/latest/:env', ctrl.getLatestByEnvironment);
 
-// Protected with optional Clerk auth (CI/CD uses DEPLOY_SECRET instead)
-// For GET routes: require Clerk auth + workspace
 router.get('/',    protect, requireWorkspace, ctrl.listDeployments);
 router.get('/:id', protect, requireWorkspace, ctrl.getDeployment);
 
-// Write routes: accept either DEPLOY_SECRET or Clerk auth
-// These don't require requireWorkspace middleware since they support both paths
-router.post('/',               ctrl.startDeployment);
-router.patch('/:id/complete',  ctrl.completeDeployment);
-router.post('/:id/audit',      ctrl.addAuditEntry);
+router.post('/',              deploySecretOrProtect, ctrl.startDeployment);
+router.patch('/:id/complete', deploySecretOrProtect, ctrl.completeDeployment);
+router.post('/:id/audit',     deploySecretOrProtect, ctrl.addAuditEntry);
 
 module.exports = router;

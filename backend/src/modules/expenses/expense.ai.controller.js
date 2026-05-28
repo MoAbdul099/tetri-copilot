@@ -125,7 +125,7 @@ const expenseAiController = {
   async getLatestRecommendation(req, res) {
     try {
       const { expenseId } = req.params;
-      const rec = await aiService.getLatestRecommendation(expenseId);
+      const rec = await aiService.getLatestRecommendation(expenseId, req.workspaceId);
       return success(res, rec || null);
     } catch (err) {
       console.error('[expense.ai] latest recommendation error:', err);

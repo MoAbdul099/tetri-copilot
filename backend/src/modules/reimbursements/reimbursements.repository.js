@@ -84,7 +84,7 @@ const addPayment = async (reimbursementId, workspaceId, userId, data) => {
   });
   const paidAmount = Number(allPayments._sum.amount || 0);
 
-  const reimbursement = await prisma.reimbursementRequest.findUnique({ where: { id: reimbursementId } });
+  const reimbursement = await prisma.reimbursementRequest.findFirst({ where: { id: reimbursementId, workspaceId } });
   const requested = Number(reimbursement.requestedAmount || 0);
   const newStatus = paidAmount >= requested ? 'fully_paid' : 'partially_paid';
 

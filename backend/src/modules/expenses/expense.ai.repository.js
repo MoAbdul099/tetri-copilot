@@ -24,9 +24,9 @@ const expenseAiRepository = {
     });
   },
 
-  async getLatestRecommendation(expenseId) {
+  async getLatestRecommendation(expenseId, workspaceId) {
     return prisma.expenseAiRecommendation.findFirst({
-      where:   { expenseId },
+      where:   { expenseId, workspaceId },
       orderBy: { createdAt: 'desc' },
     });
   },
