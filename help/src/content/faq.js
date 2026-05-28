@@ -1,0 +1,143 @@
+export const articles = [
+  {
+    slug: 'faq/general',
+    title: 'General Questions',
+    description: 'Answers to the most frequently asked general questions about Tetri Copilot.',
+    category: 'FAQ',
+    categorySlug: 'faq',
+    keywords: ['faq', 'general questions', 'common questions', 'frequently asked questions'],
+    roles: ['Owner', 'Admin', 'User'],
+    lastUpdated: 'May 2026',
+    sections: [
+      {
+        type: 'overview',
+        content: 'Here are answers to the most common general questions about Tetri Copilot.',
+      },
+      {
+        type: 'fields',
+        title: 'General Questions and Answers',
+        rows: [
+          { field: 'What is Tetri Copilot?', required: false, description: 'Tetri Copilot is an AI-powered operating assistant for small and medium businesses. It combines invoicing, expense management, compliance tracking, and AI tools in one platform.', example: '' },
+          { field: 'Can I use Tetri Copilot for multiple companies?', required: false, description: 'Yes. Each company should have its own workspace. Contact Support for guidance on managing multiple workspaces.', example: '' },
+          { field: 'Is there a mobile app?', required: false, description: 'Tetri Copilot is a web application that works on all devices including mobile browsers. A native mobile app may be available in a future release.', example: '' },
+          { field: 'Can I import data from another system?', required: false, description: 'Data import options vary. Contact Support to discuss your import requirements.', example: '' },
+          { field: 'What currencies are supported?', required: false, description: 'Tetri Copilot supports all major world currencies. Your workspace currency is set during setup and can be changed with caution.', example: '' },
+          { field: 'How do I export my data?', required: false, description: 'You can export reports as CSV, Excel, or PDF. For full data exports, contact Support.', example: '' },
+          { field: 'Can I customize invoice templates?', required: false, description: 'Invoice branding customization is available. Go to Documents → Document Templates to configure branding.', example: '' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'faq/billing',
+    title: 'Billing Questions',
+    description: 'Frequently asked questions about Tetri Copilot billing and subscriptions.',
+    category: 'FAQ',
+    categorySlug: 'faq',
+    keywords: ['billing faq', 'pricing', 'subscription questions', 'payment faq', 'cost'],
+    roles: ['Owner'],
+    lastUpdated: 'May 2026',
+    sections: [
+      {
+        type: 'overview',
+        content: 'Common questions about Tetri Copilot billing, plans, and payments.',
+      },
+      {
+        type: 'fields',
+        title: 'Billing Questions and Answers',
+        rows: [
+          { field: 'How am I charged?', required: false, description: 'You are charged monthly or annually (depending on your plan). Payments are processed automatically via the card on file.', example: '' },
+          { field: 'Can I cancel at any time?', required: false, description: 'Yes. You can cancel your subscription at any time from the Billing page. Access continues until the end of your current billing period.', example: '' },
+          { field: 'Is there a free trial?', required: false, description: 'Please check the Tetri Copilot website for current trial and pricing options.', example: '' },
+          { field: 'What happens to my data if I cancel?', required: false, description: 'Your data is retained for a period after cancellation. You can export your data before cancelling. Contact Support for data retention details.', example: '' },
+          { field: 'Can I get a receipt for billing?', required: false, description: 'Yes. All billing receipts are available in the Billing History section and can be downloaded as PDFs.', example: '' },
+          { field: 'What payment methods are accepted?', required: false, description: 'Major credit and debit cards are accepted via Stripe. Direct debit may be available on annual plans.', example: '' },
+          { field: 'How do I update my payment method?', required: false, description: 'Go to Workspace → Billing and click Update Payment Method.', example: '' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'faq/data-security',
+    title: 'Data and Security Questions',
+    description: 'Frequently asked questions about data security and privacy in Tetri Copilot.',
+    category: 'FAQ',
+    categorySlug: 'faq',
+    keywords: ['data security', 'privacy', 'security faq', 'data protection', 'gdpr', 'encryption'],
+    roles: ['Owner', 'Admin', 'User'],
+    lastUpdated: 'May 2026',
+    sections: [
+      {
+        type: 'overview',
+        content: 'Your data security and privacy are a priority. Here are answers to common security questions.',
+      },
+      {
+        type: 'fields',
+        title: 'Data and Security Q&A',
+        rows: [
+          { field: 'Where is my data stored?', required: false, description: 'Your data is stored on secure cloud infrastructure. Contact Support for information about data residency options.', example: '' },
+          { field: 'Is my data encrypted?', required: false, description: 'Yes. All data is encrypted in transit (TLS) and at rest.', example: '' },
+          { field: 'Who can see my workspace data?', required: false, description: 'Only members of your workspace can see your data. Tetri Copilot team members may access data in limited circumstances for support purposes, subject to strict confidentiality controls.', example: '' },
+          { field: 'Is Tetri Copilot GDPR compliant?', required: false, description: 'Tetri Copilot is built with data protection principles in mind. Contact legal@tetrisuite.com for GDPR-specific queries.', example: '' },
+          { field: 'Can I delete my data?', required: false, description: 'You can delete individual records at any time. For full data deletion (account closure), contact Support.', example: '' },
+          { field: 'How do I report a security concern?', required: false, description: 'Email security@tetrisuite.com immediately if you suspect a security issue.', example: '' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'faq/ai-questions',
+    title: 'AI Questions',
+    description: 'Frequently asked questions about AI features in Tetri Copilot.',
+    category: 'FAQ',
+    categorySlug: 'faq',
+    keywords: ['ai faq', 'ai questions', 'how does ai work', 'ai privacy', 'ai accuracy'],
+    roles: ['Owner', 'Admin', 'User'],
+    lastUpdated: 'May 2026',
+    sections: [
+      {
+        type: 'overview',
+        content: 'Common questions about how the AI works in Tetri Copilot.',
+      },
+      {
+        type: 'fields',
+        title: 'AI Questions and Answers',
+        rows: [
+          { field: 'Is my data used to train the AI?', required: false, description: 'Your workspace data is used to provide answers within your workspace only. It is not used to train global AI models.', example: '' },
+          { field: 'How accurate is the AI?', required: false, description: 'AI accuracy depends on the quality and completeness of your data. Always review AI responses before acting on them.', example: '' },
+          { field: 'Can the AI access external websites or data?', required: false, description: 'No. The AI Assistant operates only on your workspace data. It cannot access external websites, APIs, or other companies\' data.', example: '' },
+          { field: 'What happens to AI chat history?', required: false, description: 'AI conversations are logged within your workspace for audit purposes. Workspace owners and admins can review AI conversation history.', example: '' },
+          { field: 'Can the AI make mistakes?', required: false, description: 'Yes. AI can and does make mistakes. Always review AI output, especially for financial figures and compliance guidance.', example: '' },
+          { field: 'Can I disable AI features?', required: false, description: 'Owners and Admins can configure AI feature availability in the AI Platform settings. Contact your workspace admin if you have concerns.', example: '' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'faq/compliance-questions',
+    title: 'Compliance Questions',
+    description: 'Frequently asked questions about the Compliance module in Tetri Copilot.',
+    category: 'FAQ',
+    categorySlug: 'faq',
+    keywords: ['compliance faq', 'compliance questions', 'regulatory', 'tax', 'vat', 'paye'],
+    roles: ['Owner', 'Admin'],
+    lastUpdated: 'May 2026',
+    sections: [
+      {
+        type: 'overview',
+        content: 'Common questions about using the Compliance module.',
+      },
+      {
+        type: 'fields',
+        title: 'Compliance Q&A',
+        rows: [
+          { field: 'Does Tetri Copilot file returns on my behalf?', required: false, description: 'No. Tetri Copilot tracks your compliance obligations and reminds you of deadlines, but you are responsible for filing returns yourself or through your accountant.', example: '' },
+          { field: 'What compliance packs are available?', required: false, description: 'Compliance packs are available for various jurisdictions. Go to Compliance → Packs to see what is available for your country.', example: '' },
+          { field: 'Can I add my own compliance obligations?', required: false, description: 'Yes. Go to Compliance → Templates to create custom compliance templates for any obligation specific to your business.', example: '' },
+          { field: 'How does the compliance health score work?', required: false, description: 'The score is calculated based on the percentage of obligations completed on time vs. overdue. A score above 80 is generally healthy.', example: '' },
+          { field: 'What if an obligation does not apply to me?', required: false, description: 'You can mark occurrences as Not Applicable. This removes them from your overdue count without marking them as complete.', example: '' },
+        ],
+      },
+    ],
+  },
+]

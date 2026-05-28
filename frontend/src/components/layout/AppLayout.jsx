@@ -7,7 +7,7 @@ import {
   TrendingUp, Activity, Receipt, ShoppingCart, CheckSquare,
   Wallet, Brain, Target, RefreshCw, FolderOpen,
   HardDrive, ShieldCheck, Scale, ClipboardList, Calendar, Tag, BookOpen, Building2, CheckCircle,
-  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap, ToggleRight, MessageSquare, Bot,
+  Bell, Siren, BarChart2, BellRing, Mail, LineChart, Megaphone, Sparkles, Clock, Shield, ShieldAlert, MonitorDot, Rocket, Gauge, ClipboardCheck, AlertTriangle, DollarSign, Zap, ToggleRight, MessageSquare, Bot, HelpCircle,
 } from 'lucide-react';
 import NotificationBell from '../../features/notifications/components/NotificationBell.jsx';
 import AssistantWidget from '../../features/assistant/components/AssistantWidget.jsx';
@@ -372,8 +372,17 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
             )}
           </div>
 
-          {/* Right: notifications + user */}
+          {/* Right: help + notifications + user */}
           <div className="ml-auto flex items-center gap-2">
+            <a
+              href="https://help.tetrisuite.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
+              title="Help Center"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </a>
             <NotificationBell />
 
             {/* User menu */}
@@ -429,6 +438,15 @@ export default function AppLayout({ user, workspace, allWorkspaces = [], onSwitc
           </button>
           <img src="/logo.svg" alt="Tetri Copilot" className="max-w-[140px] w-full h-auto object-contain" draggable={false} />
           <div className="ml-auto flex items-center gap-1">
+            <a
+              href="https://help.tetrisuite.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg hover:text-tetri-text transition-colors"
+              title="Help Center"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </a>
             <NotificationBell />
             <button
               onClick={() => setUserMenuOpen((v) => !v)}
