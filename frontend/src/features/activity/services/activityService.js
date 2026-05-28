@@ -1,4 +1,4 @@
-import api from '../../../lib/api';
+import api, { API_BASE_URL } from '../../../lib/api';
 
 const base = '/api/v1/activity';
 
@@ -10,7 +10,7 @@ const activityService = {
   getRecent:         (limit = 20)  => api.get(`${base}/recent`, { params: { limit } }).then((r) => r.data.data),
   getExportUrl:      (params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${base}/export${qs ? `?${qs}` : ''}`;
+    return `${API_BASE_URL}${base}/export${qs ? `?${qs}` : ''}`;
   },
 };
 

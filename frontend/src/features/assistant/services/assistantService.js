@@ -1,8 +1,5 @@
-import api from '../../../lib/api';
-import { getApiToken } from '../../../lib/api';
+import api, { getApiToken, API_BASE_URL } from '../../../lib/api';
 import { getActiveWorkspaceId } from '../../../lib/workspace';
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const base     = '/api/v1/assistant';
 
 const assistantService = {
@@ -16,7 +13,7 @@ const assistantService = {
   deleteSession:   (id)        => api.delete(`${base}/sessions/${id}`).then((r) => r.data.data),
 
   // exportSession returns the URL for a direct file download (authenticated via token in URL not needed — handled via Axios interceptor on separate call)
-  getExportUrl:    (id, fmt)   => `${BASE_URL}${base}/sessions/${id}/export?format=${fmt || 'txt'}`,
+  getExportUrl:    (id, fmt)   => `${API_BASE_URL}${base}/sessions/${id}/export?format=${fmt || 'txt'}`,
 
   // ── Chat ────────────────────────────────────────────────────────────────────
   chat:               (id, msg) => api.post(`${base}/sessions/${id}/chat`,      { message: msg }).then((r) => r.data.data),
@@ -29,7 +26,7 @@ const assistantService = {
 
     let response;
     try {
-      response = await fetch(`${BASE_URL}${base}/sessions/${sessionId}/stream`, {
+      response = await fetch(`${API_BASE_URL}${base}/sessions/${sessionId}/stream`, {
         method:  'POST',
         headers: {
           'Content-Type':    'application/json',

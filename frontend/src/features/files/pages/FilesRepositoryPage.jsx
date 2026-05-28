@@ -4,6 +4,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, X,
 } from 'lucide-react';
 import { listFiles, deleteFile, restoreFile, renameFile } from '../services/filesService.js';
+import { API_BASE_URL } from '../../../lib/api';
 import FileUploadDropzone from '../components/FileUploadDropzone.jsx';
 import FilePreviewModal from '../components/FilePreviewModal.jsx';
 
@@ -161,7 +162,7 @@ export default function FilesRepositoryPage() {
   }
 
   function handleDownload(file) {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = API_BASE_URL;
     const a = document.createElement('a');
     a.href = `${baseUrl}/api/v1/files/${file.id}/download`;
     a.download = file.fileName || 'file';

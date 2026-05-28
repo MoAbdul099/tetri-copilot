@@ -1,5 +1,4 @@
-import api from '../../../lib/api';
-import { getApiToken } from '../../../lib/api';
+import api, { getApiToken, API_BASE_URL } from '../../../lib/api';
 
 const base = '/api/v1/audit';
 
@@ -13,7 +12,7 @@ const auditService = {
 
   async exportCsv(params = {}) {
     const token = await getApiToken();
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const apiBase = API_BASE_URL;
     const qs = new URLSearchParams(params).toString();
     const url = `${apiBase}${base}/export${qs ? `?${qs}` : ''}`;
     const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}`, 'X-Workspace-Id': localStorage.getItem('tetri_active_workspace') || '' } : {} });

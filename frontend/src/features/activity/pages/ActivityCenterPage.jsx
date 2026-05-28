@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Activity, Download, RefreshCw, Search, Filter, X } from 'lucide-react';
 import activityService from '../services/activityService';
 import ActivityItem from '../components/ActivityItem';
-import { getApiToken } from '../../../lib/api';
+import { getApiToken, API_BASE_URL } from '../../../lib/api';
 
 const MODULES = ['customers', 'invoices', 'payments', 'expenses', 'files', 'compliance', 'members', 'workspaces', 'billing', 'authentication', 'settings', 'reports'];
 const CATEGORIES = ['Customers', 'Invoices', 'Payments', 'Expenses', 'Files', 'Compliance', 'Users', 'Workspace', 'Billing', 'Subscription', 'Authentication', 'Administration', 'System', 'Notifications'];
@@ -95,7 +95,7 @@ export default function ActivityCenterPage() {
     delete params.page;
     delete params.limit;
     const token = await getApiToken();
-    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const base = API_BASE_URL;
     const qs = new URLSearchParams(params).toString();
     const url = `${base}/api/v1/activity/export${qs ? `?${qs}` : ''}`;
     const a = document.createElement('a');

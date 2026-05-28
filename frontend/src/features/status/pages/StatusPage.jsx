@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../../lib/api';
+import api, { API_BASE_URL } from '../../../lib/api';
 
 export default function StatusPage() {
   const [health, setHealth] = useState(null);
@@ -97,7 +97,7 @@ export default function StatusPage() {
               <p className="text-xs text-gray-400 mt-1">
                 Check that the backend is running on{' '}
                 <code className="bg-gray-100 px-1 rounded">
-                  {import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}
+                  {API_BASE_URL}
                 </code>
               </p>
             </div>
