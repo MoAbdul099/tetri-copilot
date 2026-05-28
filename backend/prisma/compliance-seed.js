@@ -3,9 +3,8 @@
  * Run: node prisma/compliance-seed.js
  */
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 
-async function main() {
+async function seedCompliance(prisma) {
   console.log('Seeding compliance reference data...');
 
   // ── Jurisdictions ──────────────────────────────────────────────────────────
@@ -187,6 +186,12 @@ async function main() {
   console.log('Compliance seed complete.');
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());
+module.exports = { seedCompliance };
+
+// Standalone runner
+if (require.main === module) {
+  const prisma = new PrismaClient();
+  seedCompliance(prisma)
+    .catch((e) => { console.error(e); process.exit(1); })
+    .finally(() => prisma.$disconnect());
+}
