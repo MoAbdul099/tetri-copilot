@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { seedCompliance } = require('./compliance-seed');
 
 const prisma = new PrismaClient();
 
@@ -212,6 +213,8 @@ async function main() {
     });
   }
   console.log('Plans seeded: Free, Starter, Professional, Business');
+
+  await seedCompliance(prisma);
 
   console.log('Seed complete.');
 }
