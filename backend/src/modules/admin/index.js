@@ -3,7 +3,8 @@ const requireAdmin = require('../../middleware/requireAdmin');
 const adminAuthRoutes = require('./auth/admin.auth.routes');
 const adminDashboardRoutes   = require('./dashboard/admin.dashboard.routes');
 const adminWorkspacesRoutes  = require('./workspaces/admin.workspaces.routes');
-const adminUsersRoutes       = require('./users/admin.users.routes');
+const adminUsersRoutes          = require('./users/admin.users.routes');
+const adminSubscriptionsRoutes  = require('./subscriptions/admin.subscriptions.routes');
 
 const router = express.Router();
 
@@ -15,7 +16,8 @@ router.use(requireAdmin);
 
 router.use('/dashboard',   adminDashboardRoutes);
 router.use('/workspaces',  adminWorkspacesRoutes);
-router.use('/users',       adminUsersRoutes);
+router.use('/users',           adminUsersRoutes);
+router.use('/subscriptions',   adminSubscriptionsRoutes);
 
 router.get('/ping', (req, res) => {
   res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });

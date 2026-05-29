@@ -8,6 +8,8 @@ import WorkspacesPage from './pages/WorkspacesPage';
 import WorkspaceDetailPage from './pages/WorkspaceDetailPage';
 import UsersPage from './pages/UsersPage';
 import UserDetailPage from './pages/UserDetailPage';
+import PlansPage from './pages/PlansPage';
+import SubscriptionDetailPage from './pages/SubscriptionDetailPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -30,7 +32,8 @@ export default function App() {
             <Route path="/organizations/:id"       element={<WorkspaceDetailPage />} />
             <Route path="/users"                   element={<UsersPage />} />
             <Route path="/users/:id"               element={<UserDetailPage />} />
-            <Route path="/plans"                   element={<StubPage title="Plans & Subscriptions" />} />
+            <Route path="/plans"                   element={<PlansPage />} />
+            <Route path="/subscriptions/:id"       element={<SubscriptionDetailPage />} />
             <Route path="/countries"               element={<StubPage title="Country Profiles" />} />
             <Route path="/localization"            element={<StubPage title="Languages & Currencies" />} />
             <Route path="/compliance-templates"    element={<StubPage title="Compliance Templates" />} />
