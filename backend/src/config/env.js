@@ -39,6 +39,9 @@ const envSchema = z.object({
   OPENAI_MODEL:      z.string().default('gpt-4o-mini'),
   ANTHROPIC_API_KEY: z.string().optional(),
 
+  // Admin panel (standalone JWT auth — no Clerk)
+  ADMIN_JWT_SECRET: z.string().default('change-me-in-production'),
+
   // Deployment (optional)
   DEPLOY_SECRET: z.string().optional(),
 });

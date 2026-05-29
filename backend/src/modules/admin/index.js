@@ -1,24 +1,20 @@
-const express  = require('express');
-const { protect } = require('../../middleware/requireAuth');
-const requireWorkspace = require('../../middleware/requireWorkspace');
-const aiAdminRoutes = require('../ai/ai.admin.routes');
+const express = require('express');
+const requireAdmin = require('../../middleware/requireAdmin');
+const adminAuthRoutes = require('./auth/admin.auth.routes');
 
 const router = express.Router();
 
-// All /api/admin/* routes require authentication + workspace membership
-router.use(protect, requireWorkspace);
+// Public admin endpoints (no token required)
+router.use('/auth', adminAuthRoutes);
 
-// Guard: owner or admin only for the entire admin namespace
-router.use((req, res, next) => {
-  if (!['owner', 'admin'].includes(req.role)) {
-    return res.status(403).json({ success: false, error: 'Admin access required', details: [] });
-  }
-  next();
+// All remaining /api/admin/* routes require valid admin JWT
+router.use(requireAdmin);
+
+// Placeholder — future admin sub-modules mount here
+router.get('/ping', (req, res) => {
+  res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });
 });
 
-router.use('/ai', aiAdminRoutes);
-
-// Fallback for unimplemented admin sub-routes
 router.use((req, res) => {
   res.status(404).json({ success: false, error: 'Admin endpoint not found', details: [] });
 });

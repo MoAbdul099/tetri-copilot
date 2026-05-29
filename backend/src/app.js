@@ -113,7 +113,14 @@ app.use(helmet({
   permittedCrossDomainPolicies: { permittedPolicies: 'none' },
 }));
 
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const clientIp = (req) =>

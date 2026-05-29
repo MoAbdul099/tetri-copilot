@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #0f172b;
+    background: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+  }
+}
