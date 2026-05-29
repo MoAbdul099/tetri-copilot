@@ -29,6 +29,7 @@ const createWorkspaceWithOwner = ({ userId, name }) =>
 const WORKSPACE_INCLUDE = {
   defaultCurrency: true,
   defaultLanguage: true,
+  companySettings: true,
   countryProfile: {
     include: {
       defaultCurrency: true,

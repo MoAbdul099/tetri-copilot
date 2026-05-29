@@ -60,7 +60,13 @@ function FieldRow({ label, children, half = false }) {
 export default function InvoiceForm({ initialValues, onSubmit, submitLabel = 'Save Invoice', loading }) {
   const { workspace } = useWorkspace();
   const defaultCurrency = workspace?.defaultCurrency?.code || workspace?.countryProfile?.defaultCurrency?.code || 'USD';
-  const defaultTaxRate  = Number(workspace?.countryProfile?.defaultTaxRate ?? 0);
+  // Priority: workspace setting override (if >0) → country profile default → 0
+  // Use || not ?? so that a zero companySettings value falls through to the country profile rate
+  const defaultTaxRate = Number(
+    workspace?.companySettings?.defaultTaxRate ||
+    workspace?.countryProfile?.defaultTaxRate ||
+    0
+  );
 
   const [values, setValues] = useState(() => ({
     ...buildDefaults(defaultCurrency, defaultTaxRate),
