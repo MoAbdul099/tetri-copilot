@@ -117,21 +117,17 @@ async function seedCompliance(prisma) {
   console.log(`  ✓ ${categoryData.length} system categories`);
 
   // ── Compliance Packs ───────────────────────────────────────────────────────
-  const uaePack = await prisma.compliancePack.upsert({
-    where: { id: (await prisma.compliancePack.findFirst({ where: { jurisdictionId: jMap.UAE } }))?.id || '00000000-0000-0000-0000-000000000000' },
-    update: {},
-    create: {
-      jurisdictionId: jMap.UAE,
-      name: 'UAE Core Compliance Pack',
-      description: 'Essential compliance obligations for UAE businesses including VAT, Corporate Tax, and Trade License.',
-    },
-  }).catch(() => prisma.compliancePack.create({
-    data: {
-      jurisdictionId: jMap.UAE,
-      name: 'UAE Core Compliance Pack',
-      description: 'Essential compliance obligations for UAE businesses including VAT, Corporate Tax, and Trade License.',
-    },
-  }));
+  const findOrCreatePack = async (data) => {
+    const existing = await prisma.compliancePack.findFirst({ where: { name: data.name } });
+    if (existing) return existing;
+    return prisma.compliancePack.create({ data: { ...data, status: 'published', publishedAt: new Date() } });
+  };
+
+  const uaePack = await findOrCreatePack({
+    jurisdictionId: jMap.UAE,
+    name: 'UAE Core Compliance Pack',
+    description: 'Essential compliance obligations for UAE businesses including VAT, Corporate Tax, and Trade License.',
+  });
 
   const uaePackTemplates = [
     { packId: uaePack.id, name: 'UAE VAT Return', description: 'Monthly VAT return filing with the Federal Tax Authority.', frequency: 'monthly', priority: 'high' },
@@ -140,15 +136,10 @@ async function seedCompliance(prisma) {
     { packId: uaePack.id, name: 'ESR Filing', description: 'Economic Substance Regulations notification and report.', frequency: 'annual', priority: 'high' },
   ];
 
-  const geoPack = await prisma.compliancePack.create({
-    data: {
-      jurisdictionId: jMap.GEO,
-      name: 'Georgia Core Compliance Pack',
-      description: 'Core compliance obligations for businesses registered in Georgia.',
-    },
-  }).catch(async () => {
-    const existing = await prisma.compliancePack.findFirst({ where: { jurisdictionId: jMap.GEO } });
-    return existing;
+  const geoPack = await findOrCreatePack({
+    jurisdictionId: jMap.GEO,
+    name: 'Georgia Core Compliance Pack',
+    description: 'Core compliance obligations for businesses registered in Georgia.',
   });
 
   const geoPackTemplates = [
@@ -157,15 +148,10 @@ async function seedCompliance(prisma) {
     { packId: geoPack.id, name: 'Financial Statement Submission', description: 'Annual financial statements to Revenue Service.', frequency: 'annual', priority: 'high' },
   ];
 
-  const sauPack = await prisma.compliancePack.create({
-    data: {
-      jurisdictionId: jMap.SAU,
-      name: 'Saudi Arabia Core Compliance Pack',
-      description: 'Key compliance obligations for businesses operating in Saudi Arabia.',
-    },
-  }).catch(async () => {
-    const existing = await prisma.compliancePack.findFirst({ where: { jurisdictionId: jMap.SAU } });
-    return existing;
+  const sauPack = await findOrCreatePack({
+    jurisdictionId: jMap.SAU,
+    name: 'Saudi Arabia Core Compliance Pack',
+    description: 'Key compliance obligations for businesses operating in Saudi Arabia.',
   });
 
   const sauPackTemplates = [
@@ -174,7 +160,7 @@ async function seedCompliance(prisma) {
     { packId: sauPack.id, name: 'Commercial Registration Renewal', description: 'Annual renewal of commercial registration.', frequency: 'annual', priority: 'critical' },
   ];
 
-  // Create pack templates
+  // Create pack templates (idempotent)
   for (const tpl of [...uaePackTemplates, ...geoPackTemplates, ...sauPackTemplates]) {
     const existing = await prisma.compliancePackTemplate.findFirst({ where: { packId: tpl.packId, name: tpl.name } });
     if (!existing) {
