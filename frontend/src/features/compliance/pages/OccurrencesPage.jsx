@@ -40,7 +40,7 @@ export default function OccurrencesPage() {
     setLoading(true);
     listOccurrences({ search: search || undefined, status: status || undefined, priority: priority || undefined, jurisdictionId: jurisdictionId || undefined, categoryId: categoryId || undefined, page, limit })
       .then((data) => {
-        setOccurrences(Array.isArray(data) ? data : (data?.occurrences || []));
+        setOccurrences(Array.isArray(data) ? data : (data?.items || []));
         setTotal(data?.total || 0);
       })
       .catch(() => showToast("error", "Failed to load occurrences"))

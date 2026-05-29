@@ -32,7 +32,7 @@ export default function TemplatesPage() {
     setLoading(true);
     listTemplates({ search: search || undefined, page, limit })
       .then((data) => {
-        setTemplates(Array.isArray(data) ? data : (data?.templates || []));
+        setTemplates(Array.isArray(data) ? data : (data?.items || []));
         setTotal(data?.total || 0);
       })
       .catch(() => showToast("error", "Failed to load templates"))
