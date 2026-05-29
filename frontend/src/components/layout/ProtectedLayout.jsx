@@ -7,6 +7,7 @@ import { getActiveWorkspaceId, setActiveWorkspaceId } from '../../lib/workspace.
 import LoadingSpinner from '../ui/LoadingSpinner.jsx';
 import AppLayout from './AppLayout.jsx';
 import WorkspacePickerPage from '../../features/workspaces/pages/WorkspacePickerPage.jsx';
+import { WorkspaceProvider } from '../../context/WorkspaceContext.jsx';
 
 const APP_LAYOUT_PATHS = ['/dashboard', '/settings', '/members', '/billing', '/customers', '/invoices', '/payments', '/receivables', '/collections', '/statements', '/expenses', '/approvals', '/reimbursements', '/expense-insights', '/budgets', '/recurring-expenses', '/files', '/ai-documents', '/document-templates', '/compliance', '/notifications', '/announcements', '/reports', '/analytics', '/activity', '/audit', '/security', '/system', '/ai', '/assistant'];
 
@@ -107,16 +108,18 @@ export default function ProtectedLayout() {
   const useAppLayout = APP_LAYOUT_PATHS.some((p) => location.pathname.startsWith(p));
   if (useAppLayout) {
     return (
-      <AppLayout
-        user={user}
-        workspace={workspace}
-        allWorkspaces={workspaces}
-        onSwitchWorkspace={(ws) => {
-          setActiveWorkspaceId(ws.id);
-          setActiveWorkspace(ws);
-          window.location.href = '/dashboard';
-        }}
-      />
+      <WorkspaceProvider workspaceId={workspace?.id}>
+        <AppLayout
+          user={user}
+          workspace={workspace}
+          allWorkspaces={workspaces}
+          onSwitchWorkspace={(ws) => {
+            setActiveWorkspaceId(ws.id);
+            setActiveWorkspace(ws);
+            window.location.href = '/dashboard';
+          }}
+        />
+      </WorkspaceProvider>
     );
   }
 

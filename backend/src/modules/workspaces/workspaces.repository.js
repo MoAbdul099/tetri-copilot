@@ -26,26 +26,26 @@ const createWorkspaceWithOwner = ({ userId, name }) =>
     return { workspace, membership };
   });
 
-const findWorkspaceById = (id) =>
-  prisma.workspace.findUnique({
-    where: { id },
+const WORKSPACE_INCLUDE = {
+  defaultCurrency: true,
+  defaultLanguage: true,
+  countryProfile: {
     include: {
-      countryProfile: true,
       defaultCurrency: true,
       defaultLanguage: true,
+      languages: {
+        include: { language: true },
+        where:   { language: { isNot: null } },
+      },
     },
-  });
+  },
+};
+
+const findWorkspaceById = (id) =>
+  prisma.workspace.findUnique({ where: { id }, include: WORKSPACE_INCLUDE });
 
 const updateWorkspace = (id, data) =>
-  prisma.workspace.update({
-    where: { id },
-    data,
-    include: {
-      countryProfile: true,
-      defaultCurrency: true,
-      defaultLanguage: true,
-    },
-  });
+  prisma.workspace.update({ where: { id }, data, include: WORKSPACE_INCLUDE });
 
 module.exports = {
   findUserWorkspace,

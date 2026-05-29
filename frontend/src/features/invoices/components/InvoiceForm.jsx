@@ -5,26 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import LineItemsEditor from './LineItemsEditor.jsx';
 import { listCustomers } from '../../customers/services/customersService.js';
+import { useWorkspace } from '../../../context/WorkspaceContext.jsx';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'CAD', 'AUD', 'CHF', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'QAR', 'GEL', 'CAD', 'AUD', 'CHF', 'JPY', 'SGD'];
 
 const today = () => new Date().toISOString().slice(0, 10);
 const daysFromNow = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 
-const DEFAULT_VALUES = {
-  customerId: '',
-  customerContactId: '',
-  issueDate: today(),
-  dueDate: daysFromNow(30),
-  currencyCode: 'USD',
-  referenceNumber: '',
-  poNumber: '',
-  customerReference: '',
-  notes: '',
-  terms: '',
-  internalComments: '',
-  items: [{ description: '', quantity: 1, unitPrice: 0, discountRate: 0, taxRate: 0 }],
-};
+function buildDefaults(currencyCode = 'USD', taxRate = 0) {
+  return {
+    customerId: '',
+    customerContactId: '',
+    issueDate: today(),
+    dueDate: daysFromNow(30),
+    currencyCode,
+    referenceNumber: '',
+    poNumber: '',
+    customerReference: '',
+    notes: '',
+    terms: '',
+    internalComments: '',
+    items: [{ description: '', quantity: 1, unitPrice: 0, discountRate: 0, taxRate }],
+  };
+}
 
 function Section({ title, children, collapsible = false }) {
   const [open, setOpen] = useState(true);
@@ -55,9 +58,28 @@ function FieldRow({ label, children, half = false }) {
 }
 
 export default function InvoiceForm({ initialValues, onSubmit, submitLabel = 'Save Invoice', loading }) {
-  const [values, setValues] = useState({ ...DEFAULT_VALUES, ...initialValues });
+  const { workspace } = useWorkspace();
+  const defaultCurrency = workspace?.defaultCurrency?.code || workspace?.countryProfile?.defaultCurrency?.code || 'USD';
+  const defaultTaxRate  = Number(workspace?.countryProfile?.defaultTaxRate ?? 0);
+
+  const [values, setValues] = useState(() => ({
+    ...buildDefaults(defaultCurrency, defaultTaxRate),
+    ...initialValues,
+  }));
   const [customers, setCustomers] = useState([]);
   const [errors, setErrors] = useState({});
+
+  // Re-apply defaults when workspace loads (only on create — don't overwrite existing initialValues)
+  useEffect(() => {
+    if (!workspace || initialValues?.currencyCode) return;
+    setValues((prev) => ({
+      ...prev,
+      currencyCode: defaultCurrency,
+      items: prev.items.map((item, i) =>
+        i === 0 && item.taxRate === 0 && !item.description ? { ...item, taxRate: defaultTaxRate } : item
+      ),
+    }));
+  }, [workspace]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     listCustomers({ limit: 200, status: 'active' }).then((r) => setCustomers(r?.items || []));

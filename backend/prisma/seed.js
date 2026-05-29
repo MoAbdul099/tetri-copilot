@@ -57,73 +57,109 @@ async function main() {
   console.log('Currencies seeded: USD, AED, SAR, QAR, GEL');
 
   // Country profiles
-  await Promise.all([
+  const [ae, sa, qa, ge] = await Promise.all([
     prisma.countryProfile.upsert({
       where: { countryCode: 'AE' },
       create: {
-        countryCode: 'AE',
-        countryName: 'United Arab Emirates',
-        defaultCurrencyId: aed.id,
-        defaultLanguageId: ar.id,
-        dateFormat: 'DD/MM/YYYY',
-        timezone: 'Asia/Dubai',
-        taxLabel: 'VAT',
-        taxNumberLabel: 'TRN',
-        defaultTaxRate: 5,
-        isActive: true,
+        countryCode: 'AE', countryName: 'United Arab Emirates', status: 'active',
+        defaultCurrencyId: aed.id, defaultLanguageId: ar.id,
+        dateFormat: 'DD/MM/YYYY', timezone: 'Asia/Dubai',
+        taxLabel: 'VAT', taxNumberLabel: 'TRN', defaultTaxRate: 5,
+        taxEnabled: true, taxReportingFrequency: 'quarterly',
+        fiscalYearStart: 1, fiscalYearEnd: 12, accountingPeriods: 'quarterly',
+        complianceEnabled: true, regulatoryFramework: 'UAE Federal Tax Authority (FTA) regulatory framework',
+        filingFrequency: 'quarterly', isActive: true,
       },
       update: {},
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'SA' },
       create: {
-        countryCode: 'SA',
-        countryName: 'Saudi Arabia',
-        defaultCurrencyId: sar.id,
-        defaultLanguageId: ar.id,
-        dateFormat: 'DD/MM/YYYY',
-        timezone: 'Asia/Riyadh',
-        taxLabel: 'VAT',
-        taxNumberLabel: 'VAT Number',
-        defaultTaxRate: 15,
-        isActive: true,
+        countryCode: 'SA', countryName: 'Saudi Arabia', status: 'active',
+        defaultCurrencyId: sar.id, defaultLanguageId: ar.id,
+        dateFormat: 'DD/MM/YYYY', timezone: 'Asia/Riyadh',
+        taxLabel: 'VAT', taxNumberLabel: 'VAT Number', defaultTaxRate: 15,
+        taxEnabled: true, taxReportingFrequency: 'quarterly',
+        fiscalYearStart: 1, fiscalYearEnd: 12, accountingPeriods: 'quarterly',
+        complianceEnabled: true, regulatoryFramework: 'ZATCA (Zakat, Tax and Customs Authority) regulatory framework',
+        filingFrequency: 'quarterly', isActive: true,
       },
       update: {},
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'QA' },
       create: {
-        countryCode: 'QA',
-        countryName: 'Qatar',
-        defaultCurrencyId: qar.id,
-        defaultLanguageId: ar.id,
-        dateFormat: 'DD/MM/YYYY',
-        timezone: 'Asia/Qatar',
-        taxLabel: 'Tax',
-        taxNumberLabel: 'Tax Number',
-        defaultTaxRate: 0,
-        isActive: true,
+        countryCode: 'QA', countryName: 'Qatar', status: 'active',
+        defaultCurrencyId: qar.id, defaultLanguageId: ar.id,
+        dateFormat: 'DD/MM/YYYY', timezone: 'Asia/Qatar',
+        taxLabel: 'Tax', taxNumberLabel: 'Tax Number', defaultTaxRate: 0,
+        taxEnabled: false, taxReportingFrequency: 'annual',
+        fiscalYearStart: 1, fiscalYearEnd: 12, accountingPeriods: 'annual',
+        complianceEnabled: true, regulatoryFramework: 'Qatar Financial Centre (QFC) regulatory framework',
+        filingFrequency: 'annual', isActive: true,
       },
       update: {},
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'GE' },
       create: {
-        countryCode: 'GE',
-        countryName: 'Georgia',
-        defaultCurrencyId: gel.id,
-        defaultLanguageId: ka.id,
-        dateFormat: 'DD/MM/YYYY',
-        timezone: 'Asia/Tbilisi',
-        taxLabel: 'VAT',
-        taxNumberLabel: 'TIN',
-        defaultTaxRate: 18,
-        isActive: true,
+        countryCode: 'GE', countryName: 'Georgia', status: 'active',
+        defaultCurrencyId: gel.id, defaultLanguageId: ka.id,
+        dateFormat: 'DD/MM/YYYY', timezone: 'Asia/Tbilisi',
+        taxLabel: 'VAT', taxNumberLabel: 'TIN', defaultTaxRate: 18,
+        taxEnabled: true, taxReportingFrequency: 'monthly',
+        fiscalYearStart: 1, fiscalYearEnd: 12, accountingPeriods: 'monthly',
+        complianceEnabled: true, regulatoryFramework: 'Revenue Service of Georgia regulatory framework',
+        filingFrequency: 'monthly', isActive: true,
       },
       update: {},
     }),
   ]);
   console.log('Country profiles seeded: UAE, Saudi Arabia, Qatar, Georgia');
+
+  // CountryProfileLanguage — assign supported languages to each country profile
+  await Promise.all([
+    // UAE: Arabic (default) + English
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: ae.id, languageId: ar.id } },
+      create: { countryProfileId: ae.id, languageId: ar.id, isDefault: true },
+      update: {},
+    }),
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: ae.id, languageId: en.id } },
+      create: { countryProfileId: ae.id, languageId: en.id, isDefault: false },
+      update: {},
+    }),
+    // Saudi Arabia: Arabic (default)
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: sa.id, languageId: ar.id } },
+      create: { countryProfileId: sa.id, languageId: ar.id, isDefault: true },
+      update: {},
+    }),
+    // Qatar: Arabic (default) + English
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: qa.id, languageId: ar.id } },
+      create: { countryProfileId: qa.id, languageId: ar.id, isDefault: true },
+      update: {},
+    }),
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: qa.id, languageId: en.id } },
+      create: { countryProfileId: qa.id, languageId: en.id, isDefault: false },
+      update: {},
+    }),
+    // Georgia: Georgian (default) + English
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: ge.id, languageId: ka.id } },
+      create: { countryProfileId: ge.id, languageId: ka.id, isDefault: true },
+      update: {},
+    }),
+    prisma.countryProfileLanguage.upsert({
+      where: { countryProfileId_languageId: { countryProfileId: ge.id, languageId: en.id } },
+      create: { countryProfileId: ge.id, languageId: en.id, isDefault: false },
+      update: {},
+    }),
+  ]);
+  console.log('Country profile languages seeded');
 
   // Plans — canonical feature set: same label/category/order across all plans, only `included` varies
   const MASTER_FEATURES = [
