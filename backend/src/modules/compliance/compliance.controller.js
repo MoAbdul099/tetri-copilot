@@ -59,7 +59,7 @@ const getPack = async (req, res, next) => {
 const installPack = async (req, res, next) => {
   try {
     const result = await svc.installPack(req.workspaceId, req.params.id, req.user.id);
-    success(res, result, 'Compliance pack installed', 201);
+    success(res, result, `Pack installed: ${result.templatesCreated} obligations created, ${result.occurrencesCreated} calendar events scheduled over 24 months`, 201);
   } catch (e) { next(e); }
 };
 

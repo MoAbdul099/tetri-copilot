@@ -135,6 +135,7 @@ const getPackById = async (id) => {
 const installPack = async (workspaceId, packId, ownerUserId) => {
   const pack = await getPackById(packId);
   const createdTemplates = [];
+  let totalOccurrences = 0;
 
   for (const item of pack.items) {
     const templateData = {
@@ -156,11 +157,17 @@ const installPack = async (workspaceId, packId, ownerUserId) => {
 
     const occurrences = generateOccurrences({ ...created, workspaceId });
     if (occurrences.length > 0) {
-      await repo.bulkCreateOccurrences(occurrences);
+      const result = await repo.bulkCreateOccurrences(occurrences);
+      totalOccurrences += result?.count ?? occurrences.length;
     }
   }
 
-  return { pack, templatesCreated: createdTemplates.length, templates: createdTemplates };
+  return {
+    pack,
+    templatesCreated: createdTemplates.length,
+    occurrencesCreated: totalOccurrences,
+    templates: createdTemplates,
+  };
 };
 
 // ── Templates ──────────────────────────────────────────────

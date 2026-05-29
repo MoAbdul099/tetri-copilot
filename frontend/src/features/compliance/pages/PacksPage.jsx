@@ -34,7 +34,7 @@ export default function PacksPage() {
     setInstalling(packId);
     try {
       const result = await installPack(packId, {});
-      showToast("success", `Pack installed — ${result.templatesCreated || 0} templates created`);
+      showToast("success", `Pack installed — ${result.templatesCreated || 0} obligations created, ${result.occurrencesCreated || 0} calendar events scheduled over 24 months. Check Compliance Calendar to view them.`);
     } catch (err) {
       showToast("error", err?.response?.data?.error || "Failed to install pack");
     } finally {
