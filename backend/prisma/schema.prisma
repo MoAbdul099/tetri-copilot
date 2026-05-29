@@ -220,6 +220,7 @@ model Language {
   name       String   @db.VarChar(100)
   nativeName String?  @map("native_name") @db.VarChar(100)
   isActive   Boolean  @default(true) @map("is_active")
+  isDefault  Boolean  @default(false) @map("is_default")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   users                   User[]
@@ -235,12 +236,15 @@ model Language {
 }
 
 model Currency {
-  id        String   @id @default(uuid()) @db.Uuid
-  code      String   @unique @db.VarChar(3)
-  name      String   @db.VarChar(100)
-  symbol    String?  @db.VarChar(10)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id               String   @id @default(uuid()) @db.Uuid
+  code             String   @unique @db.VarChar(3)
+  name             String   @db.VarChar(100)
+  symbol           String?  @db.VarChar(10)
+  decimalPrecision Int      @default(2) @map("decimal_precision")
+  roundingRule     String   @default("standard") @map("rounding_rule") @db.VarChar(20)
+  isActive         Boolean  @default(true) @map("is_active")
+  isDefault        Boolean  @default(false) @map("is_default")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   defaultCountryProfiles CountryProfile[] @relation("DefaultCountryCurrency")
   workspaces             Workspace[]

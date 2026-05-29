@@ -10,17 +10,17 @@ async function main() {
   const [en, ar, ka] = await Promise.all([
     prisma.language.upsert({
       where: { code: 'en' },
-      create: { code: 'en', name: 'English', nativeName: 'English', isActive: true },
-      update: {},
+      create: { code: 'en', name: 'English', nativeName: 'English', isActive: true, isDefault: true },
+      update: { isDefault: true },
     }),
     prisma.language.upsert({
       where: { code: 'ar' },
-      create: { code: 'ar', name: 'Arabic', nativeName: 'العربية', isActive: true },
+      create: { code: 'ar', name: 'Arabic', nativeName: 'العربية', isActive: true, isDefault: false },
       update: {},
     }),
     prisma.language.upsert({
       where: { code: 'ka' },
-      create: { code: 'ka', name: 'Georgian', nativeName: 'ქართული', isActive: true },
+      create: { code: 'ka', name: 'Georgian', nativeName: 'ქართული', isActive: true, isDefault: false },
       update: {},
     }),
   ]);
@@ -30,27 +30,27 @@ async function main() {
   const [, aed, sar, qar, gel] = await Promise.all([
     prisma.currency.upsert({
       where: { code: 'USD' },
-      create: { code: 'USD', name: 'US Dollar', symbol: '$', isActive: true },
-      update: {},
+      create: { code: 'USD', name: 'US Dollar', symbol: '$', isActive: true, isDefault: true, decimalPrecision: 2, roundingRule: 'standard' },
+      update: { isDefault: true },
     }),
     prisma.currency.upsert({
       where: { code: 'AED' },
-      create: { code: 'AED', name: 'UAE Dirham', symbol: 'AED', isActive: true },
+      create: { code: 'AED', name: 'UAE Dirham', symbol: 'AED', isActive: true, isDefault: false, decimalPrecision: 2, roundingRule: 'standard' },
       update: {},
     }),
     prisma.currency.upsert({
       where: { code: 'SAR' },
-      create: { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR', isActive: true },
+      create: { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR', isActive: true, isDefault: false, decimalPrecision: 2, roundingRule: 'standard' },
       update: {},
     }),
     prisma.currency.upsert({
       where: { code: 'QAR' },
-      create: { code: 'QAR', name: 'Qatari Riyal', symbol: 'QAR', isActive: true },
+      create: { code: 'QAR', name: 'Qatari Riyal', symbol: 'QAR', isActive: true, isDefault: false, decimalPrecision: 2, roundingRule: 'standard' },
       update: {},
     }),
     prisma.currency.upsert({
       where: { code: 'GEL' },
-      create: { code: 'GEL', name: 'Georgian Lari', symbol: 'GEL', isActive: true },
+      create: { code: 'GEL', name: 'Georgian Lari', symbol: 'GEL', isActive: true, isDefault: false, decimalPrecision: 2, roundingRule: 'standard' },
       update: {},
     }),
   ]);
