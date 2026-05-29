@@ -22,7 +22,11 @@ export default function LoginPage() {
       signIn(token, admin);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials');
+      if (!err.response) {
+        setError('Cannot reach server — make sure the backend is running on port 5000');
+      } else {
+        setError(err.response?.data?.error || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
     }
