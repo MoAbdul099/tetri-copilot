@@ -2274,12 +2274,18 @@ model ComplianceCategory {
 }
 
 model CompliancePack {
-  id             String   @id @default(uuid()) @db.Uuid
-  jurisdictionId String   @map("jurisdiction_id") @db.Uuid
-  name           String   @db.VarChar(200)
-  description    String?  @db.Text
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id               String    @id @default(uuid()) @db.Uuid
+  jurisdictionId   String    @map("jurisdiction_id") @db.Uuid
+  name             String    @db.VarChar(200)
+  description      String?   @db.Text
+  status           String    @default("draft") @db.VarChar(20)
+  version          String    @default("1.0") @db.VarChar(20)
+  industry         String?   @db.VarChar(100)
+  versionNotes     String?   @map("version_notes") @db.Text
+  effectiveDate    DateTime? @map("effective_date") @db.Date
+  publishedAt      DateTime? @map("published_at") @db.Timestamptz(6)
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   jurisdiction ComplianceJurisdiction  @relation(fields: [jurisdictionId], references: [id])
   items        CompliancePackTemplate[]
@@ -2289,13 +2295,20 @@ model CompliancePack {
 }
 
 model CompliancePackTemplate {
-  id         String   @id @default(uuid()) @db.Uuid
-  packId     String   @map("pack_id") @db.Uuid
-  name       String   @db.VarChar(255)
-  description String? @db.Text
-  frequency  String   @db.VarChar(50)
-  priority   String   @default("medium") @db.VarChar(20)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id             String   @id @default(uuid()) @db.Uuid
+  packId         String   @map("pack_id") @db.Uuid
+  name           String   @db.VarChar(255)
+  description    String?  @db.Text
+  frequency      String   @db.VarChar(50)
+  category       String?  @db.VarChar(50)
+  priority       String   @default("medium") @db.VarChar(20)
+  dueDayOfMonth  Int?     @map("due_day_of_month")
+  dueMonthOfYear Int?     @map("due_month_of_year")
+  reminderDays   Int?     @default(7) @map("reminder_days")
+  submissionMethod String? @map("submission_method") @db.VarChar(100)
+  notes          String?  @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   pack CompliancePack @relation(fields: [packId], references: [id], onDelete: Cascade)
 
