@@ -60,4 +60,56 @@ async function getPlans(req, res) {
   }
 }
 
-module.exports = { list, getById, changeStatus, getRevenue, getRenewals, getPlans };
+async function updatePlan(req, res) {
+  try {
+    const plan = await repo.updatePlan(req.params.planId, req.body);
+    if (!plan) return res.status(404).json({ success: false, error: 'Plan not found', details: [] });
+    await require('@prisma/client').PrismaClient;
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.adminActivityLog.create({
+      data: {
+        adminId: req.adminUser.sub,
+        action: 'plan_updated',
+        entityType: 'plan',
+        entityId: plan.id,
+        meta: { planName: plan.name, changes: Object.keys(req.body) },
+        ipAddress: req.ip,
+      },
+    });
+    res.json({ success: true, data: plan });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message, details: [] });
+  }
+}
+
+async function manageTrial(req, res) {
+  try {
+    const { action, days } = req.body;
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    let data;
+
+    if (action === 'extend') {
+      if (!days || days < 1) return res.status(400).json({ success: false, error: 'days required for extend', details: [] });
+      data = await repo.extendTrial(req.params.id, parseInt(days));
+      await prisma.adminActivityLog.create({
+        data: { adminId: req.adminUser.sub, action: 'trial_extended', entityType: 'subscription', entityId: req.params.id, meta: { days }, ipAddress: req.ip },
+      });
+    } else if (action === 'convert') {
+      data = await repo.convertTrialToPaid(req.params.id);
+      await prisma.adminActivityLog.create({
+        data: { adminId: req.adminUser.sub, action: 'trial_converted', entityType: 'subscription', entityId: req.params.id, meta: {}, ipAddress: req.ip },
+      });
+    } else {
+      return res.status(400).json({ success: false, error: 'action must be extend or convert', details: [] });
+    }
+
+    if (!data) return res.status(404).json({ success: false, error: 'Subscription not found', details: [] });
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message, details: [] });
+  }
+}
+
+module.exports = { list, getById, changeStatus, getRevenue, getRenewals, getPlans, updatePlan, manageTrial };

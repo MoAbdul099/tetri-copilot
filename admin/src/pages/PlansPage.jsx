@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CreditCard, ChevronRight, RefreshCw, TrendingUp, Users, AlertTriangle, CheckCircle } from 'lucide-react';
-import { listSubscriptions, getRevenue, getRenewals, getPlans } from '../services/subscriptionsService';
+import { Search, CreditCard, ChevronRight, RefreshCw, TrendingUp, Users, AlertTriangle, CheckCircle, Edit2, X, Plus, Save } from 'lucide-react';
+import { listSubscriptions, getRevenue, getRenewals, getPlans, updatePlan } from '../services/subscriptionsService';
 
 const STATUS_TABS = [
   { value: '', label: 'All' },
@@ -71,6 +71,59 @@ export default function PlansPage() {
   const [search, setSearch]     = useState('');
   const [statusTab, setStatusTab] = useState('');
   const [planCode, setPlanCode] = useState('');
+
+  // Plan editor state
+  const [editingPlan, setEditingPlan] = useState(null); // plan id being edited
+  const [editForm, setEditForm]       = useState({});
+  const [savingPlan, setSavingPlan]   = useState(false);
+
+  const startEdit = (plan) => {
+    setEditingPlan(plan.id);
+    setEditForm({
+      name: plan.name,
+      description: plan.description || '',
+      monthlyPriceUsd: plan.monthlyPriceUsd,
+      yearlyPriceUsd: plan.yearlyPriceUsd || 0,
+      trialDays: plan.trialDays || 0,
+      isRecommended: plan.isRecommended,
+      isPublic: plan.isPublic,
+      isActive: plan.isActive,
+      features: Array.isArray(plan.features) ? plan.features.map(f => ({ ...f })) : [],
+    });
+  };
+
+  const cancelEdit = () => { setEditingPlan(null); setEditForm({}); };
+
+  const savePlan = async (planId) => {
+    setSavingPlan(true);
+    try {
+      const updated = await updatePlan(planId, {
+        ...editForm,
+        monthlyPriceUsd: parseFloat(editForm.monthlyPriceUsd) || 0,
+        yearlyPriceUsd: parseFloat(editForm.yearlyPriceUsd) || 0,
+        trialDays: parseInt(editForm.trialDays) || 0,
+      });
+      setPlans((prev) => prev.map((p) => p.id === planId ? { ...p, ...updated } : p));
+      cancelEdit();
+    } catch { /* ignore */ }
+    finally { setSavingPlan(false); }
+  };
+
+  const updateFeature = (idx, field, value) => {
+    setEditForm((f) => {
+      const features = [...f.features];
+      features[idx] = { ...features[idx], [field]: value };
+      return { ...f, features };
+    });
+  };
+
+  const addFeature = () => {
+    setEditForm((f) => ({ ...f, features: [...f.features, { category: '', label: '', included: true }] }));
+  };
+
+  const removeFeature = (idx) => {
+    setEditForm((f) => ({ ...f, features: f.features.filter((_, i) => i !== idx) }));
+  };
 
   // Load overview
   useEffect(() => {
@@ -320,58 +373,143 @@ export default function PlansPage() {
 
       {/* ── Plan Catalog ── */}
       {tab === 'Plan Catalog' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {!plans ? (
             <div className="py-16 text-center text-tetri-neutral text-sm">Loading…</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-              {plans.map((p) => (
-                <div key={p.id} className={`bg-white border rounded-xl p-5 space-y-4 ${p.isRecommended ? 'border-tetri-primary ring-1 ring-tetri-primary/20' : 'border-tetri-border'}`}>
-                  {p.isRecommended && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tetri-primary text-white">Recommended</span>
-                  )}
-                  <div>
-                    <h3 className="text-base font-bold text-tetri-text capitalize">{p.name}</h3>
-                    <p className="text-2xl font-bold text-tetri-primary mt-1">
-                      ${Number(p.monthlyPriceUsd).toFixed(0)}<span className="text-sm font-normal text-tetri-neutral">/mo</span>
-                    </p>
-                    {p.yearlyPriceUsd && Number(p.yearlyPriceUsd) > 0 && (
-                      <p className="text-xs text-tetri-muted">${Number(p.yearlyPriceUsd).toFixed(0)}/yr</p>
+          ) : plans.map((p) => {
+            const isEditing = editingPlan === p.id;
+            const grouped = {};
+            const featureSource = isEditing ? editForm.features : (Array.isArray(p.features) ? p.features : []);
+            featureSource.forEach((f, idx) => {
+              const cat = f.category || 'General';
+              if (!grouped[cat]) grouped[cat] = [];
+              grouped[cat].push({ ...f, _idx: idx });
+            });
+
+            return (
+              <div key={p.id} className={`bg-white border rounded-xl ${p.isRecommended ? 'border-tetri-primary ring-1 ring-tetri-primary/20' : 'border-tetri-border'}`}>
+                {/* Card header */}
+                <div className="flex flex-wrap items-start justify-between gap-4 p-5 border-b border-tetri-border">
+                  <div className="flex items-start gap-4">
+                    {!isEditing ? (
+                      <>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-lg font-bold text-tetri-text">{p.name}</h3>
+                            {p.isRecommended && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-tetri-primary text-white">Recommended</span>}
+                            {!p.isPublic && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Hidden</span>}
+                            {!p.isActive && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">Inactive</span>}
+                          </div>
+                          <p className="text-sm text-tetri-neutral">{p.description}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex-1 space-y-2 min-w-[300px]">
+                        <input value={editForm.name} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                          className="w-full text-sm font-semibold border border-tetri-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-tetri-primary/20" placeholder="Plan name" />
+                        <textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))}
+                          rows={2} className="w-full text-sm border border-tetri-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-tetri-primary/20 resize-none" placeholder="Description" />
+                      </div>
                     )}
                   </div>
-                  <div className="space-y-1.5 text-xs text-tetri-neutral">
-                    <div className="flex justify-between"><span>Included Users</span><span className="font-medium text-tetri-text">{p.includedUsers}</span></div>
-                    {p.maxUsers && <div className="flex justify-between"><span>Max Users</span><span className="font-medium text-tetri-text">{p.maxUsers}</span></div>}
-                    {p.maxMonthlyInvoices && <div className="flex justify-between"><span>Invoices/mo</span><span className="font-medium text-tetri-text">{fmt(p.maxMonthlyInvoices)}</span></div>}
-                    {p.maxMonthlyAiRequests && <div className="flex justify-between"><span>AI Requests/mo</span><span className="font-medium text-tetri-text">{fmt(p.maxMonthlyAiRequests)}</span></div>}
-                    {p.maxStorageMb && <div className="flex justify-between"><span>Storage</span><span className="font-medium text-tetri-text">{p.maxStorageMb >= 1024 ? `${(p.maxStorageMb / 1024).toFixed(0)} GB` : `${p.maxStorageMb} MB`}</span></div>}
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    {[
-                      ['Expenses', p.hasExpenses],
-                      ['AI Categorization', p.hasAiCategorization],
-                      ['Advanced Compliance', p.hasAdvancedCompliance],
-                    ].map(([label, enabled]) => (
-                      <div key={label} className="flex items-center gap-1.5">
-                        {enabled
-                          ? <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                          : <div className="w-3.5 h-3.5 rounded-full border border-gray-300 flex-shrink-0" />}
-                        <span className={enabled ? 'text-tetri-text' : 'text-tetri-muted'}>{label}</span>
+
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {!isEditing ? (
+                      <>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-tetri-primary">${Number(p.monthlyPriceUsd).toFixed(0)}<span className="text-sm font-normal text-tetri-neutral">/mo</span></p>
+                          {Number(p.yearlyPriceUsd) > 0 && <p className="text-xs text-tetri-muted">${Number(p.yearlyPriceUsd).toFixed(0)}/yr</p>}
+                          {p.trialDays > 0 && <p className="text-xs text-blue-600">{p.trialDays}-day free trial</p>}
+                          <p className="text-xs text-tetri-neutral mt-0.5">{fmt(p.activeSubscribers)} active</p>
+                        </div>
+                        <button onClick={() => startEdit(p)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-tetri-border rounded-lg hover:bg-tetri-bg transition-colors text-tetri-neutral">
+                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-tetri-neutral w-24">Monthly ($)</label>
+                          <input type="number" value={editForm.monthlyPriceUsd} onChange={(e) => setEditForm(f => ({ ...f, monthlyPriceUsd: e.target.value }))}
+                            className="w-24 text-sm border border-tetri-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-tetri-primary/20" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-tetri-neutral w-24">Yearly ($)</label>
+                          <input type="number" value={editForm.yearlyPriceUsd} onChange={(e) => setEditForm(f => ({ ...f, yearlyPriceUsd: e.target.value }))}
+                            className="w-24 text-sm border border-tetri-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-tetri-primary/20" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-tetri-neutral w-24">Trial Days</label>
+                          <input type="number" value={editForm.trialDays} onChange={(e) => setEditForm(f => ({ ...f, trialDays: e.target.value }))}
+                            className="w-24 text-sm border border-tetri-border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-tetri-primary/20" />
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          {[['isRecommended','Recommended'], ['isPublic','Public'], ['isActive','Active']].map(([key, label]) => (
+                            <label key={key} className="flex items-center gap-1 cursor-pointer">
+                              <input type="checkbox" checked={editForm[key]} onChange={(e) => setEditForm(f => ({ ...f, [key]: e.target.checked }))} className="rounded" />
+                              <span className="text-tetri-neutral">{label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="pt-2 border-t border-tetri-border text-center">
-                    <p className="text-xs text-tetri-neutral">
-                      <span className="font-bold text-tetri-primary text-base">{fmt(p.activeSubscribers)}</span> active subscribers
-                    </p>
-                    <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${p.isActive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
-                      {p.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Features */}
+                <div className="p-5">
+                  {!isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-1">
+                      {Object.entries(grouped).map(([cat, features]) => (
+                        <div key={cat} className="space-y-1">
+                          <p className="text-xs font-semibold text-tetri-neutral uppercase tracking-wide mt-3 mb-1.5">{cat}</p>
+                          {features.map((f) => (
+                            <div key={f._idx} className="flex items-center gap-2">
+                              <CheckCircle className={`w-3.5 h-3.5 flex-shrink-0 ${f.included ? 'text-green-500' : 'text-tetri-border'}`} />
+                              <span className={`text-xs ${f.included ? 'text-tetri-text' : 'text-tetri-muted line-through'}`}>{f.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-tetri-text">Features ({editForm.features.length})</p>
+                        <button onClick={addFeature} className="flex items-center gap-1.5 text-xs text-tetri-primary hover:underline">
+                          <Plus className="w-3.5 h-3.5" /> Add Feature
+                        </button>
+                      </div>
+                      <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                        {editForm.features.map((f, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <input value={f.category} onChange={(e) => updateFeature(idx, 'category', e.target.value)}
+                              placeholder="Category" className="w-32 text-xs border border-tetri-border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-tetri-primary/30 flex-shrink-0" />
+                            <input value={f.label} onChange={(e) => updateFeature(idx, 'label', e.target.value)}
+                              placeholder="Feature label" className="flex-1 text-xs border border-tetri-border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-tetri-primary/30" />
+                            <label className="flex items-center gap-1 cursor-pointer flex-shrink-0">
+                              <input type="checkbox" checked={f.included} onChange={(e) => updateFeature(idx, 'included', e.target.checked)} className="rounded" />
+                              <span className="text-xs text-tetri-neutral">On</span>
+                            </label>
+                            <button onClick={() => removeFeature(idx)} className="text-tetri-muted hover:text-red-500 flex-shrink-0 transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2 border-t border-tetri-border">
+                        <button onClick={cancelEdit} className="px-4 py-1.5 text-sm border border-tetri-border rounded-lg hover:bg-tetri-bg text-tetri-neutral transition-colors">Cancel</button>
+                        <button onClick={() => savePlan(p.id)} disabled={savingPlan}
+                          className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-tetri-primary text-white rounded-lg hover:bg-tetri-primary/90 disabled:opacity-60 transition-colors">
+                          <Save className="w-3.5 h-3.5" /> {savingPlan ? 'Saving…' : 'Save Plan'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

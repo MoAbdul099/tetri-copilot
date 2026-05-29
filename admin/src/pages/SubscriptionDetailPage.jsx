@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, CreditCard, Building2, CheckCircle } from 'lucide-react';
-import { getSubscription, changeStatus } from '../services/subscriptionsService';
+import { getSubscription, changeStatus, manageTrial } from '../services/subscriptionsService';
 
 const STATUS_STYLE = {
   active:    'bg-green-50 text-green-700 border-green-200',
@@ -40,11 +40,12 @@ export default function SubscriptionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [sub, setSub]         = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab]         = useState('Overview');
-  const [busy, setBusy]       = useState(false);
-  const [error, setError]     = useState('');
+  const [sub, setSub]           = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [tab, setTab]           = useState('Overview');
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState('');
+  const [trialDays, setTrialDays] = useState(7);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +61,15 @@ export default function SubscriptionDetailPage() {
     try {
       await changeStatus(id, status);
       setSub((s) => ({ ...s, status }));
+    } catch { /* ignore */ }
+    finally { setBusy(false); }
+  };
+
+  const handleTrial = async (action) => {
+    setBusy(true);
+    try {
+      await manageTrial(id, action, action === 'extend' ? trialDays : undefined);
+      await load();
     } catch { /* ignore */ }
     finally { setBusy(false); }
   };
@@ -144,6 +154,38 @@ export default function SubscriptionDetailPage() {
 
       {/* ── Overview ── */}
       {tab === 'Overview' && (
+        <div className="space-y-5">
+          {/* Trial management panel */}
+          {sub.status === 'trialing' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">Active Trial</p>
+                  <p className="text-xs text-blue-600 mt-0.5">
+                    {days !== null && days > 0 ? `${days} day${days !== 1 ? 's' : ''} remaining` : 'Trial has expired'}
+                    {sub.currentPeriodEnd ? ` · ends ${fmtDate(sub.currentPeriodEnd)}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <input type="number" min={1} max={90} value={trialDays}
+                      onChange={(e) => setTrialDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 1)))}
+                      className="w-16 text-sm border border-blue-300 rounded-lg px-2 py-1.5 text-center focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    <span className="text-xs text-blue-600">days</span>
+                    <button onClick={() => handleTrial('extend')} disabled={busy}
+                      className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                      Extend Trial
+                    </button>
+                  </div>
+                  <button onClick={() => handleTrial('convert')} disabled={busy}
+                    className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition-colors">
+                    Convert to Paid
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="bg-white border border-tetri-border rounded-xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-tetri-text">Subscription Details</h2>
@@ -181,6 +223,7 @@ export default function SubscriptionDetailPage() {
               ))}
             </dl>
           </div>
+        </div>
         </div>
       )}
 

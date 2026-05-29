@@ -64,6 +64,7 @@ const deploymentsRoutes          = require('./modules/deployments/deployments.ro
 const monitoringRoutes           = require('./modules/monitoring/monitoring.routes');
 const monitoringScheduler        = require('./modules/monitoring/monitoring.scheduler');
 const aiScheduler                = require('./modules/ai/ai.scheduler');
+const trialScheduler             = require('./modules/admin/subscriptions/admin.subscriptions.scheduler');
 const { seedAiData }             = require('./modules/ai/ai.seeder');
 const { seedFeatures }           = require('./modules/ai/feature.service');
 const aiCopilotRoutes            = require('./modules/ai/ai.copilot.routes');
@@ -230,6 +231,7 @@ startReportScheduler();
 startAnalyticsScheduler();
 monitoringScheduler.start();
 aiScheduler.start();
+trialScheduler.start();
 seedAiData().catch(() => {});
 seedFeatures().catch(() => {});
 seedAssistantData().catch(() => {});

@@ -135,4 +135,41 @@ async function getPlans() {
   return plans.map((p) => ({ ...p, activeSubscribers: countMap[p.id] || 0 }));
 }
 
-module.exports = { list, findById, updateStatus, getRevenue, getRenewals, getPlans };
+async function updatePlan(id, data) {
+  const allowed = ['name', 'description', 'monthlyPriceUsd', 'yearlyPriceUsd', 'trialDays',
+    'isRecommended', 'isPublic', 'isActive', 'features', 'includedUsers', 'maxUsers',
+    'maxMonthlyInvoices', 'maxMonthlyAiRequests', 'maxStorageMb',
+    'hasExpenses', 'hasAiCategorization', 'hasAdvancedCompliance'];
+  const update = {};
+  for (const key of allowed) {
+    if (data[key] !== undefined) update[key] = data[key];
+  }
+  return prisma.plan.update({ where: { id }, data: update });
+}
+
+async function extendTrial(id, days) {
+  const sub = await prisma.subscription.findUnique({ where: { id } });
+  if (!sub) return null;
+  const base = sub.currentPeriodEnd && sub.currentPeriodEnd > new Date() ? sub.currentPeriodEnd : new Date();
+  const newEnd = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+  return prisma.subscription.update({ where: { id }, data: { currentPeriodEnd: newEnd, status: 'trialing' } });
+}
+
+async function convertTrialToPaid(id) {
+  const now = new Date();
+  const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  return prisma.subscription.update({
+    where: { id },
+    data: { status: 'active', currentPeriodStart: now, currentPeriodEnd: periodEnd },
+  });
+}
+
+async function expireStaleTrials() {
+  const result = await prisma.subscription.updateMany({
+    where: { status: 'trialing', currentPeriodEnd: { lt: new Date() } },
+    data: { status: 'expired' },
+  });
+  return result.count;
+}
+
+module.exports = { list, findById, updateStatus, getRevenue, getRenewals, getPlans, updatePlan, extendTrial, convertTrialToPaid, expireStaleTrials };
