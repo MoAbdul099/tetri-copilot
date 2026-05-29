@@ -37,11 +37,11 @@ export default function AIFeaturesPage() {
   if (loading) return <div className="p-8 text-tetri-muted text-sm">Loading features…</div>;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       <PageHeader title="AI Feature Registry" subtitle="Enable or disable AI features across the platform" />
 
-      <div className="bg-tetri-surface border border-tetri-border rounded-card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-tetri-surface border border-tetri-border rounded-card overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-tetri-bg border-b border-tetri-border">
             <tr>
               {['Feature', 'Description', 'Permission', 'Beta', 'Workspaces', 'Enabled'].map((h, i) => (

@@ -55,7 +55,7 @@ export default function PaymentsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search payments..." className="pl-9" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         </div>
@@ -71,8 +71,8 @@ export default function PaymentsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left">Payment #</th>

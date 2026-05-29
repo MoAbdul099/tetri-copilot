@@ -140,7 +140,7 @@ export default function InvoicesPage() {
       </PageHeader>
 
       {/* Status tabs */}
-      <div className="flex gap-1 border-b border-tetri-border">
+      <div className="flex gap-1 border-b border-tetri-border overflow-x-auto">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -170,7 +170,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-tetri-border rounded-xl overflow-hidden">
+      <div className="bg-white border border-tetri-border rounded-xl overflow-x-auto">
         {loading && invoices.length === 0 ? (
           <div className="py-16 text-center text-tetri-neutral text-sm">Loading…</div>
         ) : invoices.length === 0 ? (
@@ -180,7 +180,7 @@ export default function InvoicesPage() {
             <p className="text-xs text-tetri-neutral/70">Create your first invoice to get started</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[680px]">
             <thead>
               <tr className="border-b border-tetri-border bg-tetri-bg">
                 {['Invoice', 'Customer', 'Issue Date', 'Due Date', 'Amount', 'Status', ''].map((h) => (

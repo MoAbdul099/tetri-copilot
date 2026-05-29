@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Plus, Search, Archive, ArchiveRestore, Bot, Sparkles, Clock,
   MessageSquare, Pencil, Trash2, Download, Check, X,
-  MoreHorizontal,
+  MoreHorizontal, Menu,
 } from 'lucide-react';
 import ChatInterface from '../components/ChatInterface';
 import RecommendationsPanel from '../components/RecommendationsPanel';
@@ -179,6 +179,7 @@ export default function AssistantPage() {
   const [createError,   setCreateError]   = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [pendingPrompt, setPendingPrompt] = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const loadSessions = useCallback(async (q, currentTab) => {
     try {
@@ -298,9 +299,14 @@ export default function AssistantPage() {
   const activeSugg = suggestions.filter((s) => s.status === 'active');
 
   return (
-    <div className="flex h-[calc(100vh-88px)] -my-6 -mx-6 md:-mx-8">
+    <div className="flex h-[calc(100vh-88px)] -my-6 -mx-6 md:-mx-8 overflow-hidden">
+      {/* Mobile backdrop */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setMobileSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <div className="w-64 flex-shrink-0 border-r border-tetri-border bg-tetri-surface flex flex-col">
+      <div className={`flex-shrink-0 border-r border-tetri-border bg-tetri-surface flex flex-col w-72 md:w-64 ${mobileSidebarOpen ? 'fixed left-0 top-0 bottom-0 z-50' : 'hidden md:flex'}`}>
         {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-tetri-border">
           <div className="flex items-center gap-2 mb-3">
@@ -308,6 +314,9 @@ export default function AssistantPage() {
               <Bot className="w-4 h-4 text-violet-600" />
             </div>
             <h1 className="text-sm font-semibold text-tetri-text">Tetri Copilot</h1>
+            <button onClick={() => setMobileSidebarOpen(false)} className="ml-auto p-1 rounded-lg text-tetri-neutral hover:bg-tetri-bg md:hidden">
+              <X className="w-4 h-4" />
+            </button>
           </div>
           <button
             onClick={() => { setTab('active'); createSession(); }}
@@ -387,11 +396,28 @@ export default function AssistantPage() {
       </div>
 
       {/* ── Main area ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-w-0 flex flex-col bg-tetri-bg">
+      <div className="flex-1 min-w-0 flex flex-col bg-tetri-bg overflow-hidden">
+        {/* Mobile toolbar */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-tetri-border bg-tetri-surface flex-shrink-0">
+          <button onClick={() => setMobileSidebarOpen(true)} className="p-1.5 rounded-lg text-tetri-neutral hover:bg-tetri-bg">
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="text-sm font-semibold text-tetri-text flex-1 truncate">
+            {activeSession?.title || 'AI Assistant'}
+          </span>
+          <button
+            onClick={() => { setTab('active'); createSession(); }}
+            disabled={creating}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-tetri-blue text-white text-xs font-medium hover:bg-tetri-blue-hover disabled:opacity-50"
+          >
+            <Plus className="w-3.5 h-3.5" /> New
+          </button>
+        </div>
+
         {activeSession ? (
           <>
             {/* Conversation top bar */}
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-tetri-border bg-tetri-surface flex-shrink-0">
+            <div className="hidden md:flex items-center gap-3 px-6 py-3 border-b border-tetri-border bg-tetri-surface flex-shrink-0">
               <p className="text-sm font-semibold text-tetri-text truncate flex-1">
                 {activeSession.title || 'Untitled'}
               </p>
@@ -417,7 +443,7 @@ export default function AssistantPage() {
             />
           </>
         ) : (
-          <div className="flex-1 overflow-y-auto px-8 py-8">
+          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
             {createError && (
               <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 flex items-center justify-between">
                 <span>{createError}</span>

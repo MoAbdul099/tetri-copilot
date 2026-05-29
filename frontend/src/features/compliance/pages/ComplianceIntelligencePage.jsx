@@ -271,9 +271,9 @@ export default function ComplianceIntelligencePage() {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-violet-100">
             <Brain className="w-5 h-5 text-violet-600" />
@@ -283,7 +283,7 @@ export default function ComplianceIntelligencePage() {
             <p className="text-sm text-slate-500">Proactive risk detection and compliance health monitoring</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleAiInsights}
             disabled={insightsLoading || !health}

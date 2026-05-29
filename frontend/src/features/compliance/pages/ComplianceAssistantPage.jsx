@@ -402,7 +402,12 @@ export default function ComplianceAssistantPage() {
 
         {/* ---- Sidebar ---- */}
         {sidebarOpen && (
-          <div className="w-64 shrink-0 flex flex-col gap-2 bg-white border border-tetri-border rounded-2xl p-3 overflow-hidden">
+          <>
+            <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+          </>
+        )}
+        {sidebarOpen && (
+          <div className="fixed md:relative left-0 top-0 bottom-0 md:inset-auto z-50 md:z-auto w-72 md:w-64 shrink-0 flex flex-col gap-2 bg-white border border-tetri-border md:rounded-2xl p-3 overflow-hidden shadow-xl md:shadow-none">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-tetri-text">Conversations</p>
               <button onClick={() => setSidebarOpen(false)} className="text-tetri-neutral hover:text-tetri-text p-0.5">
