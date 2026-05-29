@@ -1,5 +1,7 @@
-const repo = require('./admin.subscriptions.repository');
-const svc  = require('./admin.subscriptions.service');
+const { PrismaClient } = require('@prisma/client');
+const repo   = require('./admin.subscriptions.repository');
+const svc    = require('./admin.subscriptions.service');
+const prisma = new PrismaClient();
 
 async function list(req, res) {
   try {
@@ -64,9 +66,6 @@ async function updatePlan(req, res) {
   try {
     const plan = await repo.updatePlan(req.params.planId, req.body);
     if (!plan) return res.status(404).json({ success: false, error: 'Plan not found', details: [] });
-    await require('@prisma/client').PrismaClient;
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
     await prisma.adminActivityLog.create({
       data: {
         adminId: req.adminUser.sub,
@@ -86,8 +85,6 @@ async function updatePlan(req, res) {
 async function manageTrial(req, res) {
   try {
     const { action, days } = req.body;
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
     let data;
 
     if (action === 'extend') {
