@@ -5,7 +5,7 @@ const SYSTEM_WHERE = { workspaceId: null, isSystemDefault: true };
 const INCLUDE_FULL = {
   placeholders:        true,
   contextRequirements: true,
-  countryProfile:      { select: { id: true, name: true, isoCode: true } },
+  countryProfile:      { select: { id: true, countryName: true, countryCode: true } },
 };
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ async function list({ search = '', category = '', status = '', page = 1, limit =
       skip,
       take: Number(limit),
       include: {
-        countryProfile: { select: { id: true, name: true, isoCode: true } },
+        countryProfile: { select: { id: true, countryName: true, countryCode: true } },
         _count: { select: { placeholders: true, generatedDocuments: true } },
       },
     }),
@@ -189,8 +189,8 @@ async function remove(id) {
 
 async function listCountryProfiles() {
   return prisma.countryProfile.findMany({
-    select: { id: true, name: true, isoCode: true },
-    orderBy: { name: 'asc' },
+    select: { id: true, countryName: true, countryCode: true },
+    orderBy: { countryName: 'asc' },
   });
 }
 
