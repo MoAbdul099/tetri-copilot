@@ -1,6 +1,7 @@
 const express = require('express');
 const requireAdmin = require('../../middleware/requireAdmin');
 const adminAuthRoutes = require('./auth/admin.auth.routes');
+const adminDashboardRoutes = require('./dashboard/admin.dashboard.routes');
 
 const router = express.Router();
 
@@ -10,7 +11,8 @@ router.use('/auth', adminAuthRoutes);
 // All remaining /api/admin/* routes require valid admin JWT
 router.use(requireAdmin);
 
-// Placeholder — future admin sub-modules mount here
+router.use('/dashboard', adminDashboardRoutes);
+
 router.get('/ping', (req, res) => {
   res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });
 });
