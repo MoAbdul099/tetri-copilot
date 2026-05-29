@@ -1,4 +1,5 @@
-import { Check, Minus, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Minus, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 
 const formatLimit = (value, unit = '') => {
   if (value === null || value === undefined) return 'Unlimited';
@@ -11,20 +12,29 @@ const formatStorage = (mb) => {
   return `${mb} MB`;
 };
 
+const SHOW_CAP = 8;
+
 export default function PricingCard({ plan, isCurrentPlan = false, billingCycle = 'monthly', action = null }) {
-  const price = billingCycle === 'yearly' && plan.yearlyPriceUsd !== null
+  const [expanded, setExpanded] = useState(false);
+
+  const price = billingCycle === 'yearly' && plan.yearlyPriceUsd != null
     ? plan.yearlyPriceUsd / 12
     : plan.monthlyPriceUsd;
 
-  const isFree = plan.monthlyPriceUsd === 0;
+  const isFree = Number(plan.monthlyPriceUsd) === 0;
   const isHighlighted = plan.isRecommended;
 
   const limitRows = [
-    { label: 'Users', value: formatLimit(plan.limits?.users) },
-    { label: 'Invoices / month', value: formatLimit(plan.limits?.monthly_invoices) },
-    { label: 'AI requests / month', value: formatLimit(plan.limits?.monthly_ai_requests) },
-    { label: 'Storage', value: formatStorage(plan.limits?.storage_mb) },
+    { label: 'Users', value: formatLimit(plan.maxUsers) },
+    { label: 'Invoices / month', value: formatLimit(plan.maxMonthlyInvoices) },
+    { label: 'AI requests / month', value: formatLimit(plan.maxMonthlyAiRequests) },
+    { label: 'Storage', value: formatStorage(plan.maxStorageMb) },
   ];
+
+  const features = Array.isArray(plan.features) ? plan.features : [];
+  const included = features.filter((f) => f.included);
+  const visible = expanded ? included : included.slice(0, SHOW_CAP);
+  const overflow = included.length - SHOW_CAP;
 
   return (
     <div
@@ -34,7 +44,6 @@ export default function PricingCard({ plan, isCurrentPlan = false, billingCycle 
           : 'border-tetri-border hover:shadow-sm'
       }`}
     >
-      {/* Recommended badge */}
       {isHighlighted && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tetri-blue text-white text-xs font-semibold">
@@ -69,36 +78,55 @@ export default function PricingCard({ plan, isCurrentPlan = false, billingCycle 
           ) : (
             <div className="flex items-end gap-1">
               <span className="text-3xl font-bold text-tetri-text">
-                ${price % 1 === 0 ? price : price.toFixed(2)}
+                ${Number(price) % 1 === 0 ? Number(price) : Number(price).toFixed(2)}
               </span>
               <span className="text-sm text-tetri-muted mb-1">/month</span>
             </div>
           )}
-          {!isFree && billingCycle === 'yearly' && plan.yearlyPriceUsd !== null && (
+          {!isFree && billingCycle === 'yearly' && plan.yearlyPriceUsd != null && (
             <p className="text-xs text-tetri-muted mt-0.5">
-              Billed ${plan.yearlyPriceUsd}/year — save {Math.round((1 - (plan.yearlyPriceUsd / (plan.monthlyPriceUsd * 12))) * 100)}%
+              Billed ${plan.yearlyPriceUsd}/year — save{' '}
+              {Math.round((1 - Number(plan.yearlyPriceUsd) / (Number(plan.monthlyPriceUsd) * 12)) * 100)}%
             </p>
+          )}
+          {!isFree && plan.trialDays > 0 && (
+            <p className="text-xs text-tetri-blue font-medium mt-1">{plan.trialDays}-day free trial</p>
           )}
         </div>
 
-        {/* Feature flags */}
-        <ul className="space-y-2">
-          {plan.features?.map((f) => (
-            <li key={f.key} className="flex items-center gap-2.5 text-sm">
-              {f.included ? (
-                <Check className="w-4 h-4 text-tetri-blue flex-shrink-0" />
-              ) : (
-                <Minus className="w-4 h-4 text-tetri-border flex-shrink-0" />
-              )}
-              <span className={f.included ? 'text-tetri-text' : 'text-tetri-neutral'}>
-                {f.key === 'invoicing' && 'Invoicing'}
-                {f.key === 'expenses' && 'Expense Tracking'}
-                {f.key === 'ai_categorization' && 'AI Categorization'}
-                {f.key === 'advanced_compliance' && 'Advanced Compliance'}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {/* Included features */}
+        {included.length > 0 && (
+          <ul className="space-y-2">
+            {visible.map((f, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm">
+                <Check className="w-4 h-4 text-tetri-blue flex-shrink-0 mt-0.5" />
+                <span className="text-tetri-text">{f.label}</span>
+              </li>
+            ))}
+            {!expanded && overflow > 0 && (
+              <li>
+                <button
+                  onClick={() => setExpanded(true)}
+                  className="flex items-center gap-1 text-xs text-tetri-blue font-medium hover:underline mt-1"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  +{overflow} more included
+                </button>
+              </li>
+            )}
+            {expanded && overflow > 0 && (
+              <li>
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="flex items-center gap-1 text-xs text-tetri-muted font-medium hover:text-tetri-text mt-1"
+                >
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  Show less
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
 
         {/* Limits */}
         <div className="border-t border-tetri-border pt-4 space-y-2">
