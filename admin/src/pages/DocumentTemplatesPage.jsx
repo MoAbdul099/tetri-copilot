@@ -164,7 +164,7 @@ function TemplateForm({ initial, countries, onSave, onCancel, saving }) {
                 <label className="block text-xs text-gray-500 mb-1">Country Assignment</label>
                 <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white" value={form.countryProfileId || ''} onChange={set('countryProfileId')}>
                   <option value="">Global (all countries)</option>
-                  {countries.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.isoCode})</option>)}
+                  {countries.map((c) => <option key={c.id} value={c.id}>{c.countryName} ({c.countryCode})</option>)}
                 </select>
               </div>
               <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ function TemplateForm({ initial, countries, onSave, onCancel, saving }) {
         {/* Content */}
         {activeTab === 'content' && (
           <div>
-            <label className="block text-xs text-gray-500 mb-2">Template Content <span className="text-gray-400">(use {{`{{placeholder}}`}} for variables)</span></label>
+            <label className="block text-xs text-gray-500 mb-2">Template Content <span className="text-gray-400">{'(use {{placeholder}} for variables)'}</span></label>
             <textarea
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono resize-y min-h-[320px]"
               value={form.templateContent || ''}
@@ -331,7 +331,7 @@ function PreviewPanel({ tpl, onClose }) {
           <div><p className="text-xs text-gray-400">Category</p><p className="text-gray-700">{tpl.category || '—'}</p></div>
           <div><p className="text-xs text-gray-400">Tone</p><p className="text-gray-700">{tpl.tone || 'Default'}</p></div>
           <div><p className="text-xs text-gray-400">Language</p><p className="text-gray-700">{tpl.languageName || 'English'}</p></div>
-          <div><p className="text-xs text-gray-400">Country</p><p className="text-gray-700">{tpl.countryProfile?.name || 'Global'}</p></div>
+          <div><p className="text-xs text-gray-400">Country</p><p className="text-gray-700">{tpl.countryProfile?.countryName || 'Global'}</p></div>
           <div><p className="text-xs text-gray-400">Usage Count</p><p className="text-gray-700 font-semibold">{tpl.usageCount || 0}</p></div>
           <div><p className="text-xs text-gray-400">Variables</p><p className="text-gray-700">{tpl.placeholders?.length || 0}</p></div>
         </div>
@@ -625,7 +625,7 @@ export default function DocumentTemplatesPage() {
                     <td className="px-4 py-3 text-gray-600 text-xs">{tpl.category || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {tpl.countryProfile ? (
-                        <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{tpl.countryProfile.isoCode}</span>
+                        <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{tpl.countryProfile.countryCode}</span>
                       ) : <span className="text-gray-400">Global</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{tpl.languageName || 'English'}</td>
