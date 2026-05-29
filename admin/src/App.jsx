@@ -4,6 +4,8 @@ import RequireAdmin from './components/RequireAdmin';
 import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import WorkspacesPage from './pages/WorkspacesPage';
+import WorkspaceDetailPage from './pages/WorkspaceDetailPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -22,7 +24,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<Protected />}>
             <Route path="/"                       element={<DashboardPage />} />
-            <Route path="/organizations"           element={<StubPage title="Organizations" />} />
+            <Route path="/organizations"           element={<WorkspacesPage />} />
+            <Route path="/organizations/:id"       element={<WorkspaceDetailPage />} />
             <Route path="/users"                   element={<StubPage title="Users" />} />
             <Route path="/plans"                   element={<StubPage title="Plans & Subscriptions" />} />
             <Route path="/countries"               element={<StubPage title="Country Profiles" />} />
