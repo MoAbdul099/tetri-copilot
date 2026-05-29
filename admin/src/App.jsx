@@ -10,6 +10,8 @@ import UsersPage from './pages/UsersPage';
 import UserDetailPage from './pages/UserDetailPage';
 import PlansPage from './pages/PlansPage';
 import SubscriptionDetailPage from './pages/SubscriptionDetailPage';
+import CountriesPage from './pages/CountriesPage';
+import CountryDetailPage from './pages/CountryDetailPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -34,7 +36,8 @@ export default function App() {
             <Route path="/users/:id"               element={<UserDetailPage />} />
             <Route path="/plans"                   element={<PlansPage />} />
             <Route path="/subscriptions/:id"       element={<SubscriptionDetailPage />} />
-            <Route path="/countries"               element={<StubPage title="Country Profiles" />} />
+            <Route path="/countries"               element={<CountriesPage />} />
+            <Route path="/countries/:id"           element={<CountryDetailPage />} />
             <Route path="/localization"            element={<StubPage title="Languages & Currencies" />} />
             <Route path="/compliance-templates"    element={<StubPage title="Compliance Templates" />} />
             <Route path="/ai-usage"                element={<StubPage title="AI Usage" />} />

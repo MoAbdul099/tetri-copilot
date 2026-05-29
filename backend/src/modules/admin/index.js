@@ -5,6 +5,7 @@ const adminDashboardRoutes   = require('./dashboard/admin.dashboard.routes');
 const adminWorkspacesRoutes  = require('./workspaces/admin.workspaces.routes');
 const adminUsersRoutes          = require('./users/admin.users.routes');
 const adminSubscriptionsRoutes  = require('./subscriptions/admin.subscriptions.routes');
+const adminCountriesRoutes      = require('./countries/admin.countries.routes');
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.use('/dashboard',   adminDashboardRoutes);
 router.use('/workspaces',  adminWorkspacesRoutes);
 router.use('/users',           adminUsersRoutes);
 router.use('/subscriptions',   adminSubscriptionsRoutes);
+router.use('/countries',       adminCountriesRoutes);
 
 router.get('/ping', (req, res) => {
   res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });

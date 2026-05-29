@@ -251,24 +251,36 @@ model Currency {
 }
 
 model CountryProfile {
-  id                String   @id @default(uuid()) @db.Uuid
-  countryCode       String   @unique @map("country_code") @db.VarChar(5)
-  countryName       String   @map("country_name") @db.VarChar(150)
-  defaultCurrencyId String?  @map("default_currency_id") @db.Uuid
-  defaultLanguageId String?  @map("default_language_id") @db.Uuid
-  dateFormat        String?  @default("YYYY-MM-DD") @map("date_format") @db.VarChar(50)
-  timezone          String?  @db.VarChar(100)
-  taxLabel          String?  @map("tax_label") @db.VarChar(50)
-  taxNumberLabel    String?  @map("tax_number_label") @db.VarChar(100)
-  defaultTaxRate    Decimal? @default(0) @map("default_tax_rate") @db.Decimal(10, 4)
-  isActive          Boolean  @default(true) @map("is_active")
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                    String   @id @default(uuid()) @db.Uuid
+  countryCode           String   @unique @map("country_code") @db.VarChar(5)
+  countryName           String   @map("country_name") @db.VarChar(150)
+  status                String   @default("active") @db.VarChar(20)
+  defaultCurrencyId     String?  @map("default_currency_id") @db.Uuid
+  defaultLanguageId     String?  @map("default_language_id") @db.Uuid
+  dateFormat            String?  @default("YYYY-MM-DD") @map("date_format") @db.VarChar(50)
+  timezone              String?  @db.VarChar(100)
+  taxLabel              String?  @map("tax_label") @db.VarChar(50)
+  taxNumberLabel        String?  @map("tax_number_label") @db.VarChar(100)
+  defaultTaxRate        Decimal? @default(0) @map("default_tax_rate") @db.Decimal(10, 4)
+  taxEnabled            Boolean  @default(true) @map("tax_enabled")
+  taxReportingFrequency String   @default("quarterly") @map("tax_reporting_frequency") @db.VarChar(50)
+  fiscalYearStart       Int      @default(1) @map("fiscal_year_start")
+  fiscalYearEnd         Int      @default(12) @map("fiscal_year_end")
+  accountingPeriods     String   @default("monthly") @map("accounting_periods") @db.VarChar(50)
+  complianceEnabled     Boolean  @default(true) @map("compliance_enabled")
+  regulatoryFramework   String?  @map("regulatory_framework") @db.Text
+  filingFrequency       String?  @map("filing_frequency") @db.VarChar(50)
+  reminderDefaults      Json?    @default("{}") @map("reminder_defaults") @db.JsonB
+  adminNotes            String?  @map("admin_notes") @db.Text
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   defaultCurrency Currency? @relation("DefaultCountryCurrency", fields: [defaultCurrencyId], references: [id])
   defaultLanguage Language? @relation("DefaultCountryLanguage", fields: [defaultLanguageId], references: [id])
 
   languages               CountryProfileLanguage[]
+  holidays                CountryHoliday[]
   workspaces              Workspace[]
   companyJurisdictions    Company[]              @relation("CompanyJurisdiction")
   complianceCalendarItems ComplianceCalendarItem[]
@@ -276,6 +288,20 @@ model CountryProfile {
   documentTemplates       DocumentTemplate[]
 
   @@map("country_profiles")
+}
+
+model CountryHoliday {
+  id               String         @id @default(uuid()) @db.Uuid
+  countryProfileId String         @map("country_profile_id") @db.Uuid
+  name             String         @db.VarChar(200)
+  holidayDate      DateTime       @map("holiday_date") @db.Date
+  isRecurring      Boolean        @default(true) @map("is_recurring")
+  description      String?        @db.Text
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  countryProfile CountryProfile @relation(fields: [countryProfileId], references: [id], onDelete: Cascade)
+
+  @@map("country_holidays")
 }
 
 model CountryProfileLanguage {
