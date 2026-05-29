@@ -139,14 +139,16 @@ const installPack = async (workspaceId, packId, ownerUserId) => {
   for (const item of pack.items) {
     const templateData = {
       workspaceId,
-      name:         item.name,
-      description:  item.description,
-      frequency:    item.frequency,
-      priority:     item.priority || 'medium',
-      startDate:    new Date(),
+      name:             item.name,
+      description:      item.description,
+      frequency:        item.frequency,
+      priority:         item.priority || 'medium',
+      submissionMethod: item.submissionMethod || null,
+      notes:            item.notes || null,
+      startDate:        new Date(),
       ownerUserId,
-      isActive:     true,
-      autoGenerate: true,
+      isActive:         true,
+      autoGenerate:     true,
     };
 
     const created = await repo.createTemplate(workspaceId, templateData);

@@ -98,12 +98,13 @@ const deleteCategory = (id, workspaceId) =>
   });
 
 const listPacks = ({ jurisdictionId } = {}) => {
-  const where = { isActive: true };
+  // Only expose published packs to workspace users — drafts and archived stay in admin only
+  const where = { isActive: true, status: 'published' };
   if (jurisdictionId) where.jurisdictionId = jurisdictionId;
   return prisma.compliancePack.findMany({
     where,
     include: {
-      items: true,
+      items: { where: { isActive: true } },
       jurisdiction: { select: JURISDICTION_SELECT },
     },
     orderBy: { name: 'asc' },
