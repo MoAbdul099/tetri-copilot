@@ -14,6 +14,7 @@ import CountriesPage from './pages/CountriesPage';
 import CountryDetailPage from './pages/CountryDetailPage';
 import LocalizationPage from './pages/LocalizationPage';
 import CompliancePage from './pages/CompliancePage';
+import AIUsagePage from './pages/AIUsagePage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -42,7 +43,7 @@ export default function App() {
             <Route path="/countries/:id"           element={<CountryDetailPage />} />
             <Route path="/localization"            element={<LocalizationPage />} />
             <Route path="/compliance-templates"    element={<CompliancePage />} />
-            <Route path="/ai-usage"                element={<StubPage title="AI Usage" />} />
+            <Route path="/ai-usage"                element={<AIUsagePage />} />
             <Route path="/document-templates"      element={<StubPage title="Document Templates" />} />
             <Route path="/billing-events"          element={<StubPage title="Billing Events" />} />
             <Route path="/activity-logs"           element={<StubPage title="Activity Logs" />} />

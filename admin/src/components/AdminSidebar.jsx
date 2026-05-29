@@ -62,7 +62,7 @@ export default function AdminSidebar({ onNavigate }) {
 
       {/* Version */}
       <div className="px-5 py-3 border-t border-tetri-border">
-        <p className="text-xs text-tetri-muted">Slice 19.1 · Admin Portal</p>
+        <p className="text-xs text-tetri-muted">Slice 19.9 · Admin Portal</p>
       </div>
     </aside>
   );
