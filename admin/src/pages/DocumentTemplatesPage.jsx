@@ -184,7 +184,7 @@ function TemplateForm({ initial, countries, onSave, onCancel, saving }) {
         {/* Content */}
         {activeTab === 'content' && (
           <div>
-            <label className="block text-xs text-gray-500 mb-2">Template Content <span className="text-gray-400">(use {{`{{placeholder}}`}} for variables)</span></label>
+            <label className="block text-xs text-gray-500 mb-2">Template Content <span className="text-gray-400">{'(use {{placeholder}} for variables)'}</span></label>
             <textarea
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono resize-y min-h-[320px]"
               value={form.templateContent || ''}
