@@ -35,7 +35,6 @@ const WORKSPACE_INCLUDE = {
       defaultLanguage: true,
       languages: {
         include: { language: true },
-        where:   { language: { isNot: null } },
       },
     },
   },

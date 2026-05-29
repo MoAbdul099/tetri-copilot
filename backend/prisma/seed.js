@@ -70,7 +70,7 @@ async function main() {
         complianceEnabled: true, regulatoryFramework: 'UAE Federal Tax Authority (FTA) regulatory framework',
         filingFrequency: 'quarterly', isActive: true,
       },
-      update: {},
+      update: { status: 'active', isActive: true },
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'SA' },
@@ -84,7 +84,7 @@ async function main() {
         complianceEnabled: true, regulatoryFramework: 'ZATCA (Zakat, Tax and Customs Authority) regulatory framework',
         filingFrequency: 'quarterly', isActive: true,
       },
-      update: {},
+      update: { status: 'active', isActive: true },
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'QA' },
@@ -98,7 +98,7 @@ async function main() {
         complianceEnabled: true, regulatoryFramework: 'Qatar Financial Centre (QFC) regulatory framework',
         filingFrequency: 'annual', isActive: true,
       },
-      update: {},
+      update: { status: 'active', isActive: true },
     }),
     prisma.countryProfile.upsert({
       where: { countryCode: 'GE' },
@@ -112,7 +112,7 @@ async function main() {
         complianceEnabled: true, regulatoryFramework: 'Revenue Service of Georgia regulatory framework',
         filingFrequency: 'monthly', isActive: true,
       },
-      update: {},
+      update: { status: 'active', isActive: true },
     }),
   ]);
   console.log('Country profiles seeded: UAE, Saudi Arabia, Qatar, Georgia');
