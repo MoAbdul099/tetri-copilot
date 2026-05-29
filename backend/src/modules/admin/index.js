@@ -10,6 +10,7 @@ const adminLanguagesRoutes      = require('./languages/admin.languages.routes');
 const adminCurrenciesRoutes     = require('./currencies/admin.currencies.routes');
 const adminComplianceRoutes     = require('./compliance/admin.compliance.routes');
 const adminAiRoutes             = require('./ai/admin.ai.routes');
+const adminDocTemplatesRoutes   = require('./document-templates/admin.document-templates.routes');
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.use('/languages',       adminLanguagesRoutes);
 router.use('/currencies',      adminCurrenciesRoutes);
 router.use('/compliance',      adminComplianceRoutes);
 router.use('/ai',              adminAiRoutes);
+router.use('/document-templates', adminDocTemplatesRoutes);
 
 router.get('/ping', (req, res) => {
   res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });

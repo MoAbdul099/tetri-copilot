@@ -11,25 +11,40 @@ const list = async (workspaceId, { page = 1, limit = 20, search, category, statu
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
+  const searchFilter = search ? {
+    OR: [
+      { name:        { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+      { category:    { contains: search, mode: 'insensitive' } },
+    ],
+  } : {};
+
+  // Include both workspace-owned templates AND published system templates from admin
   const where = {
-    workspaceId,
-    ...(search && {
-      OR: [
-        { name:        { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { category:    { contains: search, mode: 'insensitive' } },
-      ],
-    }),
-    ...(category && { category }),
-    ...(status   && { status }),
-    ...(language && { languageName: { contains: language, mode: 'insensitive' } }),
+    OR: [
+      {
+        workspaceId,
+        ...(category && { category }),
+        ...(status   && { status }),
+        ...(language && { languageName: { contains: language, mode: 'insensitive' } }),
+        ...searchFilter,
+      },
+      {
+        workspaceId: null,
+        isSystemDefault: true,
+        status: 'published',
+        ...(category && { category }),
+        ...(language && { languageName: { contains: language, mode: 'insensitive' } }),
+        ...searchFilter,
+      },
+    ],
   };
 
   const [total, items] = await Promise.all([
     prisma.documentTemplate.count({ where }),
     prisma.documentTemplate.findMany({
       where,
-      orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+      orderBy: [{ isSystemDefault: 'desc' }, { status: 'asc' }, { updatedAt: 'desc' }],
       skip,
       take,
       select: {
@@ -47,8 +62,15 @@ const list = async (workspaceId, { page = 1, limit = 20, search, category, statu
 };
 
 const findById = async (workspaceId, id) => {
+  // Find workspace-owned OR published system template
   return prisma.documentTemplate.findFirst({
-    where: { id, workspaceId },
+    where: {
+      id,
+      OR: [
+        { workspaceId },
+        { workspaceId: null, isSystemDefault: true, status: 'published' },
+      ],
+    },
     include: INCLUDE_FULL,
   });
 };
