@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkspacesPage from './pages/WorkspacesPage';
 import WorkspaceDetailPage from './pages/WorkspaceDetailPage';
+import UsersPage from './pages/UsersPage';
+import UserDetailPage from './pages/UserDetailPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -26,7 +28,8 @@ export default function App() {
             <Route path="/"                       element={<DashboardPage />} />
             <Route path="/organizations"           element={<WorkspacesPage />} />
             <Route path="/organizations/:id"       element={<WorkspaceDetailPage />} />
-            <Route path="/users"                   element={<StubPage title="Users" />} />
+            <Route path="/users"                   element={<UsersPage />} />
+            <Route path="/users/:id"               element={<UserDetailPage />} />
             <Route path="/plans"                   element={<StubPage title="Plans & Subscriptions" />} />
             <Route path="/countries"               element={<StubPage title="Country Profiles" />} />
             <Route path="/localization"            element={<StubPage title="Languages & Currencies" />} />
