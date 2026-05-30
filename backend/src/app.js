@@ -79,6 +79,8 @@ const complianceAiActionsRoutes  = require('./modules/compliance-ai-actions/comp
 const { registerComplianceHandlers } = require('./modules/compliance-ai-actions/compliance-ai-actions.handlers');
 const adminRoutes                = require('./modules/admin/index');
 const publicRoutes               = require('./modules/public/index');
+const featureFlagsRoutes         = require('./modules/feature-flags/feature-flags.routes');
+const maintenanceMode            = require('./middleware/maintenanceMode');
 
 const app = express();
 
@@ -158,8 +160,12 @@ app.use(sanitize);
 app.use(requestId);
 app.use(requestLogger);
 
+// Maintenance mode gate — runs before all workspace routes
+app.use(maintenanceMode);
+
 // Routes
 app.use('/api/v1/health',     healthRoutes);
+app.use('/api/v1/feature-flags', featureFlagsRoutes);
 app.use('/api/v1/dashboard',  dashboardRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspacesRoutes);
