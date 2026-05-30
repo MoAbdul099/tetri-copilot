@@ -12,6 +12,7 @@ const adminComplianceRoutes     = require('./compliance/admin.compliance.routes'
 const adminAiRoutes             = require('./ai/admin.ai.routes');
 const adminDocTemplatesRoutes   = require('./document-templates/admin.document-templates.routes');
 const adminBillingRoutes        = require('./billing/admin.billing.routes');
+const adminLogsRoutes           = require('./logs/admin.logs.routes');
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.use('/compliance',      adminComplianceRoutes);
 router.use('/ai',              adminAiRoutes);
 router.use('/document-templates', adminDocTemplatesRoutes);
 router.use('/billing',           adminBillingRoutes);
+router.use('/logs',              adminLogsRoutes);
 
 router.get('/ping', (req, res) => {
   res.json({ success: true, data: { pong: true, admin: req.adminUser.email } });
