@@ -20,6 +20,7 @@ import { getCurrentSubscription, getFeatureAccess } from '../services/subscripti
 import { getUsageSummary } from '../services/usageService';
 import { createPortalSession, getBillingEvents } from '../services/billingService';
 
+
 const SUBSCRIPTION_STATUS_STYLES = {
   active:    'bg-emerald-50 text-emerald-700',
   trialing:  'bg-[#eff4ff] text-tetri-blue',
@@ -58,13 +59,13 @@ export default function OverviewPage() {
       getCurrentSubscription(),
       getUsageSummary(),
       getFeatureAccess(),
-      getBillingEvents(),
+      getBillingEvents({ limit: 5 }),
     ])
-      .then(([sub, usageData, featureData, events]) => {
+      .then(([sub, usageData, featureData, evResult]) => {
         setSubscription(sub);
         setUsage(usageData);
         setFeatures(featureData);
-        setBillingEvents(events);
+        setBillingEvents(evResult?.events || []);
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load billing overview'))
       .finally(() => setLoading(false));
@@ -289,7 +290,15 @@ export default function OverviewPage() {
 
           {/* Billing events section */}
           <div>
-            <h3 className="text-sm font-semibold text-tetri-text mb-3">Billing events</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-tetri-text">Recent billing events</h3>
+              <Link
+                to="/billing/events"
+                className="inline-flex items-center gap-1 text-xs font-medium text-tetri-blue hover:underline"
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
             <BillingEventList events={billingEvents} />
           </div>
 

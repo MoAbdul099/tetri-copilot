@@ -13,6 +13,7 @@ import SettingsPage from './features/settings/pages/SettingsPage.jsx';
 import MembersPage from './features/members/pages/MembersPage.jsx';
 import PlansPage from './features/billing/pages/PlansPage.jsx';
 import OverviewPage from './features/billing/pages/OverviewPage.jsx';
+import BillingEventsPage from './features/billing/pages/BillingEventsPage.jsx';
 import CustomersPage from './features/customers/pages/CustomersPage.jsx';
 import CreateCustomerPage from './features/customers/pages/CreateCustomerPage.jsx';
 import EditCustomerPage from './features/customers/pages/EditCustomerPage.jsx';
@@ -139,6 +140,7 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/members" element={<MembersPage />} />
           <Route path="/billing" element={<OverviewPage />} />
+          <Route path="/billing/events" element={<BillingEventsPage />} />
           <Route path="/billing/plans" element={<PlansPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/customers/new" element={<CreateCustomerPage />} />
