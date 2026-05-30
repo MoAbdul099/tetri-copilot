@@ -17,6 +17,7 @@ import CompliancePage from './pages/CompliancePage';
 import AIUsagePage from './pages/AIUsagePage';
 import DocumentTemplatesPage from './pages/DocumentTemplatesPage';
 import BillingEventsPage from './pages/BillingEventsPage';
+import ActivityLogsPage from './pages/ActivityLogsPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -48,7 +49,7 @@ export default function App() {
             <Route path="/ai-usage"                element={<AIUsagePage />} />
             <Route path="/document-templates"      element={<DocumentTemplatesPage />} />
             <Route path="/billing-events"          element={<BillingEventsPage />} />
-            <Route path="/activity-logs"           element={<StubPage title="Activity Logs" />} />
+            <Route path="/activity-logs"           element={<ActivityLogsPage />} />
             <Route path="/announcements"           element={<StubPage title="Announcements" />} />
             <Route path="/security"                element={<StubPage title="Security" />} />
             <Route path="/settings"                element={<StubPage title="System Settings" />} />
