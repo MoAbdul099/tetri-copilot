@@ -4356,3 +4356,52 @@ model UserAdminMeta {
 
   @@map("user_admin_meta")
 }
+
+// =========================================================
+// SYSTEM SETTINGS & FEATURE FLAGS
+// =========================================================
+
+model SystemSetting {
+  id             String   @id @default(uuid()) @db.Uuid
+  key            String   @unique @db.VarChar(100)
+  value          Json     @db.JsonB
+  category       String   @db.VarChar(50)
+  description    String?  @db.VarChar(500)
+  lastModifiedBy String?  @map("last_modified_by") @db.VarChar(255)
+  lastModifiedAt DateTime @default(now()) @map("last_modified_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  history SettingsHistory[]
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+model FeatureFlag {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String   @unique @db.VarChar(100)
+  enabled           Boolean  @default(false)
+  rolloutPercentage Int      @default(100) @map("rollout_percentage")
+  description       String?  @db.VarChar(500)
+  isBeta            Boolean  @default(false) @map("is_beta")
+  lastModifiedBy    String?  @map("last_modified_by") @db.VarChar(255)
+  lastModifiedAt    DateTime @default(now()) @map("last_modified_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("feature_flags")
+}
+
+model SettingsHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  settingKey    String   @map("setting_key") @db.VarChar(100)
+  previousValue Json?    @map("previous_value") @db.JsonB
+  newValue      Json     @map("new_value") @db.JsonB
+  modifiedBy    String   @map("modified_by") @db.VarChar(255)
+  modifiedAt    DateTime @default(now()) @map("modified_at") @db.Timestamptz(6)
+
+  setting SystemSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
+
+  @@index([settingKey])
+  @@index([modifiedAt])
+  @@map("settings_history")
+}
