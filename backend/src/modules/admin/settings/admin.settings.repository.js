@@ -1,4 +1,5 @@
 const prisma = require('../../../lib/prisma');
+const settingsCache = require('../../../lib/settingsCache');
 
 // ── Default seeds ─────────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ async function upsertMany(updates, modifiedBy) {
     });
     results.push(setting);
   }
+  settingsCache.invalidate();
   return results;
 }
 
@@ -121,6 +123,7 @@ async function listFlags() {
 }
 
 async function upsertFlag({ name, enabled, rolloutPercentage, description, isBeta }, modifiedBy) {
+  settingsCache.invalidate();
   return prisma.featureFlag.upsert({
     where: { name },
     update: { enabled, rolloutPercentage, description, isBeta, lastModifiedBy: modifiedBy, lastModifiedAt: new Date() },

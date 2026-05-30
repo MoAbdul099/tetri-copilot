@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { setClerkTokenGetter } from './lib/api.js';
+import { FeatureFlagsProvider } from './context/FeatureFlagsContext.jsx';
 import ProtectedLayout from './components/layout/ProtectedLayout.jsx';
 import SignInPage from './features/auth/pages/SignInPage.jsx';
 import SignUpPage from './features/auth/pages/SignUpPage.jsx';
@@ -124,6 +125,7 @@ function ClerkApiSync() {
 
 export default function App() {
   return (
+    <FeatureFlagsProvider>
     <BrowserRouter>
       <ClerkApiSync />
       <Routes>
@@ -250,5 +252,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </FeatureFlagsProvider>
   );
 }
