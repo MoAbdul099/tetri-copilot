@@ -240,15 +240,18 @@ const handleWebhookEvent = async (rawBody, signature) => {
   return { received: true };
 };
 
-const listBillingEvents = async (workspaceId) => {
-  const events = await repo.listEventsByWorkspace(workspaceId);
-  return events.map((e) => ({
-    id: e.id,
-    eventType: e.eventType,
-    provider: e.provider,
-    providerEventId: e.providerEventId,
-    createdAt: e.createdAt,
-  }));
+const listBillingEvents = async (workspaceId, params = {}) => {
+  const result = await repo.listEventsByWorkspace(workspaceId, params);
+  return {
+    ...result,
+    events: result.events.map((e) => ({
+      id: e.id,
+      eventType: e.eventType,
+      provider: e.provider,
+      providerEventId: e.providerEventId,
+      createdAt: e.createdAt,
+    })),
+  };
 };
 
 module.exports = { createCheckoutSession, createPortalSession, handleWebhookEvent, listBillingEvents };

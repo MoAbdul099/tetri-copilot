@@ -8,12 +8,20 @@ const storeBillingEvent = ({ workspaceId, subscriptionId, eventType, provider, p
 const findEventByProviderId = (providerEventId) =>
   prisma.billingEvent.findFirst({ where: { providerEventId } });
 
-const listEventsByWorkspace = (workspaceId, limit = 20) =>
-  prisma.billingEvent.findMany({
-    where: { workspaceId },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+const listEventsByWorkspace = async (workspaceId, { page = 1, limit = 20, eventType } = {}) => {
+  const where = { workspaceId, ...(eventType && { eventType }) };
+  const skip = (Number(page) - 1) * Number(limit);
+  const [total, events] = await Promise.all([
+    prisma.billingEvent.count({ where }),
+    prisma.billingEvent.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+  ]);
+  return { events, total, page: Number(page), limit: Number(limit) };
+};
 
 const updateSubscriptionStripeFields = (workspaceId, fields) =>
   prisma.subscription.update({

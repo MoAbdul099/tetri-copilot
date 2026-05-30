@@ -124,8 +124,10 @@ const NAV_CONFIG = [
     groupIcon: Users,
     requiredRoles: ['owner', 'admin'],
     items: [
-      { to: '/members', label: 'Members', icon: Users },
-      { to: '/billing', label: 'Billing', icon: CreditCard, requiredRoles: ['owner'] },
+      { to: '/members',        label: 'Members',         icon: Users },
+      { to: '/billing',        label: 'Overview',        icon: CreditCard, requiredRoles: ['owner'] },
+      { to: '/billing/events', label: 'Billing Events',  icon: Receipt,    requiredRoles: ['owner'] },
+      { to: '/billing/plans',  label: 'Plans',           icon: CheckSquare, requiredRoles: ['owner'] },
     ],
   },
   {

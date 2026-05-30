@@ -33,8 +33,8 @@ const handleWebhook = async (req, res, next) => {
 
 const listEvents = async (req, res, next) => {
   try {
-    const events = await service.listBillingEvents(req.workspaceId);
-    res.json({ success: true, data: { events } });
+    const result = await service.listBillingEvents(req.workspaceId, req.query);
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }
