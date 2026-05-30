@@ -18,6 +18,7 @@ import AIUsagePage from './pages/AIUsagePage';
 import DocumentTemplatesPage from './pages/DocumentTemplatesPage';
 import BillingEventsPage from './pages/BillingEventsPage';
 import ActivityLogsPage from './pages/ActivityLogsPage';
+import SystemSettingsPage from './pages/SystemSettingsPage';
 import StubPage from './pages/StubPage';
 
 function Protected() {
@@ -52,7 +53,7 @@ export default function App() {
             <Route path="/activity-logs"           element={<ActivityLogsPage />} />
             <Route path="/announcements"           element={<StubPage title="Announcements" />} />
             <Route path="/security"                element={<StubPage title="Security" />} />
-            <Route path="/settings"                element={<StubPage title="System Settings" />} />
+            <Route path="/settings"                element={<SystemSettingsPage />} />
             <Route path="*"                        element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
